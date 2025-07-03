@@ -50,31 +50,35 @@
     try {
         console.log(`🔥 Chargement des ${type}...`);
         const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
-        const q = query(establishmentsRef, orderBy('topPosition', 'asc'));
-        const snapshot = await getDocs(q);
+        const snapshot = await getDocs(establishmentsRef);
         
         const establishments = [];
         snapshot.forEach((doc) => {
             const data = doc.data();
-            if (!type || data.category === type) { // Utiliser 'category' au lieu de 'type'
-                establishments.push({
-                    id: doc.id,
-                    name: data.name,
-                    address: data.address,
-                    laRevueRating: data.rating || 7,
-                    userRating: data.userRating || 7,
-                    rank: data.topPosition || 1,
-                    priceLevel: data.priceRange === 'luxury' ? 4 : 3,
-                    description: data.description || '',
-                    category: data.category
-                });
-            }
-                        establishments.push({
-                            id: doc.id,
-                            ...data
-                        });
-                    }
-                });
+            console.log('🔍 Document trouvé:', data);
+            
+            // Charger tous les établissements sans filtrer
+            establishments.push({
+                id: doc.id,
+                name: data.name || 'Sans nom',
+                address: data.address || 'Sans adresse',
+                laRevueRating: data.rating || 7,
+                userRating: data.userRating || 7,
+                rank: data.topPosition || 1,
+                priceLevel: 3,
+                description: data.description || '',
+                category: data.category || 'hotel'
+            });
+        });
+        
+        window.currentEstablishments = establishments;
+        console.log(`✅ ${establishments.length} établissements chargés`);
+        return establishments;
+    } catch (error) {
+        console.error('❌ Erreur chargement:', error);
+        return [];
+    }
+};
                 
                 window.currentEstablishments = establishments;
                 console.log(`✅ ${establishments.length} ${type} chargés`);

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - La Revue</title>
+    
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
+
+        // Configuration Firebase avec vos vraies clés
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjHNzW6i_d7HCZx_2K9Pv5JXIvafo1XNo",
+            authDomain: "larevueapp-1f205.firebaseapp.com",
+            projectId: "larevueapp-1f205",
+            storageBucket: "larevueapp-1f205.firebasestorage.app",
+            messagingSenderId: "248256257582",
+            appId: "1:248256257582:web:a7b9281d0143e7ed35c9bf"
+        };
+
+        // Initialiser Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // Collections
+        const COLLECTIONS = {
+            ESTABLISHMENTS: 'establishments',
+            USERS: 'users',
+            REVIEWS: 'reviews',
+            DEALS: 'deals'
+        };
+
+        // Variables globales
+        window.firebaseApp = { db, storage, COLLECTIONS };
+        window.currentEstablishments = [];
+        window.currentStats = { hotels: 0, restaurants: 0, spas: 0, totalReviews: 0 };
+
+        // Fonctions Firebase globales
+        window.loadEstablishments = async (type = 'hotels') => {
+            try {
+                console.log(`🔥 Chargement des ${type}...`);
+                const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
+                const q = query(establishmentsRef, orderBy('rank', 'asc'));
+                const snapshot = await getDocs(q);
+                
+                const establishments = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (!type || data.type === type.slice(0, -1)) { // hotels -> hotel
+                        establishments.push({
+                            id: doc.id,
+                            ...data
+                        });
+                    }
+                });
+                
+                window.currentEstablishments = establishments;
+                console.log(`✅ ${establishments.length} ${type} chargés`);
+                return establishments;
+            } catch (error) {
+                console.error('❌ Erreur chargement:', error);
+                return [];
+            }
+        };
+
+        window.updateEstablishmentRank = async (id, newRank) => {
+            try {
+                const docRef = doc(db, COLLECTIONS.ESTABLISHMENTS, id);
+                await updateDoc(docRef, { rank: newRank });
+                console.log(`✅ Rang mis à jour pour ${id}`);
+                return true;
+            } catch (error) {
+                console.error('❌ Erreur mise à jour rang:', error);
+                return false;
+            }
+        };
+
+        window.updateEstablishmentRating = async (id, rating, type = 'laRevueRating') => {
+            try {
+                const docRef = doc(db, COLLECTIONS.ESTABLISHMENTS, id);
+                await updateDoc(docRef, { [type]: rating });
+                console.log(`✅ Note ${type} mise à jour pour ${id}`);
+                return true;
+            } catch (error) {
+                console.error('❌ Erreur mise à jour note:', error);
+                return false;
+            }
+        };
+
+        window.addNewEstablishment = async (data) => {
+            try {
+                const docRef = await addDoc(collection(db, COLLECTIONS.ESTABLISHMENTS), {
+                    ...data,
+                    createdAt: new Date(),
+                    rank: window.currentEstablishments.length + 1
+                });
+                console.log(`✅ Nouvel établissement créé: ${docRef.id}`);
+                return docRef.id;
+            } catch (error) {
+                console.error('❌ Erreur création:', error);
+                return null;
+            }
+        };
+
+        window.deleteEstablishment = async (id) => {
+            try {
+                await deleteDoc(doc(db, COLLECTIONS.ESTABLISHMENTS, id));
+                console.log(`✅ Établissement supprimé: ${id}`);
+                return true;
+            } catch (error) {
+                console.error('❌ Erreur suppression:', error);
+                return false;
+            }
+        };
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔥 Firebase Dashboard initialized');
+            loadDashboard();
+        });
+    </script>
+
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .ranking-item {
+            transition: all 0.3s ease;
+        }
+
+        .ranking-item:hover {
+            background: linear-gradient(135deg, #374151 0%, #4B5563 100%);
+        }
+
+        .modal {
+            backdrop-filter: blur(10px);
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen">
+
+    <!-- Header Principal -->
+    <header class="gradient-bg shadow-2xl border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-6 py-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-yellow-500 p-3 rounded-xl">
+                        <i class="fas fa-trophy text-black text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-4xl font-bold text-yellow-400">Dashboard Admin - La Revue</h1>
+                        <p class="text-gray-300 text-lg mt-1">Gestion du classement et des établissements</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="bg-green-500 w-3 h-3 rounded-full animate-pulse"></div>
+                    <span class="text-green-400 font-medium">En ligne</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-gray-800 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex space-x-8">
+                <button onclick="switchTab('hotels')" id="tab-hotels" class="nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-blue-600 text-white">
+                    <i class="fas fa-bed mr-2"></i>Hôtels
+                </button>
+                <button onclick="switchTab('restaurants')" id="tab-restaurants" class="nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600">
+                    <i class="fas fa-utensils mr-2"></i>Restaurants
+                </button>
+                <button onclick="switchTab('spas')" id="tab-spas" class="nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600">
+                    <i class="fas fa-spa mr-2"></i>Spas
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenu Principal -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        
+        <!-- Statistiques -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-yellow-400">Total</h3>
+                        <p class="text-3xl font-bold" id="stat-total">0</p>
+                    </div>
+                    <div class="bg-yellow-500 p-3 rounded-lg">
+                        <i class="fas fa-building text-black text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-blue-400">Note Moyenne</h3>
+                        <p class="text-3xl font-bold" id="stat-average">0.0</p>
+                    </div>
+                    <div class="bg-blue-500 p-3 rounded-lg">
+                        <i class="fas fa-star text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-green-400">Top 3</h3>
+                        <p class="text-3xl font-bold">🏆🥈🥉</p>
+                    </div>
+                    <div class="bg-green-500 p-3 rounded-lg">
+                        <i class="fas fa-medal text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-purple-400">Firebase</h3>
+                        <p class="text-2xl font-bold text-green-400">🟢 Connecté</p>
+                    </div>
+                    <div class="bg-purple-500 p-3 rounded-lg">
+                        <i class="fas fa-database text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Actions rapides -->
+        <section class="mb-8">
+            <div class="flex flex-wrap gap-4">
+                <button onclick="openAddModal()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Ajouter un établissement
+                </button>
+                <button onclick="recalculateRankings()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-calculator mr-2"></i>Recalculer le classement
+                </button>
+                <button onclick="exportData()" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-download mr-2"></i>Exporter les données
+                </button>
+            </div>
+        </section>
+
+        <!-- Liste des établissements -->
+        <section class="bg-gray-800 rounded-xl border border-gray-700">
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold" id="section-title">🏨 Classement des Hôtels</h2>
+                    <div class="flex items-center space-x-4">
+                        <input type="text" id="search-input" placeholder="Rechercher..." class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" onkeyup="filterEstablishments()">
+                        <button onclick="loadDashboard()" class="bg-gray-600 hover:bg-gray-500 p-2 rounded-lg">
+                            <i class="fas fa-refresh"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-gray-400 mt-2">Glissez-déposez pour modifier le classement • Cliquez pour modifier</p>
+            </div>
+            
+            <!-- Loading -->
+            <div id="loading" class="p-12 text-center">
+                <div class="spinner w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p class="text-gray-400">Chargement des données Firebase...</p>
+            </div>
+
+            <!-- Liste -->
+            <div id="establishments-list" class="hidden">
+                <!-- Les établissements seront injectés ici par JavaScript -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Ajout/Modification -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold" id="modal-title">Ajouter un établissement</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="establishment-form" class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Nom *</label>
+                        <input type="text" id="form-name" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Type *</label>
+                        <select id="form-type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                            <option value="hotel">Hôtel</option>
+                            <option value="restaurant">Restaurant</option>
+                            <option value="spa">Spa</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Adresse *</label>
+                    <input type="text" id="form-address" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Note La Revue (/10)</label>
+                        <input type="number" id="form-larevue-rating" min="1" max="10" step="0.1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Note Utilisateurs (/10)</label>
+                        <input type="number" id="form-user-rating" min="1" max="10" step="0.1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Niveau de prix</label>
+                        <select id="form-price-level" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                            <option value="1">€ (Économique)</option>
+                            <option value="2">€€ (Modéré)</option>
+                            <option value="3">€€€ (Cher)</option>
+                            <option value="4">€€€€ (Très cher)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                    <textarea id="form-description" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700">
+                        Annuler
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium">
+                        <span id="form-submit-text">Ajouter</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentTab = 'hotels';
+        let editingId = null;
+
+        // Charger le dashboard
+        async function loadDashboard() {
+            showLoading(true);
+            
+            try {
+                const establishments = await window.loadEstablishments(currentTab);
+                updateStats(establishments);
+                renderEstablishments(establishments);
+            } catch (error) {
+                console.error('Erreur chargement dashboard:', error);
+                showError('Erreur de connexion Firebase');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Changer d'onglet
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Mettre à jour l'interface
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.className = 'nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600';
+            });
+            document.getElementById(`tab-${tab}`).className = 'nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-blue-600 text-white';
+            
+            // Mettre à jour le titre
+            const titles = {
+                hotels: '🏨 Classement des Hôtels',
+                restaurants: '🍽️ Classement des Restaurants',
+                spas: '🧘 Classement des Spas'
+            };
+            document.getElementById('section-title').textContent = titles[tab];
+            
+            // Recharger les données
+            loadDashboard();
+        }
+
+        // Afficher/masquer le loading
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
+            document.getElementById('establishments-list').classList.toggle('hidden', show);
+        }
+
+        // Mettre à jour les statistiques
+        function updateStats(establishments) {
+            const total = establishments.length;
+            const average = total > 0 ? 
+                (establishments.reduce((sum, est) => sum + (est.laRevueRating || 0), 0) / total).toFixed(1) : 
+                '0.0';
+            
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-average').textContent = average;
+        }
+
+        // Calculer le score final
+        function calculateScore(est) {
+            const userRating = est.userRating || 7;
+            const laRevueRating = est.laRevueRating || 7;
+            const bonus = est.manualBonus || 0;
+            return ((userRating * 0.6) + (laRevueRating * 0.4) + bonus).toFixed(1);
+        }
+
+        // Rendre la liste des établissements
+        function renderEstablishments(establishments) {
+            const container = document.getElementById('establishments-list');
+            
+            if (establishments.length === 0) {
+                container.innerHTML = `
+                    <div class="p-12 text-center">
+                        <div class="text-6xl mb-4">🏗️</div>
+                        <h3 class="text-xl font-bold text-gray-300 mb-2">Aucun établissement trouvé</h3>
+                        <p class="text-gray-400 mb-6">Commencez par ajouter votre premier établissement</p>
+                        <button onclick="openAddModal()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium">
+                            <i class="fas fa-plus mr-2"></i>Ajouter un établissement
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = establishments.map((est, index) => `
+                <div class="ranking-item p-6 border-b border-gray-700 last:border-b-0" id="item-${est.id}">
+                    <div class="flex items-center justify-between">
+                        <!-- Rang et info -->
+                        <div class="flex items-center space-x-6">
+                            <div class="rank-badge w-16 h-16 rounded-xl flex items-center justify-center font-bold text-xl ${
+                                est.rank <= 3 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black' : 'bg-gray-600 text-white'
+                            }">
+                                #${est.rank || index + 1}
+                            </div>
+                            
+                            <div class="flex-1">
+                                <h3 class="text-xl font-semibold text-white mb-1">${est.name || 'Sans nom'}</h3>
+                                <p class="text-gray-400 text-sm mb-2">${est.address || 'Adresse non définie'}</p>
+                                ${est.description ? `<p class="text-gray-300 text-sm">${est.description}</p>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Scores et actions -->
+                        <div class="flex items-center space-x-8">
+                            <!-- Scores -->
+                            <div class="grid grid-cols-3 gap-6 text-center">
+                                <div>
+                                    <p class="text-xs text-gray-400 mb-1">Utilisateurs</p>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold text-blue-400 text-lg">${(est.userRating || 0).toFixed(1)}</span>
+                                        <button onclick="editRating('${est.id}', 'userRating', ${est.userRating || 7})" class="text-xs text-gray-500 hover:text-blue-400">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-xs text-gray-400 mb-1">La Revue</p>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold text-yellow-400 text-lg">${(est.laRevueRating || 0).toFixed(1)}</span>
+                                        <button onclick="editRating('${est.id}', 'laRevueRating', ${est.laRevueRating || 7})" class="text-xs text-gray-500 hover:text-yellow-400">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-xs text-gray-400 mb-1">Score Final</p>
+                                    <span class="font-bold text-green-400 text-lg">${calculateScore(est)}</span>
+                                </div>
+                            </div>
+
+                            <!-- Prix -->
+                            <div class="text-center">
+                                <p class="text-xs text-gray-400 mb-1">Prix</p>
+                                <span class="font-bold text-purple-400 text-lg">${'€'.repeat(est.priceLevel || 2)}</span>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex space-x-2">
+                                <button onclick="moveUp('${est.id}', ${est.rank || index + 1})" 
+                                    ${(est.rank || index + 1) === 1 ? 'disabled' : ''} 
+                                    class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-arrow-up"></i>
+                                </button>
+                                <button onclick="moveDown('${est.id}', ${est.rank || index + 1})" 
+                                    ${(est.rank || index + 1) === establishments.length ? 'disabled' : ''} 
+                                    class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-arrow-down"></i>
+                                </button>
+                                <button onclick="editEstablishment('${est.id}')" class="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteEstablishment('${est.id}')" class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Déplacer vers le haut
+        async function moveUp(id, currentRank) {
+            if (currentRank <= 1) return;
+            
+            const success = await window.updateEstablishmentRank(id, currentRank - 1);
+            if (success) {
+                showSuccess('Classement mis à jour !');
+                loadDashboard();
+            } else {
+                showError('Erreur lors de la mise à jour');
+            }
+        }
+
+        // Déplacer vers le bas
+        async function moveDown(id, currentRank) {
+            const maxRank = window.currentEstablishments.length;
+            if (currentRank >= maxRank) return;
+            
+            const success = await window.updateEstablishmentRank(id, currentRank + 1);
+            if (success) {
+                showSuccess('Classement mis à jour !');
+                loadDashboard();
+            } else {
+                showError('Erreur lors de la mise à jour');
+            }
+        }
+
+        // Éditer une note
+        async function editRating(id, type, currentValue) {
+            const newValue = prompt(`Nouvelle note ${type === 'userRating' ? 'utilisateurs' : 'La Revue'} (/10):`, currentValue);
+            
+            if (newValue === null || newValue === '') return;
+            
+            const rating = parseFloat(newValue);
+            if (isNaN(rating) || rating < 0 || rating > 10) {
+                showError('La note doit être entre 0 et 10');
+                return;
+            }
+            
+            const success = await window.updateEstablishmentRating(id, rating, type);
+            if (success) {
+                showSuccess('Note mise à jour !');
+                loadDashboard();
+            } else {
+                showError('Erreur lors de la mise à jour');
+            }
+        }
+
+        // Ouvrir le modal d'ajout
+        function openAddModal() {
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Ajouter un établissement';
+            document.getElementById('form-submit-text').textContent = 'Ajouter';
+            document.getElementById('form-type').value = currentTab.slice(0, -1); // hotels -> hotel
+            document.getElementById('establishment-form').reset();
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        // Éditer un établissement
+        function editEstablishment(id) {
+            const est = window.currentEstablishments.find(e => e.id === id);
+            if (!est) return;
+            
+            editingId = id;
+            document.getElementById('modal-title').textContent = 'Modifier l\'établissement';
+            document.getElementById('form-submit-text').textContent = 'Modifier';
+            
+            // Remplir le formulaire
+            document.getElementById('form-name').value = est.name || '';
+            document.getElementById('form-type').value = est.type || currentTab.slice(0, -1);
+            document.getElementById('form-address').value = est.address || '';
+            document.getElementById('form-larevue-rating').value = est.laRevueRating || 7;
+            document.getElementById('form-user-rating').value = est.userRating || 7;
+            document.getElementById('form-price-level').value = est.priceLevel || 2;
+            document.getElementById('form-description').value = est.description || '';
+            
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        // Fermer le modal
+        function closeModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            editingId = null;
+        }
+
+        // Supprimer un établissement
+        async function deleteEstablishment(id) {
+            const est = window.currentEstablishments.find(e => e.id === id);
+            if (!est) return;
+            
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer "${est.name}" ?`)) return;
+            
+            const success = await window.deleteEstablishment(id);
+            if (success) {
+                showSuccess('Établissement supprimé !');
+                loadDashboard();
+            } else {
+                showError('Erreur lors de la suppression');
+            }
+        }
+
+        // Recalculer les classements
+        async function recalculateRankings() {
+            if (!confirm('Recalculer automatiquement tous les classements ?')) return;
+            
+            showLoading(true);
+            
+            try {
+                // Trier par score décroissant
+                const sorted = [...window.currentEstablishments].sort((a, b) => {
+                    const scoreA = parseFloat(calculateScore(a));
+                    const scoreB = parseFloat(calculateScore(b));
+                    return scoreB - scoreA;
+                });
+                
+                // Mettre à jour les rangs
+                for (let i = 0; i < sorted.length; i++) {
+                    await window.updateEstablishmentRank(sorted[i].id, i + 1);
+                }
+                
+                showSuccess('Classements recalculés !');
+                loadDashboard();
+            } catch (error) {
+                showError('Erreur lors du recalcul');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Exporter les données
+        function exportData() {
+            const data = {
+                type: currentTab,
+                establishments: window.currentEstablishments,
+                exportDate: new Date().toISOString(),
+                stats: window.currentStats
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `larevue-${currentTab}-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showSuccess('Données exportées !');
+        }
+
+        // Filtrer les établissements
+        function filterEstablishments() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const items = document.querySelectorAll('.ranking-item');
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                const visible = text.includes(query);
+                item.style.display = visible ? 'block' : 'none';
+            });
+        }
+
+        // Gérer le formulaire
+        document.getElementById('establishment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('form-name').value,
+                type: document.getElementById('form-type').value,
+                address: document.getElementById('form-address').value,
+                laRevueRating: parseFloat(document.getElementById('form-larevue-rating').value) || 7,
+                userRating: parseFloat(document.getElementById('form-user-rating').value) || 7,
+                priceLevel: parseInt(document.getElementById('form-price-level').value) || 2,
+                description: document.getElementById('form-description').value
+            };
+            
+            try {
+                if (editingId) {
+                    // Mise à jour
+                    const docRef = window.firebaseApp.db;
+                    await window.firebaseApp.updateDoc(window.firebaseApp.doc(docRef, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId), formData);
+                    showSuccess('Établissement modifié !');
+                } else {
+                    // Création
+                    await window.addNewEstablishment(formData);
+                    showSuccess('Établissement créé !');
+                }
+                
+                closeModal();
+                loadDashboard();
+            } catch (error) {
+                console.error('Erreur formulaire:', error);
+                showError('Erreur lors de la sauvegarde');
+            }
+        });
+
+        // Fonctions utilitaires
+        function showSuccess(message) {
+            // Vous pouvez implémenter un système de notifications ici
+            console.log('✅', message);
+        }
+
+        function showError(message) {
+            // Vous pouvez implémenter un système de notifications ici
+            console.error('❌', message);
+            alert(message);
+        }
+
+        // Fermer le modal en cliquant à l'extérieur
+        document.getElementById('edit-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeModal();
+            }
+        });
+
+        // Raccourcis clavier
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'n') {
+                    e.preventDefault();
+                    openAddModal();
+                }
+                if (e.key === 'r') {
+                    e.preventDefault();
+                    loadDashboard();
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDgKWteVbd5HQZAtDJjsBaOo8Bh0OFnegG%2Ff9c3N9JtCwW0xMukuMkP93d8NKUOkCVERokxsq0i%2FY0%2FS1l5YcKUaJGR2T6Bbp16w32jf124jUdSsZx%2B5HcWpr6xMuRJTJEuFvS2WhqubzqYoYti3BNYlzbUGAMeIZ%2F4Fq6TCD%2FcyBwMLK7kFZJw9zGFbDMos1%2F3lATS%2FE%2FHcZkoMA490zxlvG5mVQr%2FanjwuI5XFmPuoxQGFQvmbJSMLT2N2T00KY%2F4%2B%2FCadQYW6lwpyDsCtCUm3evR6SNqpa2%2BE6PAmAcXjX7ggn7EaNhXYyMpCXqcgAPsyTeKVJnSsVE8NjFiCv7jycz0LY8Os23O2SE%2BXXSArWJPUd62bVWkgd4EZM8r3kGBa4hWniZdOerH%2BOJFdnAC1k7TC0BafjmXBYLbt6aW9GcuQxYd2SCKBGxcOWWvfUC2WuNvKqdwNC8oZqq0Z445EldwR7%2FZDVZXZQKeEAoLHBSCbIMVDNBun4Tsg0HrPdLPiRdNR1Gmn%2BihLn%2FRHdk58%3D";
+        window.__genspark_locale = "fr-FR";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDgKWteVbd5HQZAtDJjsBaOo8Bh0OFnegG/f9c3N9JtCwW0xMukuMkP93d8NKUOkCVERokxsq0i/Y0/S1l5YcKUaJGR2T6Bbp16w32jf124jUdSsZx+5HcWpr6xMuRJTJEuFvS2WhqubzqYoYti3BNYlzbUGAMeIZ/4Fq6TCD/cyBwMLK7kFZJw9zGFbDMos1/3lATS/E/HcZkoMA490zxlvG5mVQr/anjwuI5XFmPuoxQGFQvmbJSMLT2N2T00KY/4+/CadQYW6lwpyDsCtCUm3evR6SNqpa2+E6PAmAcXjX7ggn7EaNhXYyMpCXqcgAPsyTeKVJnSsVE8NjFiCv7jycz0LY8Os23O2SE+XXSArWJPUd62bVWkgd4EZM8r3kGBa4hWniZdOerH+OJFdnAC1k7TC0BafjmXBYLbt6aW9GcuQxYd2SCKBGxcOWWvfUC2WuNvKqdwNC8oZqq0Z445EldwR7/ZDVZXZQKeEAoLHBSCbIMVDNBun4Tsg0HrPdLPiRdNR1Gmn+ihLn/RHdk58=";
+    </script>
+    
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    

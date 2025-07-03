@@ -101,7 +101,14 @@
                             // ✅ NOUVEAUX CHAMPS
                             promoCode: data.promoCode || '',
                             promoDiscount: data.promoDiscount || '',
-                            images: data.images || []
+                            images: data.images || [],
+                            // ✅ CHAMPS FEATURED
+                            isFeatured: data.isFeatured || false,
+                            reservationUrl: data.reservationUrl || '',
+                            positiveReviews: data.positiveReviews || '89%',
+                            negativeReviews: data.negativeReviews || '11%',
+                            positiveReviewExample: data.positiveReviewExample || '',
+                            negativeReviewExample: data.negativeReviewExample || ''
                         });
                     }
                 });
@@ -248,6 +255,18 @@
             align-items: center;
             justify-content: center;
         }
+
+        /* ✅ STYLES FEATURED */
+        .featured-badge {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border: 2px solid #fbbf24;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+        }
+
+        .featured-item {
+            border: 2px solid #fbbf24;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+        }
     </style>
 </head>
 
@@ -388,7 +407,7 @@
         </section>
     </main>
 
-    <!-- ✅ MODAL MODIFIÉ AVEC CODES PROMO + IMAGES -->
+    <!-- ✅ MODAL MODIFIÉ AVEC SECTION FEATURED -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
         <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-4xl w-full max-h-screen overflow-y-auto">
             <div class="p-6 border-b border-gray-700">
@@ -440,6 +459,49 @@
                             <option value="3">€€€ (Cher)</option>
                             <option value="4">€€€€ (Très cher)</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- ✅ SECTION FEATURED - "NOTRE HÔTEL FAVORI DU MOMENT" -->
+                <div class="bg-yellow-500 bg-opacity-20 p-4 rounded-lg border-l-4 border-yellow-500">
+                    <h4 class="text-lg font-semibold text-yellow-400 mb-4">
+                        <i class="fas fa-star mr-2"></i>Notre Hôtel Favori du Moment
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                <input type="checkbox" id="form-is-featured" class="mr-2">
+                                Marquer comme "Notre Hôtel Favori du Moment"
+                            </label>
+                            <p class="text-xs text-gray-400">Cet établissement apparaîtra en premier dans l'app</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Lien de réservation</label>
+                            <input type="url" id="form-reservation-url" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white" placeholder="https://...">
+                        </div>
+                    </div>
+                    
+                    <!-- ✅ AVIS POSITIFS/NÉGATIFS -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Avis positifs (%)</label>
+                            <input type="text" id="form-positive-reviews" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white" placeholder="89%">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Avis négatifs (%)</label>
+                            <input type="text" id="form-negative-reviews" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white" placeholder="11%">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Exemple d'avis positif</label>
+                            <input type="text" id="form-positive-example" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white" placeholder="Service exceptionnel et vue magnifique">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Exemple d'avis négatif</label>
+                            <input type="text" id="form-negative-example" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white" placeholder="Prix un peu élevé">
+                        </div>
                     </div>
                 </div>
 
@@ -594,7 +656,7 @@
             return ((userRating * 0.6) + (laRevueRating * 0.4) + bonus).toFixed(1);
         }
 
-        // ✅ RENDU LISTE AVEC CODES PROMO + IMAGES
+        // ✅ RENDU LISTE AVEC CODES PROMO + IMAGES + FEATURED
         function renderEstablishments(establishments) {
             const container = document.getElementById('establishments-list');
             
@@ -613,19 +675,29 @@
             }
 
             container.innerHTML = establishments.map((est, index) => `
-                <div class="ranking-item p-6 border-b border-gray-700 last:border-b-0" id="item-${est.id}">
+                <div class="ranking-item p-6 border-b border-gray-700 last:border-b-0 ${est.isFeatured ? 'featured-item' : ''}" id="item-${est.id}">
+                    ${est.isFeatured ? `
+                        <div class="featured-badge px-4 py-2 rounded-full text-sm font-bold text-black mb-4 inline-flex items-center">
+                            <i class="fas fa-star mr-2"></i>Notre Hôtel Favori du Moment
+                        </div>
+                    ` : ''}
+                    
                     <div class="flex items-start justify-between">
                         <!-- Rang et info -->
                         <div class="flex items-start space-x-6">
                             <div class="rank-badge w-16 h-16 rounded-xl flex items-center justify-center font-bold text-xl ${
+                                est.isFeatured ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black' :
                                 est.rank <= 3 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black' : 'bg-gray-600 text-white'
                             }">
-                                #${est.rank || index + 1}
+                                ${est.isFeatured ? '<i class="fas fa-star"></i>' : `#${est.rank || index + 1}`}
                             </div>
                             
                             <div class="flex-1">
                                 <h3 class="text-xl font-semibold text-white mb-1">${est.name || 'Sans nom'}</h3>
-                                <p class="text-gray-400 text-sm mb-2">${est.address || 'Adresse non définie'}</p>
+                                <p class="text-gray-400 text-sm mb-2">
+                                    <i class="fas fa-map-marker-alt mr-1"></i>
+                                    ${est.address || 'Adresse non définie'}
+                                </p>
                                 ${est.description ? `<p class="text-gray-300 text-sm mb-3">${est.description}</p>` : ''}
                                 
                                 <!-- ✅ AFFICHAGE CODES PROMO -->
@@ -635,6 +707,52 @@
                                             <i class="fas fa-gift mr-1"></i>
                                             ${est.promoCode} • -${est.promoDiscount || '0%'}
                                         </span>
+                                    </div>
+                                ` : ''}
+
+                                <!-- ✅ LIEN RÉSERVATION -->
+                                ${est.reservationUrl ? `
+                                    <div class="mb-3">
+                                        <a href="${est.reservationUrl}" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm">
+                                            <i class="fas fa-external-link-alt mr-1"></i>
+                                            Lien de réservation
+                                        </a>
+                                    </div>
+                                ` : ''}
+
+                                <!-- ✅ AVIS POSITIFS/NÉGATIFS -->
+                                ${est.positiveReviews || est.negativeReviews ? `
+                                    <div class="mb-3 flex items-center space-x-4">
+                                        ${est.positiveReviews ? `
+                                            <span class="text-green-400 text-sm">
+                                                <i class="fas fa-thumbs-up mr-1"></i>
+                                                ${est.positiveReviews}
+                                            </span>
+                                        ` : ''}
+                                        ${est.negativeReviews ? `
+                                            <span class="text-red-400 text-sm">
+                                                <i class="fas fa-thumbs-down mr-1"></i>
+                                                ${est.negativeReviews}
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                ` : ''}
+
+                                <!-- ✅ EXEMPLES D'AVIS -->
+                                ${est.positiveReviewExample ? `
+                                    <div class="mb-2">
+                                        <p class="text-green-300 text-xs italic">
+                                            <i class="fas fa-quote-left mr-1"></i>
+                                            "${est.positiveReviewExample}"
+                                        </p>
+                                    </div>
+                                ` : ''}
+                                ${est.negativeReviewExample ? `
+                                    <div class="mb-2">
+                                        <p class="text-red-300 text-xs italic">
+                                            <i class="fas fa-quote-left mr-1"></i>
+                                            "${est.negativeReviewExample}"
+                                        </p>
                                     </div>
                                 ` : ''}
                                 
@@ -692,16 +810,18 @@
 
                             <!-- Actions -->
                             <div class="flex space-x-2">
-                                <button onclick="moveUp('${est.id}', ${est.rank || index + 1})" 
-                                    ${(est.rank || index + 1) === 1 ? 'disabled' : ''} 
-                                    class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors">
-                                    <i class="fas fa-arrow-up"></i>
-                                </button>
-                                <button onclick="moveDown('${est.id}', ${est.rank || index + 1})" 
-                                    ${(est.rank || index + 1) === establishments.length ? 'disabled' : ''} 
-                                    class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors">
-                                    <i class="fas fa-arrow-down"></i>
-                                </button>
+                                ${!est.isFeatured ? `
+                                    <button onclick="moveUp('${est.id}', ${est.rank || index + 1})" 
+                                        ${(est.rank || index + 1) === 1 ? 'disabled' : ''} 
+                                        class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-arrow-up"></i>
+                                    </button>
+                                    <button onclick="moveDown('${est.id}', ${est.rank || index + 1})" 
+                                        ${(est.rank || index + 1) === establishments.length ? 'disabled' : ''} 
+                                        class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-arrow-down"></i>
+                                    </button>
+                                ` : ''}
                                 <button onclick="editEstablishment('${est.id}')" class="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -769,6 +889,13 @@
             document.getElementById('form-type').value = currentTab;
             document.getElementById('establishment-form').reset();
             document.getElementById('images-preview').innerHTML = '';
+            // ✅ Reset champs featured
+            document.getElementById('form-is-featured').checked = false;
+            document.getElementById('form-reservation-url').value = '';
+            document.getElementById('form-positive-reviews').value = '';
+            document.getElementById('form-negative-reviews').value = '';
+            document.getElementById('form-positive-example').value = '';
+            document.getElementById('form-negative-example').value = '';
             document.getElementById('edit-modal').classList.remove('hidden');
         }
 
@@ -793,6 +920,14 @@
             // ✅ REMPLIR CODES PROMO
             document.getElementById('form-promo-code').value = est.promoCode || '';
             document.getElementById('form-promo-discount').value = est.promoDiscount || '';
+            
+            // ✅ REMPLIR CHAMPS FEATURED
+            document.getElementById('form-is-featured').checked = est.isFeatured || false;
+            document.getElementById('form-reservation-url').value = est.reservationUrl || '';
+            document.getElementById('form-positive-reviews').value = est.positiveReviews || '';
+            document.getElementById('form-negative-reviews').value = est.negativeReviews || '';
+            document.getElementById('form-positive-example').value = est.positiveReviewExample || '';
+            document.getElementById('form-negative-example').value = est.negativeReviewExample || '';
             
             // ✅ AFFICHER IMAGES EXISTANTES
             const previewContainer = document.getElementById('images-preview');
@@ -820,7 +955,7 @@
             selectedImages = [];
         }
 
-        // ✅ GESTION FORMULAIRE AVEC UPLOAD
+        // ✅ GESTION FORMULAIRE AVEC UPLOAD + FEATURED
         document.getElementById('establishment-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -856,6 +991,13 @@
                     // ✅ CODES PROMO
                     promoCode: document.getElementById('form-promo-code').value,
                     promoDiscount: document.getElementById('form-promo-discount').value,
+                    // ✅ CHAMPS FEATURED
+                    isFeatured: document.getElementById('form-is-featured').checked,
+                    reservationUrl: document.getElementById('form-reservation-url').value,
+                    positiveReviews: document.getElementById('form-positive-reviews').value,
+                    negativeReviews: document.getElementById('form-negative-reviews').value,
+                    positiveReviewExample: document.getElementById('form-positive-example').value,
+                    negativeReviewExample: document.getElementById('form-negative-example').value,
                     // ✅ IMAGES (existantes + nouvelles)
                     images: [...existingImages, ...uploadedImageUrls],
                     city: 'Paris',
@@ -966,14 +1108,52 @@
             });
         }
 
+        // ✅ FONCTION SUPPRIMER IMAGE EXISTANTE
+        function removeExistingImage(establishmentId, imageIndex) {
+            if (!confirm('Supprimer cette image ?')) return;
+            
+            const est = window.currentEstablishments.find(e => e.id === establishmentId);
+            if (!est || !est.images) return;
+            
+            // Supprimer l'image de l'array
+            est.images.splice(imageIndex, 1);
+            
+            // Mettre à jour en base
+            const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, establishmentId);
+            window.firebaseModules.updateDoc(docRef, { images: est.images }).then(() => {
+                showSuccess('Image supprimée !');
+                // Recharger l'affichage des images dans le modal
+                editEstablishment(establishmentId);
+            }).catch(error => {
+                console.error('❌ Erreur suppression image:', error);
+                showError('Erreur lors de la suppression de l\'image');
+            });
+        }
+
         function showSuccess(message) {
             console.log('✅', message);
-            alert('✅ ' + message);
+            // Remplacer alert par une notification plus moderne
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.innerHTML = `<i class="fas fa-check mr-2"></i>${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         }
 
         function showError(message) {
             console.error('❌', message);
-            alert('❌ ' + message);
+            // Remplacer alert par une notification plus moderne
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
         }
 
         // Event listeners
@@ -996,6 +1176,38 @@
                     e.preventDefault();
                     loadDashboard();
                 }
+            }
+        });
+
+        // ✅ GESTION AUTOMATIQUE DU FEATURED
+        document.getElementById('form-is-featured').addEventListener('change', function(e) {
+            const featuredSections = document.querySelectorAll('.bg-yellow-500.bg-opacity-20');
+            if (e.target.checked) {
+                // Avertir l'utilisateur
+                if (!confirm('⚠️ Attention : Un seul établissement peut être "Notre Hôtel Favori du Moment" à la fois.\n\nEn activant cette option, tous les autres établissements perdront ce statut.\n\nContinuer ?')) {
+                    e.target.checked = false;
+                    return;
+                }
+                
+                // Afficher les champs supplémentaires comme requis
+                featuredSections.forEach(section => {
+                    const inputs = section.querySelectorAll('input');
+                    inputs.forEach(input => {
+                        if (input.type !== 'checkbox') {
+                            input.required = true;
+                        }
+                    });
+                });
+            } else {
+                // Retirer le required
+                featuredSections.forEach(section => {
+                    const inputs = section.querySelectorAll('input');
+                    inputs.forEach(input => {
+                        if (input.type !== 'checkbox') {
+                            input.required = false;
+                        }
+                    });
+                });
             }
         });
     </script>

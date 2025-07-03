@@ -41,7 +41,7 @@
         };
 
         // Variables globales
-        window.firebaseApp = { db, storage, COLLECTIONS };
+        window.firebaseApp = { db, storage, COLLECTIONS, updateDoc, doc, addDoc };
         window.currentEstablishments = [];
         window.currentStats = { hotels: 0, restaurants: 0, spas: 0, totalReviews: 0 };
 
@@ -65,7 +65,7 @@
                         laRevueRating: data.rating || 7,
                         userRating: data.userRating || 7,
                         rank: data.topPosition || 1,
-                        priceLevel: 3,
+                        priceLevel: data.priceLevel || 3,
                         description: data.description || '',
                         category: data.category || 'hotel'
                     });
@@ -106,10 +106,12 @@
 
         window.addNewEstablishment = async (data) => {
             try {
+                console.log('🔥 Création nouvel établissement:', data);
                 const docRef = await addDoc(collection(db, COLLECTIONS.ESTABLISHMENTS), {
                     ...data,
                     createdAt: new Date(),
-                    topPosition: window.currentEstablishments.length + 1
+                    topPosition: window.currentEstablishments.length + 1,
+                    isActive: true
                 });
                 console.log(`✅ Nouvel établissement créé: ${docRef.id}`);
                 return docRef.id;
@@ -342,9 +344,9 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Type *</label>
                         <select id="form-type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
-                            <option value="hotel">Hôtel</option>
-                            <option value="restaurant">Restaurant</option>
-                            <option value="spa">Spa</option>
+                            <option value="hotels">Hôtel</option>
+                            <option value="restaurants">Restaurant</option>
+                            <option value="spas">Spa</option>
                         </select>
                     </div>
                 </div>
@@ -609,7 +611,7 @@
             editingId = null;
             document.getElementById('modal-title').textContent = 'Ajouter un établissement';
             document.getElementById('form-submit-text').textContent = 'Ajouter';
-            document.getElementById('form-type').value = currentTab.slice(0, -1); // hotels -> hotel
+            document.getElementById('form-type').value = currentTab; // hotels, restaurants, spas
             document.getElementById('establishment-form').reset();
             document.getElementById('edit-modal').classList.remove('hidden');
         }
@@ -625,7 +627,7 @@
             
             // Remplir le formulaire
             document.getElementById('form-name').value = est.name || '';
-            document.getElementById('form-type').value = est.category || currentTab.slice(0, -1);
+            document.getElementById('form-type').value = est.category || currentTab;
             document.getElementById('form-address').value = est.address || '';
             document.getElementById('form-larevue-rating').value = est.laRevueRating || 7;
             document.getElementById('form-user-rating').value = est.userRating || 7;
@@ -717,7 +719,7 @@
             });
         }
 
-        // Gérer le formulaire
+        // ✅ GESTION DU FORMULAIRE CORRIGÉE
         document.getElementById('establishment-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -728,26 +730,39 @@
                 rating: parseFloat(document.getElementById('form-larevue-rating').value) || 7,
                 userRating: parseFloat(document.getElementById('form-user-rating').value) || 7,
                 priceLevel: parseInt(document.getElementById('form-price-level').value) || 2,
-                description: document.getElementById('form-description').value
+                description: document.getElementById('form-description').value,
+                city: 'Paris', // Valeur par défaut
+                isActive: true, // Valeur par défaut
+                averagePrice: 400, // Valeur par défaut
+                priceRange: 'luxury' // Valeur par défaut
             };
+            
+            console.log('📝 Données formulaire:', formData);
             
             try {
                 if (editingId) {
-                    // Mise à jour
-                    const docRef = doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId);
-                    await updateDoc(docRef, formData);
+                    // ✅ MISE À JOUR
+                    console.log('✏️ Modification établissement:', editingId);
+                    const docRef = window.firebaseApp.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId);
+                    await window.firebaseApp.updateDoc(docRef, formData);
                     showSuccess('Établissement modifié !');
                 } else {
-                    // Création
-                    await window.addNewEstablishment(formData);
-                    showSuccess('Établissement créé !');
+                    // ✅ CRÉATION
+                    console.log('➕ Création nouvel établissement');
+                    const result = await window.addNewEstablishment(formData);
+                    if (result) {
+                        showSuccess('Établissement créé avec succès !');
+                    } else {
+                        showError('Erreur lors de la création');
+                        return;
+                    }
                 }
                 
                 closeModal();
                 loadDashboard();
             } catch (error) {
-                console.error('Erreur formulaire:', error);
-                showError('Erreur lors de la sauvegarde');
+                console.error('❌ Erreur formulaire:', error);
+                showError('Erreur lors de la sauvegarde: ' + error.message);
             }
         });
 

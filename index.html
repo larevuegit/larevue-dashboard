@@ -47,16 +47,28 @@
 
         // Fonctions Firebase globales
         window.loadEstablishments = async (type = 'hotels') => {
-            try {
-                console.log(`🔥 Chargement des ${type}...`);
-                const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
-                const q = query(establishmentsRef, orderBy('rank', 'asc'));
-                const snapshot = await getDocs(q);
-                
-                const establishments = [];
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if (!type || data.type === type.slice(0, -1)) { // hotels -> hotel
+    try {
+        console.log(`🔥 Chargement des ${type}...`);
+        const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
+        const q = query(establishmentsRef, orderBy('topPosition', 'asc'));
+        const snapshot = await getDocs(q);
+        
+        const establishments = [];
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            if (!type || data.category === type) { // Utiliser 'category' au lieu de 'type'
+                establishments.push({
+                    id: doc.id,
+                    name: data.name,
+                    address: data.address,
+                    laRevueRating: data.rating || 7,
+                    userRating: data.userRating || 7,
+                    rank: data.topPosition || 1,
+                    priceLevel: data.priceRange === 'luxury' ? 4 : 3,
+                    description: data.description || '',
+                    category: data.category
+                });
+            }
                         establishments.push({
                             id: doc.id,
                             ...data

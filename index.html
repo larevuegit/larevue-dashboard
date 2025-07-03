@@ -41,11 +41,12 @@
         };
 
         // Variables globales
-        window.firebaseApp = { db, storage, COLLECTIONS, updateDoc, doc, addDoc };
+        window.firebaseApp = { db, storage, COLLECTIONS };
+        window.firebaseModules = { updateDoc, doc, addDoc, deleteDoc };
         window.currentEstablishments = [];
         window.currentStats = { hotels: 0, restaurants: 0, spas: 0, totalReviews: 0 };
 
-        // Fonctions Firebase globales
+        // ✅ FONCTIONS FIREBASE GLOBALES AVEC FILTRAGE CORRIGÉ
         window.loadEstablishments = async (type = 'hotels') => {
             try {
                 console.log(`🔥 Chargement des ${type}...`);
@@ -57,22 +58,27 @@
                     const data = doc.data();
                     console.log('🔍 Document trouvé:', data);
                     
-                    // Charger tous les établissements sans filtrer
-                    establishments.push({
-                        id: doc.id,
-                        name: data.name || 'Sans nom',
-                        address: data.address || 'Sans adresse',
-                        laRevueRating: data.rating || 7,
-                        userRating: data.userRating || 7,
-                        rank: data.topPosition || 1,
-                        priceLevel: data.priceLevel || 3,
-                        description: data.description || '',
-                        category: data.category || 'hotel'
-                    });
+                    // ✅ FILTRER PAR CATÉGORIE
+                    if (data.category === type) {
+                        establishments.push({
+                            id: doc.id,
+                            name: data.name || 'Sans nom',
+                            address: data.address || 'Sans adresse',
+                            laRevueRating: data.rating || 7,
+                            userRating: data.userRating || 7,
+                            rank: data.topPosition || 1,
+                            priceLevel: data.priceLevel || 3,
+                            description: data.description || '',
+                            category: data.category || type
+                        });
+                    }
                 });
                 
+                // Trier par rang
+                establishments.sort((a, b) => (a.rank || 999) - (b.rank || 999));
+                
                 window.currentEstablishments = establishments;
-                console.log(`✅ ${establishments.length} établissements chargés`);
+                console.log(`✅ ${establishments.length} établissements ${type} chargés`);
                 return establishments;
             } catch (error) {
                 console.error('❌ Erreur chargement:', error);
@@ -731,10 +737,10 @@
                 userRating: parseFloat(document.getElementById('form-user-rating').value) || 7,
                 priceLevel: parseInt(document.getElementById('form-price-level').value) || 2,
                 description: document.getElementById('form-description').value,
-                city: 'Paris', // Valeur par défaut
-                isActive: true, // Valeur par défaut
-                averagePrice: 400, // Valeur par défaut
-                priceRange: 'luxury' // Valeur par défaut
+                city: 'Paris',
+                isActive: true,
+                averagePrice: 400,
+                priceRange: 'luxury'
             };
             
             console.log('📝 Données formulaire:', formData);
@@ -743,8 +749,8 @@
                 if (editingId) {
                     // ✅ MISE À JOUR
                     console.log('✏️ Modification établissement:', editingId);
-                    const docRef = window.firebaseApp.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId);
-                    await window.firebaseApp.updateDoc(docRef, formData);
+                    const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId);
+                    await window.firebaseModules.updateDoc(docRef, formData);
                     showSuccess('Établissement modifié !');
                 } else {
                     // ✅ CRÉATION

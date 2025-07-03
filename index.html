@@ -17,7 +17,7 @@
         import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
         import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
 
-        // Configuration Firebase avec vos vraies clés
+        // Configuration Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBjHNzW6i_d7HCZx_2K9Pv5JXIvafo1XNo",
             authDomain: "larevueapp-1f205.firebaseapp.com",
@@ -42,11 +42,40 @@
 
         // Variables globales
         window.firebaseApp = { db, storage, COLLECTIONS };
-        window.firebaseModules = { updateDoc, doc, addDoc, deleteDoc };
+        window.firebaseModules = { updateDoc, doc, addDoc, deleteDoc, ref, uploadBytes, getDownloadURL };
         window.currentEstablishments = [];
         window.currentStats = { hotels: 0, restaurants: 0, spas: 0, totalReviews: 0 };
 
-        // ✅ FONCTIONS FIREBASE GLOBALES AVEC FILTRAGE CORRIGÉ
+        // ✅ FONCTION UPLOAD IMAGES
+        window.uploadImages = async (files) => {
+            const urls = [];
+            const uploadPromises = [];
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const timestamp = Date.now();
+                const fileName = `${timestamp}_${i}_${file.name}`;
+                const storageRef = ref(storage, `establishments/${fileName}`);
+                
+                uploadPromises.push(
+                    uploadBytes(storageRef, file).then(async (snapshot) => {
+                        const url = await getDownloadURL(snapshot.ref);
+                        return url;
+                    })
+                );
+            }
+            
+            try {
+                const uploadedUrls = await Promise.all(uploadPromises);
+                console.log('✅ Images uploadées:', uploadedUrls);
+                return uploadedUrls;
+            } catch (error) {
+                console.error('❌ Erreur upload:', error);
+                return [];
+            }
+        };
+
+        // Fonctions Firebase existantes (loadEstablishments, etc.)
         window.loadEstablishments = async (type = 'hotels') => {
             try {
                 console.log(`🔥 Chargement des ${type}...`);
@@ -58,7 +87,6 @@
                     const data = doc.data();
                     console.log('🔍 Document trouvé:', data);
                     
-                    // ✅ FILTRER PAR CATÉGORIE
                     if (data.category === type) {
                         establishments.push({
                             id: doc.id,
@@ -69,14 +97,16 @@
                             rank: data.topPosition || 1,
                             priceLevel: data.priceLevel || 3,
                             description: data.description || '',
-                            category: data.category || type
+                            category: data.category || type,
+                            // ✅ NOUVEAUX CHAMPS
+                            promoCode: data.promoCode || '',
+                            promoDiscount: data.promoDiscount || '',
+                            images: data.images || []
                         });
                     }
                 });
                 
-                // Trier par rang
                 establishments.sort((a, b) => (a.rank || 999) - (b.rank || 999));
-                
                 window.currentEstablishments = establishments;
                 console.log(`✅ ${establishments.length} établissements ${type} chargés`);
                 return establishments;
@@ -86,6 +116,7 @@
             }
         };
 
+        // Autres fonctions Firebase (updateEstablishmentRank, addNewEstablishment, etc.)
         window.updateEstablishmentRank = async (id, newRank) => {
             try {
                 const docRef = doc(db, COLLECTIONS.ESTABLISHMENTS, id);
@@ -188,12 +219,41 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* ✅ STYLES POUR IMAGES */
+        .image-preview {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        
+        .image-preview img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+        }
+        
+        .image-preview .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 
 <body class="bg-gray-900 text-white min-h-screen">
 
-    <!-- Header Principal -->
+    <!-- Header et Navigation identiques -->
     <header class="gradient-bg shadow-2xl border-b border-gray-700">
         <div class="max-w-7xl mx-auto px-6 py-8">
             <div class="flex items-center justify-between">
@@ -215,7 +275,6 @@
         </div>
     </header>
 
-    <!-- Navigation -->
     <nav class="bg-gray-800 border-b border-gray-700">
         <div class="max-w-7xl mx-auto px-6 py-4">
             <div class="flex space-x-8">
@@ -235,7 +294,7 @@
     <!-- Contenu Principal -->
     <main class="max-w-7xl mx-auto px-6 py-8">
         
-        <!-- Statistiques -->
+        <!-- Statistiques (identiques) -->
         <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 card-hover">
                 <div class="flex items-center justify-between">
@@ -329,9 +388,9 @@
         </section>
     </main>
 
-    <!-- Modal Ajout/Modification -->
+    <!-- ✅ MODAL MODIFIÉ AVEC CODES PROMO + IMAGES -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
-        <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-2xl w-full max-h-screen overflow-y-auto">
+        <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-4xl w-full max-h-screen overflow-y-auto">
             <div class="p-6 border-b border-gray-700">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold" id="modal-title">Ajouter un établissement</h3>
@@ -342,6 +401,7 @@
             </div>
             
             <form id="establishment-form" class="p-6 space-y-6">
+                <!-- Informations de base -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Nom *</label>
@@ -362,6 +422,7 @@
                     <input type="text" id="form-address" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
                 </div>
 
+                <!-- Notes et prix -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Note La Revue (/10)</label>
@@ -380,6 +441,38 @@
                             <option value="4">€€€€ (Très cher)</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- ✅ CODES PROMO PREMIUM -->
+                <div class="bg-gray-700 p-4 rounded-lg border-l-4 border-yellow-500">
+                    <h4 class="text-lg font-semibold text-yellow-400 mb-4">
+                        <i class="fas fa-gift mr-2"></i>Codes Promo Premium
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Code Promo</label>
+                            <input type="text" id="form-promo-code" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white" placeholder="HOTEL20">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Réduction</label>
+                            <input type="text" id="form-promo-discount" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white" placeholder="20%">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ✅ UPLOAD D'IMAGES -->
+                <div class="bg-gray-700 p-4 rounded-lg border-l-4 border-blue-500">
+                    <h4 class="text-lg font-semibold text-blue-400 mb-4">
+                        <i class="fas fa-camera mr-2"></i>Photos de l'établissement
+                    </h4>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Sélectionner des images (max 8)</label>
+                        <input type="file" id="form-images" multiple accept="image/*" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white">
+                        <p class="text-xs text-gray-400 mt-2">Formats acceptés: JPG, PNG, WebP • Taille max: 5MB par image</p>
+                    </div>
+                    
+                    <!-- Prévisualisation des images -->
+                    <div id="images-preview" class="grid grid-cols-4 gap-4 mt-4"></div>
                 </div>
 
                 <div>
@@ -403,8 +496,49 @@
         // Variables globales
         let currentTab = 'hotels';
         let editingId = null;
+        let selectedImages = [];
 
-        // Charger le dashboard
+        // ✅ GESTION PRÉVISUALISATION IMAGES
+        document.getElementById('form-images').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            selectedImages = files;
+            
+            const previewContainer = document.getElementById('images-preview');
+            previewContainer.innerHTML = '';
+            
+            files.forEach((file, index) => {
+                if (index >= 8) return; // Max 8 images
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview';
+                    previewDiv.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview ${index + 1}">
+                        <button type="button" class="remove-btn" onclick="removeImage(${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    previewContainer.appendChild(previewDiv);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // ✅ SUPPRIMER UNE IMAGE
+        function removeImage(index) {
+            selectedImages.splice(index, 1);
+            
+            // Recréer le FileList (simulation)
+            const dt = new DataTransfer();
+            selectedImages.forEach(file => dt.items.add(file));
+            document.getElementById('form-images').files = dt.files;
+            
+            // Re-trigger l'événement change
+            document.getElementById('form-images').dispatchEvent(new Event('change'));
+        }
+
+        // Fonctions Dashboard existantes
         async function loadDashboard() {
             showLoading(true);
             
@@ -420,17 +554,14 @@
             }
         }
 
-        // Changer d'onglet
         function switchTab(tab) {
             currentTab = tab;
             
-            // Mettre à jour l'interface
             document.querySelectorAll('.nav-tab').forEach(btn => {
                 btn.className = 'nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600';
             });
             document.getElementById(`tab-${tab}`).className = 'nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-blue-600 text-white';
             
-            // Mettre à jour le titre
             const titles = {
                 hotels: '🏨 Classement des Hôtels',
                 restaurants: '🍽️ Classement des Restaurants',
@@ -438,17 +569,14 @@
             };
             document.getElementById('section-title').textContent = titles[tab];
             
-            // Recharger les données
             loadDashboard();
         }
 
-        // Afficher/masquer le loading
         function showLoading(show) {
             document.getElementById('loading').classList.toggle('hidden', !show);
             document.getElementById('establishments-list').classList.toggle('hidden', show);
         }
 
-        // Mettre à jour les statistiques
         function updateStats(establishments) {
             const total = establishments.length;
             const average = total > 0 ? 
@@ -459,7 +587,6 @@
             document.getElementById('stat-average').textContent = average;
         }
 
-        // Calculer le score final
         function calculateScore(est) {
             const userRating = est.userRating || 7;
             const laRevueRating = est.laRevueRating || 7;
@@ -467,7 +594,7 @@
             return ((userRating * 0.6) + (laRevueRating * 0.4) + bonus).toFixed(1);
         }
 
-        // Rendre la liste des établissements
+        // ✅ RENDU LISTE AVEC CODES PROMO + IMAGES
         function renderEstablishments(establishments) {
             const container = document.getElementById('establishments-list');
             
@@ -487,9 +614,9 @@
 
             container.innerHTML = establishments.map((est, index) => `
                 <div class="ranking-item p-6 border-b border-gray-700 last:border-b-0" id="item-${est.id}">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-start justify-between">
                         <!-- Rang et info -->
-                        <div class="flex items-center space-x-6">
+                        <div class="flex items-start space-x-6">
                             <div class="rank-badge w-16 h-16 rounded-xl flex items-center justify-center font-bold text-xl ${
                                 est.rank <= 3 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black' : 'bg-gray-600 text-white'
                             }">
@@ -499,7 +626,31 @@
                             <div class="flex-1">
                                 <h3 class="text-xl font-semibold text-white mb-1">${est.name || 'Sans nom'}</h3>
                                 <p class="text-gray-400 text-sm mb-2">${est.address || 'Adresse non définie'}</p>
-                                ${est.description ? `<p class="text-gray-300 text-sm">${est.description}</p>` : ''}
+                                ${est.description ? `<p class="text-gray-300 text-sm mb-3">${est.description}</p>` : ''}
+                                
+                                <!-- ✅ AFFICHAGE CODES PROMO -->
+                                ${est.promoCode ? `
+                                    <div class="bg-yellow-500 bg-opacity-20 border border-yellow-500 rounded-lg p-2 mb-3 inline-block">
+                                        <span class="text-yellow-400 text-sm font-bold">
+                                            <i class="fas fa-gift mr-1"></i>
+                                            ${est.promoCode} • -${est.promoDiscount || '0%'}
+                                        </span>
+                                    </div>
+                                ` : ''}
+                                
+                                <!-- ✅ AFFICHAGE IMAGES -->
+                                ${est.images && est.images.length > 0 ? `
+                                    <div class="flex space-x-2 mb-3">
+                                        ${est.images.slice(0, 4).map(img => `
+                                            <img src="${img}" alt="Photo" class="w-16 h-12 object-cover rounded border border-gray-600">
+                                        `).join('')}
+                                        ${est.images.length > 4 ? `
+                                            <div class="w-16 h-12 bg-gray-600 rounded border border-gray-500 flex items-center justify-center">
+                                                <span class="text-xs text-gray-300">+${est.images.length - 4}</span>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
 
@@ -564,7 +715,7 @@
             `).join('');
         }
 
-        // Déplacer vers le haut
+        // Autres fonctions (moveUp, moveDown, editRating, etc.)
         async function moveUp(id, currentRank) {
             if (currentRank <= 1) return;
             
@@ -577,7 +728,6 @@
             }
         }
 
-        // Déplacer vers le bas
         async function moveDown(id, currentRank) {
             const maxRank = window.currentEstablishments.length;
             if (currentRank >= maxRank) return;
@@ -591,7 +741,6 @@
             }
         }
 
-        // Éditer une note
         async function editRating(id, type, currentValue) {
             const newValue = prompt(`Nouvelle note ${type === 'userRating' ? 'utilisateurs' : 'La Revue'} (/10):`, currentValue);
             
@@ -612,22 +761,23 @@
             }
         }
 
-        // Ouvrir le modal d'ajout
         function openAddModal() {
             editingId = null;
+            selectedImages = [];
             document.getElementById('modal-title').textContent = 'Ajouter un établissement';
             document.getElementById('form-submit-text').textContent = 'Ajouter';
-            document.getElementById('form-type').value = currentTab; // hotels, restaurants, spas
+            document.getElementById('form-type').value = currentTab;
             document.getElementById('establishment-form').reset();
+            document.getElementById('images-preview').innerHTML = '';
             document.getElementById('edit-modal').classList.remove('hidden');
         }
 
-        // Éditer un établissement
         function editEstablishment(id) {
             const est = window.currentEstablishments.find(e => e.id === id);
             if (!est) return;
             
             editingId = id;
+            selectedImages = [];
             document.getElementById('modal-title').textContent = 'Modifier l\'établissement';
             document.getElementById('form-submit-text').textContent = 'Modifier';
             
@@ -640,16 +790,112 @@
             document.getElementById('form-price-level').value = est.priceLevel || 2;
             document.getElementById('form-description').value = est.description || '';
             
+            // ✅ REMPLIR CODES PROMO
+            document.getElementById('form-promo-code').value = est.promoCode || '';
+            document.getElementById('form-promo-discount').value = est.promoDiscount || '';
+            
+            // ✅ AFFICHER IMAGES EXISTANTES
+            const previewContainer = document.getElementById('images-preview');
+            previewContainer.innerHTML = '';
+            if (est.images && est.images.length > 0) {
+                est.images.forEach((imageUrl, index) => {
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview';
+                    previewDiv.innerHTML = `
+                        <img src="${imageUrl}" alt="Image existante ${index + 1}">
+                        <button type="button" class="remove-btn" onclick="removeExistingImage('${est.id}', ${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    previewContainer.appendChild(previewDiv);
+                });
+            }
+            
             document.getElementById('edit-modal').classList.remove('hidden');
         }
 
-        // Fermer le modal
         function closeModal() {
             document.getElementById('edit-modal').classList.add('hidden');
             editingId = null;
+            selectedImages = [];
         }
 
-        // Supprimer un établissement
+        // ✅ GESTION FORMULAIRE AVEC UPLOAD
+        document.getElementById('establishment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Show loading
+            const submitBtn = document.querySelector('#establishment-form button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enregistrement...';
+            submitBtn.disabled = true;
+            
+            try {
+                // ✅ UPLOAD DES IMAGES
+                let uploadedImageUrls = [];
+                if (selectedImages.length > 0) {
+                    console.log('📤 Upload de', selectedImages.length, 'images...');
+                    uploadedImageUrls = await window.uploadImages(selectedImages);
+                }
+                
+                // Récupérer images existantes si modification
+                let existingImages = [];
+                if (editingId) {
+                    const existingEst = window.currentEstablishments.find(e => e.id === editingId);
+                    existingImages = existingEst?.images || [];
+                }
+                
+                const formData = {
+                    name: document.getElementById('form-name').value,
+                    category: document.getElementById('form-type').value,
+                    address: document.getElementById('form-address').value,
+                    rating: parseFloat(document.getElementById('form-larevue-rating').value) || 7,
+                    userRating: parseFloat(document.getElementById('form-user-rating').value) || 7,
+                    priceLevel: parseInt(document.getElementById('form-price-level').value) || 2,
+                    description: document.getElementById('form-description').value,
+                    // ✅ CODES PROMO
+                    promoCode: document.getElementById('form-promo-code').value,
+                    promoDiscount: document.getElementById('form-promo-discount').value,
+                    // ✅ IMAGES (existantes + nouvelles)
+                    images: [...existingImages, ...uploadedImageUrls],
+                    city: 'Paris',
+                    isActive: true,
+                    averagePrice: 400,
+                    priceRange: 'luxury'
+                };
+                
+                console.log('📝 Données formulaire:', formData);
+                
+                if (editingId) {
+                    // MISE À JOUR
+                    const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId);
+                    await window.firebaseModules.updateDoc(docRef, formData);
+                    showSuccess('Établissement modifié avec succès !');
+                } else {
+                    // CRÉATION
+                    const result = await window.addNewEstablishment(formData);
+                    if (result) {
+                        showSuccess('Établissement créé avec succès !');
+                    } else {
+                        showError('Erreur lors de la création');
+                        return;
+                    }
+                }
+                
+                closeModal();
+                loadDashboard();
+                
+            } catch (error) {
+                console.error('❌ Erreur formulaire:', error);
+                showError('Erreur lors de la sauvegarde: ' + error.message);
+            } finally {
+                // Restore button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Autres fonctions utilitaires
         async function deleteEstablishment(id) {
             const est = window.currentEstablishments.find(e => e.id === id);
             if (!est) return;
@@ -665,21 +911,18 @@
             }
         }
 
-        // Recalculer les classements
         async function recalculateRankings() {
             if (!confirm('Recalculer automatiquement tous les classements ?')) return;
             
             showLoading(true);
             
             try {
-                // Trier par score décroissant
                 const sorted = [...window.currentEstablishments].sort((a, b) => {
                     const scoreA = parseFloat(calculateScore(a));
                     const scoreB = parseFloat(calculateScore(b));
                     return scoreB - scoreA;
                 });
                 
-                // Mettre à jour les rangs
                 for (let i = 0; i < sorted.length; i++) {
                     await window.updateEstablishmentRank(sorted[i].id, i + 1);
                 }
@@ -693,7 +936,6 @@
             }
         }
 
-        // Exporter les données
         function exportData() {
             const data = {
                 type: currentTab,
@@ -713,7 +955,6 @@
             showSuccess('Données exportées !');
         }
 
-        // Filtrer les établissements
         function filterEstablishments() {
             const query = document.getElementById('search-input').value.toLowerCase();
             const items = document.querySelectorAll('.ranking-item');
@@ -725,54 +966,6 @@
             });
         }
 
-        // ✅ GESTION DU FORMULAIRE CORRIGÉE
-        document.getElementById('establishment-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = {
-                name: document.getElementById('form-name').value,
-                category: document.getElementById('form-type').value,
-                address: document.getElementById('form-address').value,
-                rating: parseFloat(document.getElementById('form-larevue-rating').value) || 7,
-                userRating: parseFloat(document.getElementById('form-user-rating').value) || 7,
-                priceLevel: parseInt(document.getElementById('form-price-level').value) || 2,
-                description: document.getElementById('form-description').value,
-                city: 'Paris',
-                isActive: true,
-                averagePrice: 400,
-                priceRange: 'luxury'
-            };
-            
-            console.log('📝 Données formulaire:', formData);
-            
-            try {
-                if (editingId) {
-                    // ✅ MISE À JOUR
-                    console.log('✏️ Modification établissement:', editingId);
-                    const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId);
-                    await window.firebaseModules.updateDoc(docRef, formData);
-                    showSuccess('Établissement modifié !');
-                } else {
-                    // ✅ CRÉATION
-                    console.log('➕ Création nouvel établissement');
-                    const result = await window.addNewEstablishment(formData);
-                    if (result) {
-                        showSuccess('Établissement créé avec succès !');
-                    } else {
-                        showError('Erreur lors de la création');
-                        return;
-                    }
-                }
-                
-                closeModal();
-                loadDashboard();
-            } catch (error) {
-                console.error('❌ Erreur formulaire:', error);
-                showError('Erreur lors de la sauvegarde: ' + error.message);
-            }
-        });
-
-        // Fonctions utilitaires
         function showSuccess(message) {
             console.log('✅', message);
             alert('✅ ' + message);
@@ -783,14 +976,13 @@
             alert('❌ ' + message);
         }
 
-        // Fermer le modal en cliquant à l'extérieur
+        // Event listeners
         document.getElementById('edit-modal').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) {
                 closeModal();
             }
         });
 
-        // Raccourcis clavier
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeModal();

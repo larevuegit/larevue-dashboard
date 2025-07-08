@@ -14,7 +14,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-        import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, orderBy, where } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
         import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
 
         // Configuration Firebase
@@ -42,7 +42,7 @@
 
         // Variables globales
         window.firebaseApp = { db, storage, COLLECTIONS };
-        window.firebaseModules = { updateDoc, doc, addDoc, deleteDoc, ref, uploadBytes, getDownloadURL };
+        window.firebaseModules = { updateDoc, doc, addDoc, deleteDoc, ref, uploadBytes, getDownloadURL, getDocs, collection, query, where };
         window.currentEstablishments = [];
         window.currentStats = { hotels: 0, restaurants: 0, spas: 0, totalReviews: 0 };
 
@@ -955,17 +955,42 @@
             selectedImages = [];
         }
 
-        // ✅ GESTION FORMULAIRE AVEC UPLOAD + FEATURED
+        // ✅ GESTION FORMULAIRE AVEC UPLOAD + FEATURED - VERSION CORRIGÉE
         document.getElementById('establishment-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Show loading
             const submitBtn = document.querySelector('#establishment-form button[type="submit"]');
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enregistrement...';
             submitBtn.disabled = true;
             
             try {
+                // ✅ GESTION AUTOMATIQUE DU FEATURED
+                const isFeatured = document.getElementById('form-is-featured').checked;
+                
+                // Si cet établissement devient featured, désactiver tous les autres
+                if (isFeatured) {
+                    console.log('🌟 Désactivation des autres établissements featured...');
+                    
+                    // Récupérer tous les établissements
+                    const allEstablishments = await getDocs(collection(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS));
+                    
+                    // Désactiver tous les autres featured
+                    const updatePromises = [];
+                    allEstablishments.forEach((doc) => {
+                        const data = doc.data();
+                        if (data.isFeatured === true && doc.id !== editingId) {
+                            console.log(`⚠️ Désactivation featured pour: ${data.name}`);
+                            const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, doc.id);
+                            updatePromises.push(window.firebaseModules.updateDoc(docRef, { isFeatured: false }));
+                        }
+                    });
+                    
+                    // Attendre que tous soient désactivés
+                    await Promise.all(updatePromises);
+                    console.log('✅ Autres établissements désactivés');
+                }
+                
                 // ✅ UPLOAD DES IMAGES
                 let uploadedImageUrls = [];
                 if (selectedImages.length > 0) {
@@ -991,33 +1016,36 @@
                     // ✅ CODES PROMO
                     promoCode: document.getElementById('form-promo-code').value,
                     promoDiscount: document.getElementById('form-promo-discount').value,
-                    // ✅ CHAMPS FEATURED
-                    isFeatured: document.getElementById('form-is-featured').checked,
+                    // ✅ CHAMPS FEATURED - VALEURS EXPLICITES
+                    isFeatured: isFeatured, // boolean explicite
                     reservationUrl: document.getElementById('form-reservation-url').value,
                     positiveReviews: document.getElementById('form-positive-reviews').value,
                     negativeReviews: document.getElementById('form-negative-reviews').value,
                     positiveReviewExample: document.getElementById('form-positive-example').value,
                     negativeReviewExample: document.getElementById('form-negative-example').value,
-                    // ✅ IMAGES (existantes + nouvelles)
+                    // ✅ IMAGES
                     images: [...existingImages, ...uploadedImageUrls],
+                    // ✅ MÉTADONNÉES
+                    updatedAt: new Date(), // timestamp de mise à jour
                     city: 'Paris',
                     isActive: true,
                     averagePrice: 400,
                     priceRange: 'luxury'
                 };
                 
-                console.log('📝 Données formulaire:', formData);
+                console.log('📝 Données à sauvegarder:', formData);
+                console.log('🌟 isFeatured sera défini à:', formData.isFeatured);
                 
                 if (editingId) {
                     // MISE À JOUR
                     const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId);
                     await window.firebaseModules.updateDoc(docRef, formData);
-                    showSuccess('Établissement modifié avec succès !');
+                    showSuccess(`Établissement ${isFeatured ? '⭐ marqué comme favori' : 'modifié'} avec succès !`);
                 } else {
                     // CRÉATION
                     const result = await window.addNewEstablishment(formData);
                     if (result) {
-                        showSuccess('Établissement créé avec succès !');
+                        showSuccess(`Établissement ${isFeatured ? '⭐ créé et marqué comme favori' : 'créé'} avec succès !`);
                     } else {
                         showError('Erreur lors de la création');
                         return;
@@ -1031,7 +1059,6 @@
                 console.error('❌ Erreur formulaire:', error);
                 showError('Erreur lors de la sauvegarde: ' + error.message);
             } finally {
-                // Restore button
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }

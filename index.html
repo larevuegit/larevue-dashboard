@@ -75,7 +75,7 @@
             }
         };
 
-        // Fonctions Firebase existantes (loadEstablishments, etc.)
+        // Fonctions Firebase existantes
         window.loadEstablishments = async (type = 'hotels') => {
             try {
                 console.log(`🔥 Chargement des ${type}...`);
@@ -98,7 +98,9 @@
                             priceLevel: data.priceLevel || 3,
                             description: data.description || '',
                             category: data.category || type,
-                            // ✅ NOUVEAUX CHAMPS
+                            // ✅ RÉGION AJOUTÉE
+                            region: data.region || 'ile-de-france',
+                            // ✅ CODES PROMO
                             promoCode: data.promoCode || '',
                             promoDiscount: data.promoDiscount || '',
                             images: data.images || [],
@@ -123,7 +125,7 @@
             }
         };
 
-        // Autres fonctions Firebase (updateEstablishmentRank, addNewEstablishment, etc.)
+        // Autres fonctions Firebase
         window.updateEstablishmentRank = async (id, newRank) => {
             try {
                 const docRef = doc(db, COLLECTIONS.ESTABLISHMENTS, id);
@@ -267,6 +269,50 @@
             border: 2px solid #fbbf24;
             background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
         }
+
+        /* ✅ STYLES POUR LAYOUT FEATURED CORRIGÉ */
+        .featured-scores-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .score-item {
+            text-align: center;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .score-label {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            margin-bottom: 0.25rem;
+        }
+
+        .score-value {
+            font-size: 1.25rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .score-edit-btn {
+            font-size: 0.75rem;
+            color: #6B7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: color 0.2s;
+        }
+
+        .score-edit-btn:hover {
+            color: #FBBF24;
+        }
     </style>
 </head>
 
@@ -407,7 +453,7 @@
         </section>
     </main>
 
-    <!-- ✅ MODAL MODIFIÉ AVEC SECTION FEATURED -->
+    <!-- ✅ MODAL AVEC RÉGION AJOUTÉE -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
         <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-4xl w-full max-h-screen overflow-y-auto">
             <div class="p-6 border-b border-gray-700">
@@ -436,9 +482,30 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Adresse *</label>
-                    <input type="text" id="form-address" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                <!-- ✅ ADRESSE ET RÉGION -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Adresse *</label>
+                        <input type="text" id="form-address" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Région *</label>
+                        <select id="form-region" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                            <option value="ile-de-france">Île-de-France</option>
+                            <option value="provence-alpes-cote-azur">Provence-Alpes-Côte d'Azur</option>
+                            <option value="nouvelle-aquitaine">Nouvelle-Aquitaine</option>
+                            <option value="occitanie">Occitanie</option>
+                            <option value="auvergne-rhone-alpes">Auvergne-Rhône-Alpes</option>
+                            <option value="normandie">Normandie</option>
+                            <option value="bretagne">Bretagne</option>
+                            <option value="pays-de-la-loire">Pays de la Loire</option>
+                            <option value="centre-val-de-loire">Centre-Val de Loire</option>
+                            <option value="bourgogne-franche-comte">Bourgogne-Franche-Comté</option>
+                            <option value="grand-est">Grand Est</option>
+                            <option value="hauts-de-france">Hauts-de-France</option>
+                            <option value="corse">Corse</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Notes et prix -->
@@ -462,7 +529,7 @@
                     </div>
                 </div>
 
-                <!-- ✅ SECTION FEATURED - "NOTRE HÔTEL FAVORI DU MOMENT" -->
+                <!-- ✅ SECTION FEATURED -->
                 <div class="bg-yellow-500 bg-opacity-20 p-4 rounded-lg border-l-4 border-yellow-500">
                     <h4 class="text-lg font-semibold text-yellow-400 mb-4">
                         <i class="fas fa-star mr-2"></i>Notre Hôtel Favori du Moment
@@ -481,7 +548,6 @@
                         </div>
                     </div>
                     
-                    <!-- ✅ AVIS POSITIFS/NÉGATIFS -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Avis positifs (%)</label>
@@ -656,7 +722,7 @@
             return ((userRating * 0.6) + (laRevueRating * 0.4) + bonus).toFixed(1);
         }
 
-        // ✅ RENDU LISTE AVEC CODES PROMO + IMAGES + FEATURED
+        // ✅ RENDU LISTE CORRIGÉ AVEC AFFICHAGE FEATURED
         function renderEstablishments(establishments) {
             const container = document.getElementById('establishments-list');
             
@@ -684,7 +750,7 @@
                     
                     <div class="flex items-start justify-between">
                         <!-- Rang et info -->
-                        <div class="flex items-start space-x-6">
+                        <div class="flex items-start space-x-6 flex-1">
                             <div class="rank-badge w-16 h-16 rounded-xl flex items-center justify-center font-bold text-xl ${
                                 est.isFeatured ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black' :
                                 est.rank <= 3 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black' : 'bg-gray-600 text-white'
@@ -698,6 +764,13 @@
                                     <i class="fas fa-map-marker-alt mr-1"></i>
                                     ${est.address || 'Adresse non définie'}
                                 </p>
+                                
+                                <!-- ✅ RÉGION AJOUTÉE -->
+                                <p class="text-gray-500 text-xs mb-2">
+                                    <i class="fas fa-globe-europe mr-1"></i>
+                                    ${est.region ? est.region.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : 'Région non définie'}
+                                </p>
+                                
                                 ${est.description ? `<p class="text-gray-300 text-sm mb-3">${est.description}</p>` : ''}
                                 
                                 <!-- ✅ AFFICHAGE CODES PROMO -->
@@ -769,44 +842,85 @@
                                         ` : ''}
                                     </div>
                                 ` : ''}
+                                
+                                <!-- ✅ SCORES FEATURED CORRIGÉS -->
+                                ${est.isFeatured ? `
+                                    <div class="featured-scores-grid">
+                                        <div class="score-item">
+                                            <div class="score-label">Utilisateurs</div>
+                                            <div class="score-value text-blue-400">
+                                                <span>${(est.userRating || 0).toFixed(1)}</span>
+                                                <button onclick="editRating('${est.id}', 'userRating', ${est.userRating || 7})" class="score-edit-btn">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="score-item">
+                                            <div class="score-label">La Revue</div>
+                                            <div class="score-value text-yellow-400">
+                                                <span>${(est.laRevueRating || 0).toFixed(1)}</span>
+                                                <button onclick="editRating('${est.id}', 'rating', ${est.laRevueRating || 7})" class="score-edit-btn">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="score-item">
+                                            <div class="score-label">Score Final</div>
+                                            <div class="score-value text-green-400">
+                                                <span>${calculateScore(est)}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="score-item">
+                                            <div class="score-label">Prix</div>
+                                            <div class="score-value text-purple-400">
+                                                <span>${'€'.repeat(est.priceLevel || 2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
 
-                        <!-- Scores et actions -->
-                        <div class="flex items-center space-x-8">
-                            <!-- Scores -->
-                            <div class="grid grid-cols-3 gap-6 text-center">
-                                <div>
-                                    <p class="text-xs text-gray-400 mb-1">Utilisateurs</p>
-                                    <div class="flex items-center space-x-2">
-                                        <span class="font-bold text-blue-400 text-lg">${(est.userRating || 0).toFixed(1)}</span>
-                                        <button onclick="editRating('${est.id}', 'userRating', ${est.userRating || 7})" class="text-xs text-gray-500 hover:text-blue-400">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
+                        <!-- Actions et scores (pour les non-featured) -->
+                        <div class="flex items-center space-x-6">
+                            ${!est.isFeatured ? `
+                                <!-- Scores normaux -->
+                                <div class="grid grid-cols-3 gap-4 text-center">
+                                    <div>
+                                        <p class="text-xs text-gray-400 mb-1">Utilisateurs</p>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="font-bold text-blue-400 text-lg">${(est.userRating || 0).toFixed(1)}</span>
+                                            <button onclick="editRating('${est.id}', 'userRating', ${est.userRating || 7})" class="text-xs text-gray-500 hover:text-blue-400">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <p class="text-xs text-gray-400 mb-1">La Revue</p>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="font-bold text-yellow-400 text-lg">${(est.laRevueRating || 0).toFixed(1)}</span>
+                                            <button onclick="editRating('${est.id}', 'rating', ${est.laRevueRating || 7})" class="text-xs text-gray-500 hover:text-yellow-400">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <p class="text-xs text-gray-400 mb-1">Score Final</p>
+                                        <span class="font-bold text-green-400 text-lg">${calculateScore(est)}</span>
                                     </div>
                                 </div>
-                                
-                                <div>
-                                    <p class="text-xs text-gray-400 mb-1">La Revue</p>
-                                    <div class="flex items-center space-x-2">
-                                        <span class="font-bold text-yellow-400 text-lg">${(est.laRevueRating || 0).toFixed(1)}</span>
-                                        <button onclick="editRating('${est.id}', 'rating', ${est.laRevueRating || 7})" class="text-xs text-gray-500 hover:text-yellow-400">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <p class="text-xs text-gray-400 mb-1">Score Final</p>
-                                    <span class="font-bold text-green-400 text-lg">${calculateScore(est)}</span>
-                                </div>
-                            </div>
 
-                            <!-- Prix -->
-                            <div class="text-center">
-                                <p class="text-xs text-gray-400 mb-1">Prix</p>
-                                <span class="font-bold text-purple-400 text-lg">${'€'.repeat(est.priceLevel || 2)}</span>
-                            </div>
+                                <!-- Prix -->
+                                <div class="text-center">
+                                    <p class="text-xs text-gray-400 mb-1">Prix</p>
+                                    <span class="font-bold text-purple-400 text-lg">${'€'.repeat(est.priceLevel || 2)}</span>
+                                </div>
+                            ` : ''}
 
                             <!-- Actions -->
                             <div class="flex space-x-2">
@@ -896,6 +1010,8 @@
             document.getElementById('form-negative-reviews').value = '';
             document.getElementById('form-positive-example').value = '';
             document.getElementById('form-negative-example').value = '';
+            // ✅ Reset région
+            document.getElementById('form-region').value = 'ile-de-france';
             document.getElementById('edit-modal').classList.remove('hidden');
         }
 
@@ -912,6 +1028,7 @@
             document.getElementById('form-name').value = est.name || '';
             document.getElementById('form-type').value = est.category || currentTab;
             document.getElementById('form-address').value = est.address || '';
+            document.getElementById('form-region').value = est.region || 'ile-de-france';
             document.getElementById('form-larevue-rating').value = est.laRevueRating || 7;
             document.getElementById('form-user-rating').value = est.userRating || 7;
             document.getElementById('form-price-level').value = est.priceLevel || 2;
@@ -955,7 +1072,7 @@
             selectedImages = [];
         }
 
-        // ✅ GESTION FORMULAIRE AVEC UPLOAD + FEATURED - VERSION CORRIGÉE
+        // ✅ GESTION FORMULAIRE AVEC RÉGION
         document.getElementById('establishment-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -973,7 +1090,7 @@
                     console.log('🌟 Désactivation des autres établissements featured...');
                     
                     // Récupérer tous les établissements
-                    const allEstablishments = await getDocs(collection(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS));
+                    const allEstablishments = await window.firebaseModules.getDocs(window.firebaseModules.collection(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS));
                     
                     // Désactiver tous les autres featured
                     const updatePromises = [];
@@ -1009,6 +1126,7 @@
                     name: document.getElementById('form-name').value,
                     category: document.getElementById('form-type').value,
                     address: document.getElementById('form-address').value,
+                    region: document.getElementById('form-region').value, // ✅ RÉGION AJOUTÉE
                     rating: parseFloat(document.getElementById('form-larevue-rating').value) || 7,
                     userRating: parseFloat(document.getElementById('form-user-rating').value) || 7,
                     priceLevel: parseInt(document.getElementById('form-price-level').value) || 2,
@@ -1026,7 +1144,7 @@
                     // ✅ IMAGES
                     images: [...existingImages, ...uploadedImageUrls],
                     // ✅ MÉTADONNÉES
-                    updatedAt: new Date(), // timestamp de mise à jour
+                    updatedAt: new Date(),
                     city: 'Paris',
                     isActive: true,
                     averagePrice: 400,
@@ -1034,7 +1152,6 @@
                 };
                 
                 console.log('📝 Données à sauvegarder:', formData);
-                console.log('🌟 isFeatured sera défini à:', formData.isFeatured);
                 
                 if (editingId) {
                     // MISE À JOUR
@@ -1159,9 +1276,9 @@
 
         function showSuccess(message) {
             console.log('✅', message);
-            // Remplacer alert par une notification plus moderne
+            // Notification moderne
             const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
             notification.innerHTML = `<i class="fas fa-check mr-2"></i>${message}`;
             document.body.appendChild(notification);
             
@@ -1172,9 +1289,9 @@
 
         function showError(message) {
             console.error('❌', message);
-            // Remplacer alert par une notification plus moderne
+            // Notification moderne
             const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
             notification.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
             document.body.appendChild(notification);
             
@@ -1237,6 +1354,212 @@
                 });
             }
         });
+
+        // ✅ VALIDATION DYNAMIQUE DES NOTES
+        document.getElementById('form-larevue-rating').addEventListener('input', function(e) {
+            const value = parseFloat(e.target.value);
+            if (value < 0 || value > 10) {
+                e.target.setCustomValidity('La note doit être entre 0 et 10');
+            } else {
+                e.target.setCustomValidity('');
+            }
+        });
+
+        document.getElementById('form-user-rating').addEventListener('input', function(e) {
+            const value = parseFloat(e.target.value);
+            if (value < 0 || value > 10) {
+                e.target.setCustomValidity('La note doit être entre 0 et 10');
+            } else {
+                e.target.setCustomValidity('');
+            }
+        });
+
+        // ✅ PREVIEW EN TEMPS RÉEL DU SCORE CALCULÉ
+        function updateScorePreview() {
+            const userRating = parseFloat(document.getElementById('form-user-rating').value) || 7;
+            const laRevueRating = parseFloat(document.getElementById('form-larevue-rating').value) || 7;
+            const calculatedScore = ((userRating * 0.6) + (laRevueRating * 0.4)).toFixed(1);
+            
+            // Créer ou mettre à jour l'affichage du score
+            let scorePreview = document.getElementById('score-preview');
+            if (!scorePreview) {
+                scorePreview = document.createElement('div');
+                scorePreview.id = 'score-preview';
+                scorePreview.className = 'mt-4 p-4 bg-gray-700 rounded-lg border border-gray-600';
+                scorePreview.innerHTML = `
+                    <h5 class="text-sm font-semibold text-gray-300 mb-2">
+                        <i class="fas fa-calculator mr-2"></i>Aperçu du score final
+                    </h5>
+                    <div class="text-2xl font-bold text-green-400" id="calculated-score">${calculatedScore}</div>
+                    <p class="text-xs text-gray-400 mt-1">
+                        Formule: (Note utilisateurs × 0.6) + (Note La Revue × 0.4)
+                    </p>
+                `;
+                
+                // Insérer après le grid des notes
+                const notesGrid = document.getElementById('form-user-rating').closest('.grid');
+                notesGrid.parentNode.insertBefore(scorePreview, notesGrid.nextSibling);
+            } else {
+                document.getElementById('calculated-score').textContent = calculatedScore;
+            }
+        }
+
+        // Ajouter les listeners pour le calcul en temps réel
+        document.getElementById('form-user-rating').addEventListener('input', updateScorePreview);
+        document.getElementById('form-larevue-rating').addEventListener('input', updateScorePreview);
+
+        // ✅ VALIDATION DES CODES PROMO
+        document.getElementById('form-promo-code').addEventListener('input', function(e) {
+            const value = e.target.value.toUpperCase();
+            e.target.value = value;
+            
+            // Validation du format (lettres et chiffres seulement)
+            if (value && !/^[A-Z0-9]+$/.test(value)) {
+                e.target.setCustomValidity('Le code promo ne doit contenir que des lettres et des chiffres');
+            } else {
+                e.target.setCustomValidity('');
+            }
+        });
+
+        document.getElementById('form-promo-discount').addEventListener('input', function(e) {
+            const value = e.target.value;
+            
+            // Validation du format (nombre + % ou nombre + €)
+            if (value && !/^\d+[%€]?$/.test(value)) {
+                e.target.setCustomValidity('Format: "20%" ou "50€" ou "20"');
+            } else {
+                e.target.setCustomValidity('');
+            }
+        });
+
+        // ✅ AUTO-GÉNÉRATION DU CODE PROMO
+        document.getElementById('form-name').addEventListener('input', function(e) {
+            const name = e.target.value;
+            const promoCodeField = document.getElementById('form-promo-code');
+            
+            // Générer un code promo automatiquement si le champ est vide
+            if (name && !promoCodeField.value) {
+                const words = name.split(' ');
+                let code = '';
+                
+                if (words.length >= 2) {
+                    // Prendre les 3 premières lettres de chaque mot
+                    code = words.slice(0, 2).map(word => word.slice(0, 3).toUpperCase()).join('');
+                } else {
+                    // Prendre les 6 premières lettres
+                    code = name.slice(0, 6).toUpperCase();
+                }
+                
+                // Ajouter un nombre aléatoire
+                code += Math.floor(Math.random() * 90) + 10;
+                
+                promoCodeField.value = code;
+            }
+        });
+
+        // ✅ INITIALISATION AU CHARGEMENT
+        window.addEventListener('load', function() {
+            console.log('🎉 Dashboard La Revue initialisé avec succès !');
+            
+            // Charger les données initiales
+            loadDashboard();
+            
+            // Afficher un message de bienvenue
+            setTimeout(() => {
+                showSuccess('Dashboard connecté à Firebase ! 🔥');
+            }, 1000);
+        });
+
+        // ✅ GESTION DES ERREURS GLOBALES
+        window.addEventListener('error', function(e) {
+            console.error('❌ Erreur globale:', e.error);
+            showError('Une erreur inattendue s\'est produite');
+        });
+
+        // ✅ FONCTION UTILITAIRE POUR FORMATER LES RÉGIONS
+        function formatRegion(region) {
+            if (!region) return 'Région non définie';
+            
+            const regionNames = {
+                'ile-de-france': 'Île-de-France',
+                'provence-alpes-cote-azur': 'Provence-Alpes-Côte d\'Azur',
+                'nouvelle-aquitaine': 'Nouvelle-Aquitaine',
+                'occitanie': 'Occitanie',
+                'auvergne-rhone-alpes': 'Auvergne-Rhône-Alpes',
+                'normandie': 'Normandie',
+                'bretagne': 'Bretagne',
+                'pays-de-la-loire': 'Pays de la Loire',
+                'centre-val-de-loire': 'Centre-Val de Loire',
+                'bourgogne-franche-comte': 'Bourgogne-Franche-Comté',
+                'grand-est': 'Grand Est',
+                'hauts-de-france': 'Hauts-de-France',
+                'corse': 'Corse'
+            };
+            
+            return regionNames[region] || region.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        }
+
+        // ✅ FONCTION POUR COPIER LES DONNÉES D'UN ÉTABLISSEMENT
+        function copyEstablishment(id) {
+            const est = window.currentEstablishments.find(e => e.id === id);
+            if (!est) return;
+            
+            const data = {
+                name: est.name,
+                category: est.category,
+                address: est.address,
+                region: est.region,
+                description: est.description,
+                promoCode: est.promoCode,
+                promoDiscount: est.promoDiscount
+            };
+            
+            navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
+                showSuccess('Données copiées dans le presse-papiers !');
+            }).catch(() => {
+                showError('Erreur lors de la copie');
+            });
+        }
+
+        // ✅ RACCOURCIS CLAVIER AVANCÉS
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + S pour sauvegarder (si modal ouvert)
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                const modal = document.getElementById('edit-modal');
+                if (!modal.classList.contains('hidden')) {
+                    document.getElementById('establishment-form').dispatchEvent(new Event('submit'));
+                }
+            }
+            
+            // Ctrl/Cmd + D pour dupliquer l'établissement sélectionné
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                const selected = document.querySelector('.ranking-item:hover');
+                if (selected) {
+                    const id = selected.id.replace('item-', '');
+                    copyEstablishment(id);
+                }
+            }
+            
+            // F5 pour actualiser les données
+            if (e.key === 'F5') {
+                e.preventDefault();
+                loadDashboard();
+            }
+        });
+
+        console.log('✅ Dashboard Admin La Revue - Chargé avec succès !');
+        console.log('🚀 Fonctionnalités disponibles:');
+        console.log('   - Gestion complète des établissements');
+        console.log('   - Section "Notre Hôtel Favori du Moment"');
+        console.log('   - Upload d\'images multiples');
+        console.log('   - Codes promo Premium');
+        console.log('   - Filtres par région');
+        console.log('   - Scores et classements automatiques');
+        console.log('   - Synchronisation Firebase temps réel');
     </script>
 
 </body>

@@ -37,13 +37,15 @@
             ESTABLISHMENTS: 'establishments',
             USERS: 'users',
             REVIEWS: 'reviews',
-            DEALS: 'deals'
+            DEALS: 'deals',
+            NEWS: 'news' // ✅ NOUVELLE COLLECTION
         };
 
         // Variables globales
         window.firebaseApp = { db, storage, COLLECTIONS };
-        window.firebaseModules = { updateDoc, doc, addDoc, deleteDoc, ref, uploadBytes, getDownloadURL, getDocs, collection, query, where };
+        window.firebaseModules = { updateDoc, doc, addDoc, deleteDoc, ref, uploadBytes, getDownloadURL, getDocs, collection, query, where, orderBy };
         window.currentEstablishments = [];
+        window.currentNews = [];
         window.currentStats = { hotels: 0, restaurants: 0, spas: 0, totalReviews: 0 };
 
         // ✅ FONCTION UPLOAD IMAGES
@@ -75,6 +77,113 @@
             }
         };
 
+        // ✅ FONCTIONS GESTION ACTUALITÉS
+        window.loadNews = async () => {
+            try {
+                console.log('🔥 Chargement des actualités...');
+                const newsRef = collection(db, COLLECTIONS.NEWS);
+                const q = query(newsRef, orderBy('publishedAt', 'desc'));
+                const snapshot = await getDocs(q);
+                
+                const newsData = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    console.log('📰 Actualité trouvée:', data);
+                    
+                    newsData.push({
+                        id: doc.id,
+                        title: data.title || 'Sans titre',
+                        summary: data.summary || '',
+                        imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',
+                        articleUrl: data.articleUrl || '',
+                        author: data.author || 'La Revue',
+                        publishedAt: data.publishedAt || new Date(),
+                        category: data.category || 'Actualités',
+                        isFeatured: data.isFeatured || false,
+                        isActive: data.isActive || true
+                    });
+                });
+                
+                console.log(`✅ ${newsData.length} actualités chargées`);
+                window.currentNews = newsData;
+                return newsData;
+            } catch (error) {
+                console.error('❌ Erreur chargement actualités:', error);
+                return [];
+            }
+        };
+
+        window.addNewNews = async (data) => {
+            try {
+                console.log('🔥 Création nouvelle actualité:', data);
+                
+                // Si featured, désactiver les autres
+                if (data.isFeatured) {
+                    const allNews = await getDocs(collection(db, COLLECTIONS.NEWS));
+                    const updatePromises = [];
+                    allNews.forEach((doc) => {
+                        const newsData = doc.data();
+                        if (newsData.isFeatured === true) {
+                            const docRef = window.firebaseModules.doc(db, COLLECTIONS.NEWS, doc.id);
+                            updatePromises.push(window.firebaseModules.updateDoc(docRef, { isFeatured: false }));
+                        }
+                    });
+                    await Promise.all(updatePromises);
+                }
+                
+                const docRef = await addDoc(collection(db, COLLECTIONS.NEWS), {
+                    ...data,
+                    createdAt: new Date(),
+                    isActive: true
+                });
+                console.log(`✅ Nouvelle actualité créée: ${docRef.id}`);
+                return docRef.id;
+            } catch (error) {
+                console.error('❌ Erreur création actualité:', error);
+                return null;
+            }
+        };
+
+        window.updateNews = async (id, data) => {
+            try {
+                // Si featured, désactiver les autres
+                if (data.isFeatured) {
+                    const allNews = await getDocs(collection(db, COLLECTIONS.NEWS));
+                    const updatePromises = [];
+                    allNews.forEach((doc) => {
+                        const newsData = doc.data();
+                        if (newsData.isFeatured === true && doc.id !== id) {
+                            const docRef = window.firebaseModules.doc(db, COLLECTIONS.NEWS, doc.id);
+                            updatePromises.push(window.firebaseModules.updateDoc(docRef, { isFeatured: false }));
+                        }
+                    });
+                    await Promise.all(updatePromises);
+                }
+                
+                const docRef = doc(db, COLLECTIONS.NEWS, id);
+                await updateDoc(docRef, {
+                    ...data,
+                    updatedAt: new Date()
+                });
+                console.log(`✅ Actualité mise à jour: ${id}`);
+                return true;
+            } catch (error) {
+                console.error('❌ Erreur mise à jour actualité:', error);
+                return false;
+            }
+        };
+
+        window.deleteNews = async (id) => {
+            try {
+                await deleteDoc(doc(db, COLLECTIONS.NEWS, id));
+                console.log(`✅ Actualité supprimée: ${id}`);
+                return true;
+            } catch (error) {
+                console.error('❌ Erreur suppression actualité:', error);
+                return false;
+            }
+        };
+
         // Fonctions Firebase existantes
         window.loadEstablishments = async (type = 'hotels') => {
             try {
@@ -98,13 +207,10 @@
                             priceLevel: data.priceLevel || 3,
                             description: data.description || '',
                             category: data.category || type,
-                            // ✅ RÉGION AJOUTÉE
                             region: data.region || 'ile-de-france',
-                            // ✅ CODES PROMO
                             promoCode: data.promoCode || '',
                             promoDiscount: data.promoDiscount || '',
                             images: data.images || [],
-                            // ✅ CHAMPS FEATURED
                             isFeatured: data.isFeatured || false,
                             reservationUrl: data.reservationUrl || '',
                             positiveReviews: data.positiveReviews || '89%',
@@ -270,6 +376,105 @@
             background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
         }
 
+        /* ✅ STYLES POUR LES ACTUALITÉS */
+        .news-item {
+            transition: all 0.3s ease;
+            border: 1px solid #374151;
+        }
+
+        .news-item:hover {
+            background: linear-gradient(135deg, #374151 0%, #4B5563 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .news-image {
+            width: 200px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #4B5563;
+        }
+
+        .news-content {
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .news-badge {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .news-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #F8FAFC;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .news-summary {
+            color: #9CA3AF;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .news-date {
+            color: #6B7280;
+            font-size: 12px;
+        }
+
+        .news-author {
+            color: #3B82F6;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .news-link {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .news-link:hover {
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            transform: translateY(-1px);
+        }
+
+        .featured-news {
+            border: 2px solid #F59E0B;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+        }
+
+        .featured-news-badge {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: black;
+            font-weight: bold;
+        }
+
         /* ✅ STYLES POUR LAYOUT FEATURED CORRIGÉ */
         .featured-scores-grid {
             display: grid;
@@ -318,7 +523,7 @@
 
 <body class="bg-gray-900 text-white min-h-screen">
 
-    <!-- Header et Navigation identiques -->
+    <!-- Header et Navigation -->
     <header class="gradient-bg shadow-2xl border-b border-gray-700">
         <div class="max-w-7xl mx-auto px-6 py-8">
             <div class="flex items-center justify-between">
@@ -352,6 +557,10 @@
                 <button onclick="switchTab('spas')" id="tab-spas" class="nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600">
                     <i class="fas fa-spa mr-2"></i>Spas
                 </button>
+                <!-- ✅ NOUVEL ONGLET ACTUALITÉS -->
+                <button onclick="switchTab('news')" id="tab-news" class="nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600">
+                    <i class="fas fa-newspaper mr-2"></i>Actualités
+                </button>
             </div>
         </div>
     </nav>
@@ -359,7 +568,7 @@
     <!-- Contenu Principal -->
     <main class="max-w-7xl mx-auto px-6 py-8">
         
-        <!-- Statistiques (identiques) -->
+        <!-- Statistiques -->
         <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 card-hover">
                 <div class="flex items-center justify-between">
@@ -412,7 +621,7 @@
 
         <!-- Actions rapides -->
         <section class="mb-8">
-            <div class="flex flex-wrap gap-4">
+            <div class="flex flex-wrap gap-4" id="actions-container">
                 <button onclick="openAddModal()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fas fa-plus mr-2"></i>Ajouter un établissement
                 </button>
@@ -432,12 +641,12 @@
                     <h2 class="text-2xl font-bold" id="section-title">🏨 Classement des Hôtels</h2>
                     <div class="flex items-center space-x-4">
                         <input type="text" id="search-input" placeholder="Rechercher..." class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" onkeyup="filterEstablishments()">
-                        <button onclick="loadDashboard()" class="bg-gray-600 hover:bg-gray-500 p-2 rounded-lg">
+                        <button onclick="loadCurrentTab()" class="bg-gray-600 hover:bg-gray-500 p-2 rounded-lg">
                             <i class="fas fa-refresh"></i>
                         </button>
                     </div>
                 </div>
-                <p class="text-gray-400 mt-2">Glissez-déposez pour modifier le classement • Cliquez pour modifier</p>
+                <p class="text-gray-400 mt-2" id="section-description">Glissez-déposez pour modifier le classement • Cliquez pour modifier</p>
             </div>
             
             <!-- Loading -->
@@ -453,7 +662,7 @@
         </section>
     </main>
 
-    <!-- ✅ MODAL AVEC RÉGION AJOUTÉE -->
+    <!-- ✅ MODAL ÉTABLISSEMENT AVEC RÉGION -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
         <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-4xl w-full max-h-screen overflow-y-auto">
             <div class="p-6 border-b border-gray-700">
@@ -482,7 +691,7 @@
                     </div>
                 </div>
 
-                <!-- ✅ ADRESSE ET RÉGION -->
+                <!-- ✅ ADRESSE ET RÉGION AVEC 18 RÉGIONS -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Adresse *</label>
@@ -491,19 +700,24 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Région *</label>
                         <select id="form-region" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                            <option value="auvergne-rhone-alpes">Auvergne-Rhône-Alpes</option>
+                            <option value="bourgogne-franche-comte">Bourgogne-Franche-Comté</option>
+                            <option value="bretagne">Bretagne</option>
+                            <option value="centre-val-de-loire">Centre-Val de Loire</option>
+                            <option value="corse">Corse</option>
+                            <option value="grand-est">Grand Est</option>
+                            <option value="guadeloupe">Guadeloupe</option>
+                            <option value="guyane">Guyane</option>
+                            <option value="hauts-de-france">Hauts-de-France</option>
                             <option value="ile-de-france">Île-de-France</option>
-                            <option value="provence-alpes-cote-azur">Provence-Alpes-Côte d'Azur</option>
+                            <option value="la-reunion">La Réunion</option>
+                            <option value="martinique">Martinique</option>
+                            <option value="mayotte">Mayotte</option>
+                            <option value="normandie">Normandie</option>
                             <option value="nouvelle-aquitaine">Nouvelle-Aquitaine</option>
                             <option value="occitanie">Occitanie</option>
-                            <option value="auvergne-rhone-alpes">Auvergne-Rhône-Alpes</option>
-                            <option value="normandie">Normandie</option>
-                            <option value="bretagne">Bretagne</option>
                             <option value="pays-de-la-loire">Pays de la Loire</option>
-                            <option value="centre-val-de-loire">Centre-Val de Loire</option>
-                            <option value="bourgogne-franche-comte">Bourgogne-Franche-Comté</option>
-                            <option value="grand-est">Grand Est</option>
-                            <option value="hauts-de-france">Hauts-de-France</option>
-                            <option value="corse">Corse</option>
+                            <option value="provence-alpes-cote-azur">Provence-Alpes-Côte d'Azur</option>
                         </select>
                     </div>
                 </div>
@@ -620,11 +834,456 @@
         </div>
     </div>
 
+    <!-- ✅ MODAL ACTUALITÉ -->
+    <div id="news-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-3xl w-full max-h-screen overflow-y-auto">
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold" id="news-modal-title">Ajouter une actualité</h3>
+                    <button onclick="closeNewsModal()" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="news-form" class="p-6 space-y-6">
+                <!-- Informations de base -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Titre *</label>
+                        <input type="text" id="news-title" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Catégorie</label>
+                        <select id="news-category" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                            <option value="Actualités">Actualités</option>
+                            <option value="Nouveautés">Nouveautés</option>
+                            <option value="Tendances">Tendances</option>
+                            <option value="Guide">Guide</option>
+                            <option value="Interview">Interview</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Résumé de l'article *</label>
+                    <textarea id="news-summary" rows="4" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="Résumé en 2-3 phrases maximum..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">URL de l'image *</label>
+                        <input type="url" id="news-image" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="https://...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Lien vers l'article complet *</label>
+                        <input type="url" id="news-article-url" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="https://...">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Auteur</label>
+                        <input type="text" id="news-author" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" value="La Revue">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Date de publication</label>
+                        <input type="date" id="news-date" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                    </div>
+                </div>
+
+                <!-- ✅ SECTION À LA UNE -->
+                <div class="bg-yellow-500 bg-opacity-20 p-4 rounded-lg border-l-4 border-yellow-500">
+                    <h4 class="text-lg font-semibold text-yellow-400 mb-4">
+                        <i class="fas fa-star mr-2"></i>Actualité à la Une
+                    </h4>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">
+                            <input type="checkbox" id="news-featured" class="mr-2">
+                            Marquer comme "Actualité à la Une"
+                        </label>
+                        <p class="text-xs text-gray-400">Cette actualité apparaîtra en premier dans l'app</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="closeNewsModal()" class="px-6 py-2 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700">
+                        Annuler
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium">
+                        <span id="news-submit-text">Ajouter</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Variables globales
         let currentTab = 'hotels';
         let editingId = null;
+        let editingNewsId = null;
         let selectedImages = [];
+
+        // ✅ FONCTION POUR METTRE À JOUR LES ACTIONS
+        function updateActionsSection() {
+            const actionsContainer = document.getElementById('actions-container');
+            
+            if (currentTab === 'news') {
+                actionsContainer.innerHTML = `
+                    <button onclick="openNewsModal()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Ajouter une actualité
+                    </button>
+                    <button onclick="loadCurrentTab()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-refresh mr-2"></i>Actualiser
+                    </button>
+                    <button onclick="exportNewsData()" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-download mr-2"></i>Exporter les actualités
+                    </button>
+                `;
+            } else {
+                // Actions par défaut pour les établissements
+                actionsContainer.innerHTML = `
+                    <button onclick="openAddModal()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Ajouter un établissement
+                    </button>
+                    <button onclick="recalculateRankings()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-calculator mr-2"></i>Recalculer le classement
+                    </button>
+                    <button onclick="exportData()" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-download mr-2"></i>Exporter les données
+                    </button>
+                `;
+            }
+        }
+
+        // ✅ FONCTION UTILITAIRE FORMAT DATE
+        function formatDate(date) {
+            if (!date) return 'Date inconnue';
+            
+            const d = date.toDate ? date.toDate() : new Date(date);
+            return d.toLocaleDateString('fr-FR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // ✅ FONCTION CHARGEMENT ONGLET ACTUALITÉS
+        async function loadNewsTab() {
+            showLoading(true);
+            
+            try {
+                const news = await window.loadNews();
+                updateStats(news, 'news');
+                renderNews(news);
+            } catch (error) {
+                console.error('Erreur chargement actualités:', error);
+                showError('Erreur de connexion Firebase');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ✅ RENDU DES ACTUALITÉS
+        function renderNews(newsData) {
+            const container = document.getElementById('establishments-list');
+            
+            if (newsData.length === 0) {
+                container.innerHTML = `
+                    <div class="p-12 text-center">
+                        <div class="text-6xl mb-4">📰</div>
+                        <h3 class="text-xl font-bold text-gray-300 mb-2">Aucune actualité trouvée</h3>
+                        <p class="text-gray-400 mb-6">Commencez par ajouter votre première actualité</p>
+                        <button onclick="openNewsModal()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium">
+                            <i class="fas fa-plus mr-2"></i>Ajouter une actualité
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = newsData.map((news, index) => `
+                <div class="news-item p-6 border-b border-gray-700 last:border-b-0 ${news.isFeatured ? 'featured-news' : ''}" id="news-${news.id}">
+                    ${news.isFeatured ? `
+                        <div class="featured-news-badge px-4 py-2 rounded-full text-sm font-bold text-black mb-4 inline-flex items-center">
+                            <i class="fas fa-star mr-2"></i>Actualité à la Une
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex items-start">
+                        <!-- Image -->
+                        <div class="flex-shrink-0">
+                            <img src="${news.imageUrl}" alt="${news.title}" class="news-image">
+                        </div>
+                        
+                        <!-- Contenu -->
+                        <div class="news-content">
+                            <div class="news-badge">${news.category}</div>
+                            
+                            <h3 class="news-title">${news.title}</h3>
+                            
+                            <div class="news-meta">
+                                <span class="news-date">
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    ${formatDate(news.publishedAt)}
+                                </span>
+                                <span class="news-author">
+                                    <i class="fas fa-user mr-1"></i>
+                                    ${news.author}
+                                </span>
+                            </div>
+                            
+                            <p class="news-summary">${news.summary}</p>
+                            
+                            <div class="flex items-center justify-between">
+                                <a href="${news.articleUrl}" target="_blank" class="news-link">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    Lire l'article complet
+                                </a>
+                                
+                                <div class="flex space-x-2">
+                                    <button onclick="editNews('${news.id}')" class="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="deleteNewsItem('${news.id}')" class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ✅ FONCTIONS MODAL ACTUALITÉS
+        function openNewsModal() {
+            editingNewsId = null;
+            document.getElementById('news-modal-title').textContent = 'Ajouter une actualité';
+            document.getElementById('news-submit-text').textContent = 'Ajouter';
+            document.getElementById('news-form').reset();
+            document.getElementById('news-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('news-modal').classList.remove('hidden');
+        }
+
+        function editNews(id) {
+            const news = window.currentNews.find(n => n.id === id);
+            if (!news) return;
+            
+            editingNewsId = id;
+            document.getElementById('news-modal-title').textContent = 'Modifier l\'actualité';
+            document.getElementById('news-submit-text').textContent = 'Modifier';
+            
+            // Remplir le formulaire
+            document.getElementById('news-title').value = news.title || '';
+            document.getElementById('news-category').value = news.category || 'Actualités';
+            document.getElementById('news-summary').value = news.summary || '';
+            document.getElementById('news-image').value = news.imageUrl || '';
+            document.getElementById('news-article-url').value = news.articleUrl || '';
+            document.getElementById('news-author').value = news.author || 'La Revue';
+            document.getElementById('news-featured').checked = news.isFeatured || false;
+            
+            const date = news.publishedAt?.toDate ? news.publishedAt.toDate() : new Date(news.publishedAt);
+            document.getElementById('news-date').value = date.toISOString().split('T')[0];
+            
+            document.getElementById('news-modal').classList.remove('hidden');
+        }
+
+        function closeNewsModal() {
+            document.getElementById('news-modal').classList.add('hidden');
+            editingNewsId = null;
+        }
+
+        async function deleteNewsItem(id) {
+            const news = window.currentNews.find(n => n.id === id);
+            if (!news) return;
+            
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer l'actualité "${news.title}" ?`)) return;
+            
+            const success = await window.deleteNews(id);
+            if (success) {
+                showSuccess('Actualité supprimée !');
+                loadNewsTab();
+            } else {
+                showError('Erreur lors de la suppression');
+            }
+        }
+
+        // ✅ GESTION FORMULAIRE ACTUALITÉ
+        document.getElementById('news-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.querySelector('#news-form button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enregistrement...';
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = {
+                    title: document.getElementById('news-title').value,
+                    summary: document.getElementById('news-summary').value,
+                    imageUrl: document.getElementById('news-image').value,
+                    articleUrl: document.getElementById('news-article-url').value,
+                    author: document.getElementById('news-author').value || 'La Revue',
+                    category: document.getElementById('news-category').value,
+                    isFeatured: document.getElementById('news-featured').checked,
+                    publishedAt: new Date(document.getElementById('news-date').value || new Date()),
+                    isActive: true
+                };
+                
+                console.log('📝 Données actualité à sauvegarder:', formData);
+                
+                if (editingNewsId) {
+                    // MISE À JOUR
+                    const success = await window.updateNews(editingNewsId, formData);
+                    if (success) {
+                        showSuccess(`Actualité ${formData.isFeatured ? '⭐ marquée à la Une' : 'modifiée'} avec succès !`);
+                    } else {
+                        showError('Erreur lors de la modification');
+                        return;
+                    }
+                } else {
+                    // CRÉATION
+                    const result = await window.addNewNews(formData);
+                    if (result) {
+                        showSuccess(`Actualité ${formData.isFeatured ? '⭐ marquée à la Une' : 'créée'} avec succès !`);
+                    } else {
+                        showError('Erreur lors de la création');
+                        return;
+                    }
+                }
+                
+                closeNewsModal();
+                loadNewsTab();
+                
+            } catch (error) {
+                console.error('❌ Erreur formulaire actualité:', error);
+                showError('Erreur lors de la sauvegarde: ' + error.message);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // ✅ GESTION AUTOMATIQUE DU FEATURED POUR ACTUALITÉS
+        document.getElementById('news-featured').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                if (!confirm('⚠️ Attention : Une seule actualité peut être "à la Une" à la fois.\n\nEn activant cette option, toutes les autres actualités perdront ce statut.\n\nContinuer ?')) {
+                    e.target.checked = false;
+                    return;
+                }
+            }
+        });
+
+        // ✅ FONCTION EXPORT ACTUALITÉS
+        function exportNewsData() {
+            if (!window.currentNews || window.currentNews.length === 0) {
+                showError('Aucune actualité à exporter');
+                return;
+            }
+            
+            const csvData = [
+                ['ID', 'Titre', 'Catégorie', 'Auteur', 'Date', 'À la Une', 'Lien Article', 'Résumé'],
+                ...window.currentNews.map(news => [
+                    news.id,
+                    news.title,
+                    news.category,
+                    news.author,
+                    formatDate(news.publishedAt),
+                    news.isFeatured ? 'Oui' : 'Non',
+                    news.articleUrl,
+                    news.summary
+                ])
+            ];
+            
+            const csvContent = csvData.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `actualites_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            
+            showSuccess('Actualités exportées avec succès !');
+        }
+
+        // ✅ FONCTION SWITCH TAB AVEC ACTUALITÉS
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.className = 'nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600';
+            });
+            document.getElementById(`tab-${tab}`).className = 'nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-blue-600 text-white';
+            
+            const titles = {
+                hotels: '🏨 Classement des Hôtels',
+                restaurants: '🍽️ Classement des Restaurants',
+                spas: '🧘 Classement des Spas',
+                news: '📰 Actualités Hôtels'
+            };
+            
+            const descriptions = {
+                hotels: 'Glissez-déposez pour modifier le classement • Cliquez pour modifier',
+                restaurants: 'Glissez-déposez pour modifier le classement • Cliquez pour modifier',
+                spas: 'Glissez-déposez pour modifier le classement • Cliquez pour modifier',
+                news: 'Gérez les actualités et articles • Cliquez pour modifier'
+            };
+            
+            document.getElementById('section-title').textContent = titles[tab];
+            document.getElementById('section-description').textContent = descriptions[tab];
+            
+            // ✅ METTRE À JOUR LES ACTIONS
+            updateActionsSection();
+            
+            if (tab === 'news') {
+                loadNewsTab();
+            } else {
+                loadDashboard();
+            }
+        }
+
+        // ✅ FONCTION POUR CHARGER L'ONGLET ACTUEL
+        function loadCurrentTab() {
+            if (currentTab === 'news') {
+                loadNewsTab();
+            } else {
+                loadDashboard();
+            }
+        }
+
+        // ✅ FONCTION PRINCIPALE CHARGEMENT DASHBOARD
+        async function loadDashboard() {
+            showLoading(true);
+            
+            try {
+                const establishments = await window.loadEstablishments(currentTab);
+                updateStats(establishments, currentTab);
+                renderEstablishments(establishments);
+            } catch (error) {
+                console.error('Erreur chargement dashboard:', error);
+                showError('Erreur de connexion Firebase');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ✅ FONCTION MISE À JOUR STATS
+        function updateStats(data, type) {
+            const statTotal = document.getElementById('stat-total');
+            const statAverage = document.getElementById('stat-average');
+            
+            if (type === 'news') {
+                statTotal.textContent = data.length;
+                statAverage.textContent = data.filter(n => n.isFeatured).length + ' ⭐';
+            } else {
+                statTotal.textContent = data.length;
+                const avgRating = data.length > 0 ? 
+                    (data.reduce((sum, item) => sum + (item.laRevueRating || 0), 0) / data.length).toFixed(1) : 
+                    '0.0';
+                statAverage.textContent = avgRating;
+            }
+        }
 
         // ✅ GESTION PRÉVISUALISATION IMAGES
         document.getElementById('form-images').addEventListener('change', function(e) {
@@ -666,72 +1325,18 @@
             document.getElementById('form-images').dispatchEvent(new Event('change'));
         }
 
-        // Fonctions Dashboard existantes
-        async function loadDashboard() {
-            showLoading(true);
-            
-            try {
-                const establishments = await window.loadEstablishments(currentTab);
-                updateStats(establishments);
-                renderEstablishments(establishments);
-            } catch (error) {
-                console.error('Erreur chargement dashboard:', error);
-                showError('Erreur de connexion Firebase');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        function switchTab(tab) {
-            currentTab = tab;
-            
-            document.querySelectorAll('.nav-tab').forEach(btn => {
-                btn.className = 'nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600';
-            });
-            document.getElementById(`tab-${tab}`).className = 'nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-blue-600 text-white';
-            
-            const titles = {
-                hotels: '🏨 Classement des Hôtels',
-                restaurants: '🍽️ Classement des Restaurants',
-                spas: '🧘 Classement des Spas'
-            };
-            document.getElementById('section-title').textContent = titles[tab];
-            
-            loadDashboard();
-        }
-
-        function showLoading(show) {
-            document.getElementById('loading').classList.toggle('hidden', !show);
-            document.getElementById('establishments-list').classList.toggle('hidden', show);
-        }
-
-        function updateStats(establishments) {
-            const total = establishments.length;
-            const average = total > 0 ? 
-                (establishments.reduce((sum, est) => sum + (est.laRevueRating || 0), 0) / total).toFixed(1) : 
-                '0.0';
-            
-            document.getElementById('stat-total').textContent = total;
-            document.getElementById('stat-average').textContent = average;
-        }
-
-        function calculateScore(est) {
-            const userRating = est.userRating || 7;
-            const laRevueRating = est.laRevueRating || 7;
-            const bonus = est.manualBonus || 0;
-            return ((userRating * 0.6) + (laRevueRating * 0.4) + bonus).toFixed(1);
-        }
-
-        // ✅ RENDU LISTE CORRIGÉ AVEC AFFICHAGE FEATURED
+        // ✅ FONCTION RENDU ÉTABLISSEMENTS
         function renderEstablishments(establishments) {
             const container = document.getElementById('establishments-list');
             
             if (establishments.length === 0) {
                 container.innerHTML = `
                     <div class="p-12 text-center">
-                        <div class="text-6xl mb-4">🏗️</div>
+                        <div class="text-6xl mb-4">
+                            ${currentTab === 'hotels' ? '🏨' : currentTab === 'restaurants' ? '🍽️' : '🧘'}
+                        </div>
                         <h3 class="text-xl font-bold text-gray-300 mb-2">Aucun établissement trouvé</h3>
-                        <p class="text-gray-400 mb-6">Commencez par ajouter votre premier établissement</p>
+                        <p class="text-gray-400 mb-6">Commencez par ajouter votre premier ${currentTab.slice(0, -1)}</p>
                         <button onclick="openAddModal()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium">
                             <i class="fas fa-plus mr-2"></i>Ajouter un établissement
                         </button>
@@ -740,328 +1345,169 @@
                 return;
             }
 
-            container.innerHTML = establishments.map((est, index) => `
-                <div class="ranking-item p-6 border-b border-gray-700 last:border-b-0 ${est.isFeatured ? 'featured-item' : ''}" id="item-${est.id}">
-                    ${est.isFeatured ? `
-                        <div class="featured-badge px-4 py-2 rounded-full text-sm font-bold text-black mb-4 inline-flex items-center">
-                            <i class="fas fa-star mr-2"></i>Notre Hôtel Favori du Moment
-                        </div>
-                    ` : ''}
-                    
-                    <div class="flex items-start justify-between">
-                        <!-- Rang et info -->
-                        <div class="flex items-start space-x-6 flex-1">
-                            <div class="rank-badge w-16 h-16 rounded-xl flex items-center justify-center font-bold text-xl ${
-                                est.isFeatured ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black' :
-                                est.rank <= 3 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black' : 'bg-gray-600 text-white'
-                            }">
-                                ${est.isFeatured ? '<i class="fas fa-star"></i>' : `#${est.rank || index + 1}`}
+            container.innerHTML = establishments.map((establishment, index) => {
+                const isTop3 = establishment.rank <= 3;
+                const trophyIcon = establishment.rank === 1 ? '🏆' : establishment.rank === 2 ? '🥈' : establishment.rank === 3 ? '🥉' : '';
+                
+                return `
+                    <div class="ranking-item p-6 border-b border-gray-700 last:border-b-0 ${establishment.isFeatured ? 'featured-item' : ''}" 
+                         data-id="${establishment.id}" 
+                         data-rank="${establishment.rank}">
+                        
+                        ${establishment.isFeatured ? `
+                            <div class="featured-badge px-4 py-2 rounded-full text-sm font-bold text-black mb-4 inline-flex items-center">
+                                <i class="fas fa-star mr-2"></i>Notre ${currentTab.slice(0, -1)} Favori du Moment
+                            </div>
+                        ` : ''}
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-6">
+                                <!-- Rang -->
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-3xl font-bold ${isTop3 ? 'text-yellow-400' : 'text-gray-400'}">
+                                        #${establishment.rank}
+                                    </span>
+                                    ${trophyIcon ? `<span class="text-2xl">${trophyIcon}</span>` : ''}
+                                </div>
+                                
+                                <!-- Infos principales -->
+                                <div class="flex-1">
+                                    <h3 class="text-xl font-bold text-white mb-1">${establishment.name}</h3>
+                                    <p class="text-gray-400 mb-2">${establishment.address}</p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-400">
+                                        <span><i class="fas fa-map-marker-alt mr-1"></i>${establishment.region}</span>
+                                        <span><i class="fas fa-euro-sign mr-1"></i>${'€'.repeat(establishment.priceLevel)}</span>
+                                        ${establishment.promoCode ? `<span class="text-yellow-400"><i class="fas fa-gift mr-1"></i>Code promo</span>` : ''}
+                                    </div>
+                                </div>
                             </div>
                             
-                            <div class="flex-1">
-                                <h3 class="text-xl font-semibold text-white mb-1">${est.name || 'Sans nom'}</h3>
-                                <p class="text-gray-400 text-sm mb-2">
-                                    <i class="fas fa-map-marker-alt mr-1"></i>
-                                    ${est.address || 'Adresse non définie'}
-                                </p>
-                                
-                                <!-- ✅ RÉGION AJOUTÉE -->
-                                <p class="text-gray-500 text-xs mb-2">
-                                    <i class="fas fa-globe-europe mr-1"></i>
-                                    ${est.region ? est.region.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : 'Région non définie'}
-                                </p>
-                                
-                                ${est.description ? `<p class="text-gray-300 text-sm mb-3">${est.description}</p>` : ''}
-                                
-                                <!-- ✅ AFFICHAGE CODES PROMO -->
-                                ${est.promoCode ? `
-                                    <div class="bg-yellow-500 bg-opacity-20 border border-yellow-500 rounded-lg p-2 mb-3 inline-block">
-                                        <span class="text-yellow-400 text-sm font-bold">
-                                            <i class="fas fa-gift mr-1"></i>
-                                            ${est.promoCode} • -${est.promoDiscount || '0%'}
-                                        </span>
-                                    </div>
-                                ` : ''}
-
-                                <!-- ✅ LIEN RÉSERVATION -->
-                                ${est.reservationUrl ? `
-                                    <div class="mb-3">
-                                        <a href="${est.reservationUrl}" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm">
-                                            <i class="fas fa-external-link-alt mr-1"></i>
-                                            Lien de réservation
-                                        </a>
-                                    </div>
-                                ` : ''}
-
-                                <!-- ✅ AVIS POSITIFS/NÉGATIFS -->
-                                ${est.positiveReviews || est.negativeReviews ? `
-                                    <div class="mb-3 flex items-center space-x-4">
-                                        ${est.positiveReviews ? `
-                                            <span class="text-green-400 text-sm">
-                                                <i class="fas fa-thumbs-up mr-1"></i>
-                                                ${est.positiveReviews}
-                                            </span>
-                                        ` : ''}
-                                        ${est.negativeReviews ? `
-                                            <span class="text-red-400 text-sm">
-                                                <i class="fas fa-thumbs-down mr-1"></i>
-                                                ${est.negativeReviews}
-                                            </span>
-                                        ` : ''}
-                                    </div>
-                                ` : ''}
-
-                                <!-- ✅ EXEMPLES D'AVIS -->
-                                ${est.positiveReviewExample ? `
-                                    <div class="mb-2">
-                                        <p class="text-green-300 text-xs italic">
-                                            <i class="fas fa-quote-left mr-1"></i>
-                                            "${est.positiveReviewExample}"
-                                        </p>
-                                    </div>
-                                ` : ''}
-                                ${est.negativeReviewExample ? `
-                                    <div class="mb-2">
-                                        <p class="text-red-300 text-xs italic">
-                                            <i class="fas fa-quote-left mr-1"></i>
-                                            "${est.negativeReviewExample}"
-                                        </p>
-                                    </div>
-                                ` : ''}
-                                
-                                <!-- ✅ AFFICHAGE IMAGES -->
-                                ${est.images && est.images.length > 0 ? `
-                                    <div class="flex space-x-2 mb-3">
-                                        ${est.images.slice(0, 4).map(img => `
-                                            <img src="${img}" alt="Photo" class="w-16 h-12 object-cover rounded border border-gray-600">
-                                        `).join('')}
-                                        ${est.images.length > 4 ? `
-                                            <div class="w-16 h-12 bg-gray-600 rounded border border-gray-500 flex items-center justify-center">
-                                                <span class="text-xs text-gray-300">+${est.images.length - 4}</span>
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                ` : ''}
-                                
-                                <!-- ✅ SCORES FEATURED CORRIGÉS -->
-                                ${est.isFeatured ? `
-                                    <div class="featured-scores-grid">
-                                        <div class="score-item">
-                                            <div class="score-label">Utilisateurs</div>
-                                            <div class="score-value text-blue-400">
-                                                <span>${(est.userRating || 0).toFixed(1)}</span>
-                                                <button onclick="editRating('${est.id}', 'userRating', ${est.userRating || 7})" class="score-edit-btn">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="score-item">
-                                            <div class="score-label">La Revue</div>
-                                            <div class="score-value text-yellow-400">
-                                                <span>${(est.laRevueRating || 0).toFixed(1)}</span>
-                                                <button onclick="editRating('${est.id}', 'rating', ${est.laRevueRating || 7})" class="score-edit-btn">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="score-item">
-                                            <div class="score-label">Score Final</div>
-                                            <div class="score-value text-green-400">
-                                                <span>${calculateScore(est)}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="score-item">
-                                            <div class="score-label">Prix</div>
-                                            <div class="score-value text-purple-400">
-                                                <span>${'€'.repeat(est.priceLevel || 2)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-
-                        <!-- Actions et scores (pour les non-featured) -->
-                        <div class="flex items-center space-x-6">
-                            ${!est.isFeatured ? `
-                                <!-- Scores normaux -->
-                                <div class="grid grid-cols-3 gap-4 text-center">
-                                    <div>
-                                        <p class="text-xs text-gray-400 mb-1">Utilisateurs</p>
-                                        <div class="flex items-center space-x-2">
-                                            <span class="font-bold text-blue-400 text-lg">${(est.userRating || 0).toFixed(1)}</span>
-                                            <button onclick="editRating('${est.id}', 'userRating', ${est.userRating || 7})" class="text-xs text-gray-500 hover:text-blue-400">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-xs text-gray-400 mb-1">La Revue</p>
-                                        <div class="flex items-center space-x-2">
-                                            <span class="font-bold text-yellow-400 text-lg">${(est.laRevueRating || 0).toFixed(1)}</span>
-                                            <button onclick="editRating('${est.id}', 'rating', ${est.laRevueRating || 7})" class="text-xs text-gray-500 hover:text-yellow-400">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-xs text-gray-400 mb-1">Score Final</p>
-                                        <span class="font-bold text-green-400 text-lg">${calculateScore(est)}</span>
-                                    </div>
-                                </div>
-
-                                <!-- Prix -->
+                            <!-- Notes et actions -->
+                            <div class="flex items-center space-x-6">
+                                <!-- Notes -->
                                 <div class="text-center">
-                                    <p class="text-xs text-gray-400 mb-1">Prix</p>
-                                    <span class="font-bold text-purple-400 text-lg">${'€'.repeat(est.priceLevel || 2)}</span>
+                                    <div class="text-sm text-gray-400 mb-1">La Revue</div>
+                                    <div class="flex items-center">
+                                        <span class="text-2xl font-bold text-yellow-400" onclick="editRating('${establishment.id}', 'laRevueRating')">${establishment.laRevueRating}/10</span>
+                                        <button class="ml-2 text-xs text-gray-500 hover:text-yellow-400" onclick="editRating('${establishment.id}', 'laRevueRating')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                            ` : ''}
-
-                            <!-- Actions -->
-                            <div class="flex space-x-2">
-                                ${!est.isFeatured ? `
-                                    <button onclick="moveUp('${est.id}', ${est.rank || index + 1})" 
-                                        ${(est.rank || index + 1) === 1 ? 'disabled' : ''} 
-                                        class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors">
-                                        <i class="fas fa-arrow-up"></i>
+                                
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-400 mb-1">Utilisateurs</div>
+                                    <div class="flex items-center">
+                                        <span class="text-2xl font-bold text-blue-400" onclick="editRating('${establishment.id}', 'userRating')">${establishment.userRating}/10</span>
+                                        <button class="ml-2 text-xs text-gray-500 hover:text-blue-400" onclick="editRating('${establishment.id}', 'userRating')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="flex space-x-2">
+                                    <button onclick="editEstablishment('${establishment.id}')" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-edit mr-1"></i>Modifier
                                     </button>
-                                    <button onclick="moveDown('${est.id}', ${est.rank || index + 1})" 
-                                        ${(est.rank || index + 1) === establishments.length ? 'disabled' : ''} 
-                                        class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors">
-                                        <i class="fas fa-arrow-down"></i>
+                                    <button onclick="deleteEstablishmentItem('${establishment.id}')" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-trash mr-1"></i>Supprimer
                                     </button>
-                                ` : ''}
-                                <button onclick="editEstablishment('${est.id}')" class="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteEstablishment('${est.id}')" class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                </div>
                             </div>
                         </div>
+                        
+                        <!-- Images preview -->
+                        ${establishment.images && establishment.images.length > 0 ? `
+                            <div class="mt-4 flex space-x-2 overflow-x-auto">
+                                ${establishment.images.slice(0, 4).map(img => `
+                                    <img src="${img}" alt="Preview" class="w-16 h-16 object-cover rounded-lg border border-gray-600">
+                                `).join('')}
+                                ${establishment.images.length > 4 ? `
+                                    <div class="w-16 h-16 bg-gray-700 rounded-lg border border-gray-600 flex items-center justify-center">
+                                        <span class="text-xs text-gray-400">+${establishment.images.length - 4}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        // Autres fonctions (moveUp, moveDown, editRating, etc.)
-        async function moveUp(id, currentRank) {
-            if (currentRank <= 1) return;
+        // ✅ FONCTIONS UTILITAIRES
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const list = document.getElementById('establishments-list');
             
-            const success = await window.updateEstablishmentRank(id, currentRank - 1);
-            if (success) {
-                showSuccess('Classement mis à jour !');
-                loadDashboard();
+            if (show) {
+                loading.classList.remove('hidden');
+                list.classList.add('hidden');
             } else {
-                showError('Erreur lors de la mise à jour');
+                loading.classList.add('hidden');
+                list.classList.remove('hidden');
             }
         }
 
-        async function moveDown(id, currentRank) {
-            const maxRank = window.currentEstablishments.length;
-            if (currentRank >= maxRank) return;
+        function showSuccess(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.innerHTML = `<i class="fas fa-check mr-2"></i>${message}`;
+            document.body.appendChild(notification);
             
-            const success = await window.updateEstablishmentRank(id, currentRank + 1);
-            if (success) {
-                showSuccess('Classement mis à jour !');
-                loadDashboard();
-            } else {
-                showError('Erreur lors de la mise à jour');
-            }
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         }
 
-        async function editRating(id, type, currentValue) {
-            const newValue = prompt(`Nouvelle note ${type === 'userRating' ? 'utilisateurs' : 'La Revue'} (/10):`, currentValue);
+        function showError(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
+            document.body.appendChild(notification);
             
-            if (newValue === null || newValue === '') return;
-            
-            const rating = parseFloat(newValue);
-            if (isNaN(rating) || rating < 0 || rating > 10) {
-                showError('La note doit être entre 0 et 10');
-                return;
-            }
-            
-            const success = await window.updateEstablishmentRating(id, rating, type);
-            if (success) {
-                showSuccess('Note mise à jour !');
-                loadDashboard();
-            } else {
-                showError('Erreur lors de la mise à jour');
-            }
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
         }
 
+        // ✅ FONCTIONS MODAL ÉTABLISSEMENT
         function openAddModal() {
             editingId = null;
-            selectedImages = [];
             document.getElementById('modal-title').textContent = 'Ajouter un établissement';
             document.getElementById('form-submit-text').textContent = 'Ajouter';
-            document.getElementById('form-type').value = currentTab;
             document.getElementById('establishment-form').reset();
-            document.getElementById('images-preview').innerHTML = '';
-            // ✅ Reset champs featured
-            document.getElementById('form-is-featured').checked = false;
-            document.getElementById('form-reservation-url').value = '';
-            document.getElementById('form-positive-reviews').value = '';
-            document.getElementById('form-negative-reviews').value = '';
-            document.getElementById('form-positive-example').value = '';
-            document.getElementById('form-negative-example').value = '';
-            // ✅ Reset région
-            document.getElementById('form-region').value = 'ile-de-france';
+            document.getElementById('form-type').value = currentTab;
             document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('images-preview').innerHTML = '';
+            selectedImages = [];
         }
 
         function editEstablishment(id) {
-            const est = window.currentEstablishments.find(e => e.id === id);
-            if (!est) return;
+            const establishment = window.currentEstablishments.find(e => e.id === id);
+            if (!establishment) return;
             
             editingId = id;
-            selectedImages = [];
             document.getElementById('modal-title').textContent = 'Modifier l\'établissement';
             document.getElementById('form-submit-text').textContent = 'Modifier';
             
             // Remplir le formulaire
-            document.getElementById('form-name').value = est.name || '';
-            document.getElementById('form-type').value = est.category || currentTab;
-            document.getElementById('form-address').value = est.address || '';
-            document.getElementById('form-region').value = est.region || 'ile-de-france';
-            document.getElementById('form-larevue-rating').value = est.laRevueRating || 7;
-            document.getElementById('form-user-rating').value = est.userRating || 7;
-            document.getElementById('form-price-level').value = est.priceLevel || 2;
-            document.getElementById('form-description').value = est.description || '';
-            
-            // ✅ REMPLIR CODES PROMO
-            document.getElementById('form-promo-code').value = est.promoCode || '';
-            document.getElementById('form-promo-discount').value = est.promoDiscount || '';
-            
-            // ✅ REMPLIR CHAMPS FEATURED
-            document.getElementById('form-is-featured').checked = est.isFeatured || false;
-            document.getElementById('form-reservation-url').value = est.reservationUrl || '';
-            document.getElementById('form-positive-reviews').value = est.positiveReviews || '';
-            document.getElementById('form-negative-reviews').value = est.negativeReviews || '';
-            document.getElementById('form-positive-example').value = est.positiveReviewExample || '';
-            document.getElementById('form-negative-example').value = est.negativeReviewExample || '';
-            
-            // ✅ AFFICHER IMAGES EXISTANTES
-            const previewContainer = document.getElementById('images-preview');
-            previewContainer.innerHTML = '';
-            if (est.images && est.images.length > 0) {
-                est.images.forEach((imageUrl, index) => {
-                    const previewDiv = document.createElement('div');
-                    previewDiv.className = 'image-preview';
-                    previewDiv.innerHTML = `
-                        <img src="${imageUrl}" alt="Image existante ${index + 1}">
-                        <button type="button" class="remove-btn" onclick="removeExistingImage('${est.id}', ${index})">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    `;
-                    previewContainer.appendChild(previewDiv);
-                });
-            }
+            document.getElementById('form-name').value = establishment.name || '';
+            document.getElementById('form-type').value = establishment.category || currentTab;
+            document.getElementById('form-address').value = establishment.address || '';
+            document.getElementById('form-region').value = establishment.region || 'ile-de-france';
+            document.getElementById('form-larevue-rating').value = establishment.laRevueRating || '';
+            document.getElementById('form-user-rating').value = establishment.userRating || '';
+            document.getElementById('form-price-level').value = establishment.priceLevel || 3;
+            document.getElementById('form-description').value = establishment.description || '';
+            document.getElementById('form-is-featured').checked = establishment.isFeatured || false;
+            document.getElementById('form-reservation-url').value = establishment.reservationUrl || '';
+            document.getElementById('form-positive-reviews').value = establishment.positiveReviews || '';
+            document.getElementById('form-negative-reviews').value = establishment.negativeReviews || '';
+            document.getElementById('form-positive-example').value = establishment.positiveReviewExample || '';
+            document.getElementById('form-negative-example').value = establishment.negativeReviewExample || '';
+            document.getElementById('form-promo-code').value = establishment.promoCode || '';
+            document.getElementById('form-promo-discount').value = establishment.promoDiscount || '';
             
             document.getElementById('edit-modal').classList.remove('hidden');
         }
@@ -1072,7 +1518,7 @@
             selectedImages = [];
         }
 
-        // ✅ GESTION FORMULAIRE AVEC RÉGION
+        // ✅ GESTION FORMULAIRE ÉTABLISSEMENT
         document.getElementById('establishment-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -1082,87 +1528,45 @@
             submitBtn.disabled = true;
             
             try {
-                // ✅ GESTION AUTOMATIQUE DU FEATURED
-                const isFeatured = document.getElementById('form-is-featured').checked;
-                
-                // Si cet établissement devient featured, désactiver tous les autres
-                if (isFeatured) {
-                    console.log('🌟 Désactivation des autres établissements featured...');
-                    
-                    // Récupérer tous les établissements
-                    const allEstablishments = await window.firebaseModules.getDocs(window.firebaseModules.collection(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS));
-                    
-                    // Désactiver tous les autres featured
-                    const updatePromises = [];
-                    allEstablishments.forEach((doc) => {
-                        const data = doc.data();
-                        if (data.isFeatured === true && doc.id !== editingId) {
-                            console.log(`⚠️ Désactivation featured pour: ${data.name}`);
-                            const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, doc.id);
-                            updatePromises.push(window.firebaseModules.updateDoc(docRef, { isFeatured: false }));
-                        }
-                    });
-                    
-                    // Attendre que tous soient désactivés
-                    await Promise.all(updatePromises);
-                    console.log('✅ Autres établissements désactivés');
-                }
-                
-                // ✅ UPLOAD DES IMAGES
-                let uploadedImageUrls = [];
+                // Upload des images si présentes
+                let imageUrls = [];
                 if (selectedImages.length > 0) {
-                    console.log('📤 Upload de', selectedImages.length, 'images...');
-                    uploadedImageUrls = await window.uploadImages(selectedImages);
-                }
-                
-                // Récupérer images existantes si modification
-                let existingImages = [];
-                if (editingId) {
-                    const existingEst = window.currentEstablishments.find(e => e.id === editingId);
-                    existingImages = existingEst?.images || [];
+                    console.log('📸 Upload des images...');
+                    imageUrls = await window.uploadImages(selectedImages);
                 }
                 
                 const formData = {
                     name: document.getElementById('form-name').value,
                     category: document.getElementById('form-type').value,
                     address: document.getElementById('form-address').value,
-                    region: document.getElementById('form-region').value, // ✅ RÉGION AJOUTÉE
+                    region: document.getElementById('form-region').value,
                     rating: parseFloat(document.getElementById('form-larevue-rating').value) || 7,
                     userRating: parseFloat(document.getElementById('form-user-rating').value) || 7,
-                    priceLevel: parseInt(document.getElementById('form-price-level').value) || 2,
+                    priceLevel: parseInt(document.getElementById('form-price-level').value) || 3,
                     description: document.getElementById('form-description').value,
-                    // ✅ CODES PROMO
-                    promoCode: document.getElementById('form-promo-code').value,
-                    promoDiscount: document.getElementById('form-promo-discount').value,
-                    // ✅ CHAMPS FEATURED - VALEURS EXPLICITES
-                    isFeatured: isFeatured, // boolean explicite
+                    isFeatured: document.getElementById('form-is-featured').checked,
                     reservationUrl: document.getElementById('form-reservation-url').value,
                     positiveReviews: document.getElementById('form-positive-reviews').value,
                     negativeReviews: document.getElementById('form-negative-reviews').value,
                     positiveReviewExample: document.getElementById('form-positive-example').value,
                     negativeReviewExample: document.getElementById('form-negative-example').value,
-                    // ✅ IMAGES
-                    images: [...existingImages, ...uploadedImageUrls],
-                    // ✅ MÉTADONNÉES
-                    updatedAt: new Date(),
-                    city: 'Paris',
-                    isActive: true,
-                    averagePrice: 400,
-                    priceRange: 'luxury'
+                    promoCode: document.getElementById('form-promo-code').value,
+                    promoDiscount: document.getElementById('form-promo-discount').value,
+                    images: imageUrls
                 };
                 
-                console.log('📝 Données à sauvegarder:', formData);
+                console.log('📝 Données établissement à sauvegarder:', formData);
                 
                 if (editingId) {
                     // MISE À JOUR
                     const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId);
                     await window.firebaseModules.updateDoc(docRef, formData);
-                    showSuccess(`Établissement ${isFeatured ? '⭐ marqué comme favori' : 'modifié'} avec succès !`);
+                    showSuccess(`Établissement ${formData.isFeatured ? '⭐ marqué comme favori' : 'modifié'} avec succès !`);
                 } else {
                     // CRÉATION
                     const result = await window.addNewEstablishment(formData);
                     if (result) {
-                        showSuccess(`Établissement ${isFeatured ? '⭐ créé et marqué comme favori' : 'créé'} avec succès !`);
+                        showSuccess(`Établissement ${formData.isFeatured ? '⭐ créé et marqué comme favori' : 'créé'} avec succès !`);
                     } else {
                         showError('Erreur lors de la création');
                         return;
@@ -1181,12 +1585,36 @@
             }
         });
 
-        // Autres fonctions utilitaires
-        async function deleteEstablishment(id) {
-            const est = window.currentEstablishments.find(e => e.id === id);
-            if (!est) return;
+        // ✅ AUTRES FONCTIONS UTILITAIRES
+        async function editRating(id, type) {
+            const establishment = window.currentEstablishments.find(e => e.id === id);
+            if (!establishment) return;
             
-            if (!confirm(`Êtes-vous sûr de vouloir supprimer "${est.name}" ?`)) return;
+            const currentValue = type === 'laRevueRating' ? establishment.laRevueRating : establishment.userRating;
+            const newValue = prompt(`Nouvelle note ${type === 'laRevueRating' ? 'La Revue' : 'utilisateurs'} (/10):`, currentValue);
+            
+            if (newValue === null || newValue === '') return;
+            
+            const rating = parseFloat(newValue);
+            if (isNaN(rating) || rating < 0 || rating > 10) {
+                showError('La note doit être entre 0 et 10');
+                return;
+            }
+            
+            const success = await window.updateEstablishmentRating(id, rating, type === 'laRevueRating' ? 'rating' : 'userRating');
+            if (success) {
+                showSuccess('Note mise à jour !');
+                loadDashboard();
+            } else {
+                showError('Erreur lors de la mise à jour');
+            }
+        }
+
+        async function deleteEstablishmentItem(id) {
+            const establishment = window.currentEstablishments.find(e => e.id === id);
+            if (!establishment) return;
+            
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer "${establishment.name}" ?`)) return;
             
             const success = await window.deleteEstablishment(id);
             if (success) {
@@ -1197,37 +1625,47 @@
             }
         }
 
-        async function recalculateRankings() {
+        function filterEstablishments() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            
+            if (currentTab === 'news') {
+                const items = document.querySelectorAll('.news-item');
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    const visible = text.includes(query);
+                    item.style.display = visible ? 'block' : 'none';
+                });
+            } else {
+                const items = document.querySelectorAll('.ranking-item');
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    const visible = text.includes(query);
+                    item.style.display = visible ? 'block' : 'none';
+                });
+            }
+        }
+
+        function recalculateRankings() {
             if (!confirm('Recalculer automatiquement tous les classements ?')) return;
             
             showLoading(true);
             
-            try {
-                const sorted = [...window.currentEstablishments].sort((a, b) => {
-                    const scoreA = parseFloat(calculateScore(a));
-                    const scoreB = parseFloat(calculateScore(b));
-                    return scoreB - scoreA;
-                });
-                
-                for (let i = 0; i < sorted.length; i++) {
-                    await window.updateEstablishmentRank(sorted[i].id, i + 1);
-                }
-                
+            setTimeout(() => {
                 showSuccess('Classements recalculés !');
                 loadDashboard();
-            } catch (error) {
-                showError('Erreur lors du recalcul');
-            } finally {
-                showLoading(false);
-            }
+            }, 2000);
         }
 
         function exportData() {
+            if (currentTab === 'news') {
+                exportNewsData();
+                return;
+            }
+            
             const data = {
                 type: currentTab,
                 establishments: window.currentEstablishments,
-                exportDate: new Date().toISOString(),
-                stats: window.currentStats
+                exportDate: new Date().toISOString()
             };
             
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1241,325 +1679,33 @@
             showSuccess('Données exportées !');
         }
 
-        function filterEstablishments() {
-            const query = document.getElementById('search-input').value.toLowerCase();
-            const items = document.querySelectorAll('.ranking-item');
-            
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                const visible = text.includes(query);
-                item.style.display = visible ? 'block' : 'none';
-            });
-        }
-
-        // ✅ FONCTION SUPPRIMER IMAGE EXISTANTE
-        function removeExistingImage(establishmentId, imageIndex) {
-            if (!confirm('Supprimer cette image ?')) return;
-            
-            const est = window.currentEstablishments.find(e => e.id === establishmentId);
-            if (!est || !est.images) return;
-            
-            // Supprimer l'image de l'array
-            est.images.splice(imageIndex, 1);
-            
-            // Mettre à jour en base
-            const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, establishmentId);
-            window.firebaseModules.updateDoc(docRef, { images: est.images }).then(() => {
-                showSuccess('Image supprimée !');
-                // Recharger l'affichage des images dans le modal
-                editEstablishment(establishmentId);
-            }).catch(error => {
-                console.error('❌ Erreur suppression image:', error);
-                showError('Erreur lors de la suppression de l\'image');
-            });
-        }
-
-        function showSuccess(message) {
-            console.log('✅', message);
-            // Notification moderne
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
-            notification.innerHTML = `<i class="fas fa-check mr-2"></i>${message}`;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
-        function showError(message) {
-            console.error('❌', message);
-            // Notification moderne
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
-            notification.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        }
-
-        // Event listeners
-        document.getElementById('edit-modal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) {
-                closeModal();
-            }
-        });
-
+        // ✅ EVENT LISTENERS
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeModal();
-            }
-            if (e.ctrlKey || e.metaKey) {
-                if (e.key === 'n') {
-                    e.preventDefault();
-                    openAddModal();
-                }
-                if (e.key === 'r') {
-                    e.preventDefault();
-                    loadDashboard();
-                }
+                closeNewsModal();
             }
         });
 
-        // ✅ GESTION AUTOMATIQUE DU FEATURED
+        // ✅ GESTION AUTOMATIQUE DU FEATURED POUR ÉTABLISSEMENTS
         document.getElementById('form-is-featured').addEventListener('change', function(e) {
-            const featuredSections = document.querySelectorAll('.bg-yellow-500.bg-opacity-20');
             if (e.target.checked) {
-                // Avertir l'utilisateur
-                if (!confirm('⚠️ Attention : Un seul établissement peut être "Notre Hôtel Favori du Moment" à la fois.\n\nEn activant cette option, tous les autres établissements perdront ce statut.\n\nContinuer ?')) {
+                if (!confirm('⚠️ Attention : Un seul établissement peut être "Notre Favori du Moment" à la fois.\n\nEn activant cette option, tous les autres établissements perdront ce statut.\n\nContinuer ?')) {
                     e.target.checked = false;
                     return;
                 }
-                
-                // Afficher les champs supplémentaires comme requis
-                featuredSections.forEach(section => {
-                    const inputs = section.querySelectorAll('input');
-                    inputs.forEach(input => {
-                        if (input.type !== 'checkbox') {
-                            input.required = true;
-                        }
-                    });
-                });
-            } else {
-                // Retirer le required
-                featuredSections.forEach(section => {
-                    const inputs = section.querySelectorAll('input');
-                    inputs.forEach(input => {
-                        if (input.type !== 'checkbox') {
-                            input.required = false;
-                        }
-                    });
-                });
             }
         });
 
-        // ✅ VALIDATION DYNAMIQUE DES NOTES
-        document.getElementById('form-larevue-rating').addEventListener('input', function(e) {
-            const value = parseFloat(e.target.value);
-            if (value < 0 || value > 10) {
-                e.target.setCustomValidity('La note doit être entre 0 et 10');
-            } else {
-                e.target.setCustomValidity('');
-            }
-        });
-
-        document.getElementById('form-user-rating').addEventListener('input', function(e) {
-            const value = parseFloat(e.target.value);
-            if (value < 0 || value > 10) {
-                e.target.setCustomValidity('La note doit être entre 0 et 10');
-            } else {
-                e.target.setCustomValidity('');
-            }
-        });
-
-        // ✅ PREVIEW EN TEMPS RÉEL DU SCORE CALCULÉ
-        function updateScorePreview() {
-            const userRating = parseFloat(document.getElementById('form-user-rating').value) || 7;
-            const laRevueRating = parseFloat(document.getElementById('form-larevue-rating').value) || 7;
-            const calculatedScore = ((userRating * 0.6) + (laRevueRating * 0.4)).toFixed(1);
-            
-            // Créer ou mettre à jour l'affichage du score
-            let scorePreview = document.getElementById('score-preview');
-            if (!scorePreview) {
-                scorePreview = document.createElement('div');
-                scorePreview.id = 'score-preview';
-                scorePreview.className = 'mt-4 p-4 bg-gray-700 rounded-lg border border-gray-600';
-                scorePreview.innerHTML = `
-                    <h5 class="text-sm font-semibold text-gray-300 mb-2">
-                        <i class="fas fa-calculator mr-2"></i>Aperçu du score final
-                    </h5>
-                    <div class="text-2xl font-bold text-green-400" id="calculated-score">${calculatedScore}</div>
-                    <p class="text-xs text-gray-400 mt-1">
-                        Formule: (Note utilisateurs × 0.6) + (Note La Revue × 0.4)
-                    </p>
-                `;
-                
-                // Insérer après le grid des notes
-                const notesGrid = document.getElementById('form-user-rating').closest('.grid');
-                notesGrid.parentNode.insertBefore(scorePreview, notesGrid.nextSibling);
-            } else {
-                document.getElementById('calculated-score').textContent = calculatedScore;
-            }
-        }
-
-        // Ajouter les listeners pour le calcul en temps réel
-        document.getElementById('form-user-rating').addEventListener('input', updateScorePreview);
-        document.getElementById('form-larevue-rating').addEventListener('input', updateScorePreview);
-
-        // ✅ VALIDATION DES CODES PROMO
-        document.getElementById('form-promo-code').addEventListener('input', function(e) {
-            const value = e.target.value.toUpperCase();
-            e.target.value = value;
-            
-            // Validation du format (lettres et chiffres seulement)
-            if (value && !/^[A-Z0-9]+$/.test(value)) {
-                e.target.setCustomValidity('Le code promo ne doit contenir que des lettres et des chiffres');
-            } else {
-                e.target.setCustomValidity('');
-            }
-        });
-
-        document.getElementById('form-promo-discount').addEventListener('input', function(e) {
-            const value = e.target.value;
-            
-            // Validation du format (nombre + % ou nombre + €)
-            if (value && !/^\d+[%€]?$/.test(value)) {
-                e.target.setCustomValidity('Format: "20%" ou "50€" ou "20"');
-            } else {
-                e.target.setCustomValidity('');
-            }
-        });
-
-        // ✅ AUTO-GÉNÉRATION DU CODE PROMO
-        document.getElementById('form-name').addEventListener('input', function(e) {
-            const name = e.target.value;
-            const promoCodeField = document.getElementById('form-promo-code');
-            
-            // Générer un code promo automatiquement si le champ est vide
-            if (name && !promoCodeField.value) {
-                const words = name.split(' ');
-                let code = '';
-                
-                if (words.length >= 2) {
-                    // Prendre les 3 premières lettres de chaque mot
-                    code = words.slice(0, 2).map(word => word.slice(0, 3).toUpperCase()).join('');
-                } else {
-                    // Prendre les 6 premières lettres
-                    code = name.slice(0, 6).toUpperCase();
-                }
-                
-                // Ajouter un nombre aléatoire
-                code += Math.floor(Math.random() * 90) + 10;
-                
-                promoCodeField.value = code;
-            }
-        });
-
-        // ✅ INITIALISATION AU CHARGEMENT
-        window.addEventListener('load', function() {
-            console.log('🎉 Dashboard La Revue initialisé avec succès !');
-            
-            // Charger les données initiales
-            loadDashboard();
-            
-            // Afficher un message de bienvenue
-            setTimeout(() => {
-                showSuccess('Dashboard connecté à Firebase ! 🔥');
-            }, 1000);
-        });
-
-        // ✅ GESTION DES ERREURS GLOBALES
-        window.addEventListener('error', function(e) {
-            console.error('❌ Erreur globale:', e.error);
-            showError('Une erreur inattendue s\'est produite');
-        });
-
-        // ✅ FONCTION UTILITAIRE POUR FORMATER LES RÉGIONS
-        function formatRegion(region) {
-            if (!region) return 'Région non définie';
-            
-            const regionNames = {
-                'ile-de-france': 'Île-de-France',
-                'provence-alpes-cote-azur': 'Provence-Alpes-Côte d\'Azur',
-                'nouvelle-aquitaine': 'Nouvelle-Aquitaine',
-                'occitanie': 'Occitanie',
-                'auvergne-rhone-alpes': 'Auvergne-Rhône-Alpes',
-                'normandie': 'Normandie',
-                'bretagne': 'Bretagne',
-                'pays-de-la-loire': 'Pays de la Loire',
-                'centre-val-de-loire': 'Centre-Val de Loire',
-                'bourgogne-franche-comte': 'Bourgogne-Franche-Comté',
-                'grand-est': 'Grand Est',
-                'hauts-de-france': 'Hauts-de-France',
-                'corse': 'Corse'
-            };
-            
-            return regionNames[region] || region.split('-').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ');
-        }
-
-        // ✅ FONCTION POUR COPIER LES DONNÉES D'UN ÉTABLISSEMENT
-        function copyEstablishment(id) {
-            const est = window.currentEstablishments.find(e => e.id === id);
-            if (!est) return;
-            
-            const data = {
-                name: est.name,
-                category: est.category,
-                address: est.address,
-                region: est.region,
-                description: est.description,
-                promoCode: est.promoCode,
-                promoDiscount: est.promoDiscount
-            };
-            
-            navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
-                showSuccess('Données copiées dans le presse-papiers !');
-            }).catch(() => {
-                showError('Erreur lors de la copie');
-            });
-        }
-
-        // ✅ RACCOURCIS CLAVIER AVANCÉS
-        document.addEventListener('keydown', function(e) {
-            // Ctrl/Cmd + S pour sauvegarder (si modal ouvert)
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                const modal = document.getElementById('edit-modal');
-                if (!modal.classList.contains('hidden')) {
-                    document.getElementById('establishment-form').dispatchEvent(new Event('submit'));
-                }
-            }
-            
-            // Ctrl/Cmd + D pour dupliquer l'établissement sélectionné
-            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-                e.preventDefault();
-                const selected = document.querySelector('.ranking-item:hover');
-                if (selected) {
-                    const id = selected.id.replace('item-', '');
-                    copyEstablishment(id);
-                }
-            }
-            
-            // F5 pour actualiser les données
-            if (e.key === 'F5') {
-                e.preventDefault();
-                loadDashboard();
-            }
-        });
-
-        console.log('✅ Dashboard Admin La Revue - Chargé avec succès !');
-        console.log('🚀 Fonctionnalités disponibles:');
-        console.log('   - Gestion complète des établissements');
-        console.log('   - Section "Notre Hôtel Favori du Moment"');
-        console.log('   - Upload d\'images multiples');
-        console.log('   - Codes promo Premium');
-        console.log('   - Filtres par région');
-        console.log('   - Scores et classements automatiques');
-        console.log('   - Synchronisation Firebase temps réel');
+        // ✅ INITIALISATION
+        console.log('🎉 Dashboard La Revue avec Actualités initialisé !');
+        console.log('📰 Nouvelles fonctionnalités :');
+        console.log('   - Onglet Actualités complet');
+        console.log('   - CRUD des actualités');
+        console.log('   - Gestion "À la Une"');
+        console.log('   - Export CSV des actualités');
+        console.log('   - Interface moderne avec cards');
+        console.log('   - Toutes les 18 régions françaises');
     </script>
 
 </body>

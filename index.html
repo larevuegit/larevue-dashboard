@@ -99,6 +99,7 @@
                         author: data.author || 'La Revue',
                         publishedAt: data.publishedAt || new Date(),
                         category: data.category || 'Actualités',
+                        establishmentType: data.establishmentType || 'hotels',
                         isFeatured: data.isFeatured || false,
                         isActive: data.isActive || true
                     });
@@ -410,6 +411,18 @@
             font-weight: bold;
             display: inline-block;
             margin-bottom: 8px;
+        }
+
+        .establishment-type-badge {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .news-title {
@@ -834,7 +847,7 @@
         </div>
     </div>
 
-    <!-- ✅ MODAL ACTUALITÉ -->
+    <!-- ✅ MODAL ACTUALITÉ AVEC TYPE D'ÉTABLISSEMENT -->
     <div id="news-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
         <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-3xl w-full max-h-screen overflow-y-auto">
             <div class="p-6 border-b border-gray-700">
@@ -847,20 +860,30 @@
             </div>
             
             <form id="news-form" class="p-6 space-y-6">
-                <!-- Informations de base -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- ✅ INFORMATIONS DE BASE AVEC TYPE D'ÉTABLISSEMENT -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Titre *</label>
                         <input type="text" id="news-title" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Catégorie</label>
-                        <select id="news-category" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Catégorie *</label>
+                        <select id="news-category" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
                             <option value="Actualités">Actualités</option>
                             <option value="Nouveautés">Nouveautés</option>
                             <option value="Tendances">Tendances</option>
                             <option value="Guide">Guide</option>
                             <option value="Interview">Interview</option>
+                        </select>
+                    </div>
+                    <!-- ✅ NOUVEAU CHAMP : TYPE D'ÉTABLISSEMENT -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Type d'établissement *</label>
+                        <select id="news-establishment-type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                            <option value="hotels">Hôtels</option>
+                            <option value="restaurants">Restaurants</option>
+                            <option value="spas">Spas</option>
+                            <option value="all">Tous types</option>
                         </select>
                     </div>
                 </div>
@@ -925,6 +948,27 @@
         let editingNewsId = null;
         let selectedImages = [];
 
+        // ✅ FONCTIONS UTILITAIRES POUR TYPE D'ÉTABLISSEMENT
+        function getEstablishmentIcon(type) {
+            const icons = {
+                'hotels': '🏨',
+                'restaurants': '🍽️',
+                'spas': '🧘',
+                'all': '🏢'
+            };
+            return icons[type] || '🏢';
+        }
+
+        function getEstablishmentLabel(type) {
+            const labels = {
+                'hotels': 'Hôtels',
+                'restaurants': 'Restaurants',
+                'spas': 'Spas',
+                'all': 'Tous types'
+            };
+            return labels[type] || 'Tous types';
+        }
+
         // ✅ FONCTION POUR METTRE À JOUR LES ACTIONS
         function updateActionsSection() {
             const actionsContainer = document.getElementById('actions-container');
@@ -985,7 +1029,7 @@
             }
         }
 
-        // ✅ RENDU DES ACTUALITÉS
+        // ✅ RENDU DES ACTUALITÉS AVEC TYPE D'ÉTABLISSEMENT
         function renderNews(newsData) {
             const container = document.getElementById('establishments-list');
             
@@ -1019,7 +1063,13 @@
                         
                         <!-- Contenu -->
                         <div class="news-content">
-                            <div class="news-badge">${news.category}</div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="news-badge">${news.category}</div>
+                                <!-- ✅ NOUVEAU : BADGE TYPE D'ÉTABLISSEMENT -->
+                                <div class="establishment-type-badge">
+                                    ${getEstablishmentIcon(news.establishmentType)} ${getEstablishmentLabel(news.establishmentType)}
+                                </div>
+                            </div>
                             
                             <h3 class="news-title">${news.title}</h3>
                             
@@ -1057,13 +1107,15 @@
             `).join('');
         }
 
-        // ✅ FONCTIONS MODAL ACTUALITÉS
+        // ✅ FONCTIONS MODAL ACTUALITÉS AVEC TYPE D'ÉTABLISSEMENT
         function openNewsModal() {
             editingNewsId = null;
             document.getElementById('news-modal-title').textContent = 'Ajouter une actualité';
             document.getElementById('news-submit-text').textContent = 'Ajouter';
             document.getElementById('news-form').reset();
             document.getElementById('news-date').value = new Date().toISOString().split('T')[0];
+            // ✅ DÉFINIR LE TYPE D'ÉTABLISSEMENT PAR DÉFAUT SELON L'ONGLET ACTUEL
+            document.getElementById('news-establishment-type').value = currentTab === 'news' ? 'hotels' : currentTab;
             document.getElementById('news-modal').classList.remove('hidden');
         }
 
@@ -1078,6 +1130,7 @@
             // Remplir le formulaire
             document.getElementById('news-title').value = news.title || '';
             document.getElementById('news-category').value = news.category || 'Actualités';
+            document.getElementById('news-establishment-type').value = news.establishmentType || 'hotels'; // ✅ NOUVEAU
             document.getElementById('news-summary').value = news.summary || '';
             document.getElementById('news-image').value = news.imageUrl || '';
             document.getElementById('news-article-url').value = news.articleUrl || '';
@@ -1110,7 +1163,7 @@
             }
         }
 
-        // ✅ GESTION FORMULAIRE ACTUALITÉ
+        // ✅ GESTION FORMULAIRE ACTUALITÉ AVEC TYPE ÉTABLISSEMENT
         document.getElementById('news-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -1127,9 +1180,12 @@
                     articleUrl: document.getElementById('news-article-url').value,
                     author: document.getElementById('news-author').value || 'La Revue',
                     category: document.getElementById('news-category').value,
+                    establishmentType: document.getElementById('news-establishment-type').value, // ✅ NOUVEAU
                     isFeatured: document.getElementById('news-featured').checked,
                     publishedAt: new Date(document.getElementById('news-date').value || new Date()),
-                    isActive: true
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 };
                 
                 console.log('📝 Données actualité à sauvegarder:', formData);
@@ -1184,11 +1240,12 @@
             }
             
             const csvData = [
-                ['ID', 'Titre', 'Catégorie', 'Auteur', 'Date', 'À la Une', 'Lien Article', 'Résumé'],
+                ['ID', 'Titre', 'Catégorie', 'Type Établissement', 'Auteur', 'Date', 'À la Une', 'Lien Article', 'Résumé'],
                 ...window.currentNews.map(news => [
                     news.id,
                     news.title,
                     news.category,
+                    getEstablishmentLabel(news.establishmentType),
                     news.author,
                     formatDate(news.publishedAt),
                     news.isFeatured ? 'Oui' : 'Non',
@@ -1701,11 +1758,12 @@
         console.log('🎉 Dashboard La Revue avec Actualités initialisé !');
         console.log('📰 Nouvelles fonctionnalités :');
         console.log('   - Onglet Actualités complet');
-        console.log('   - CRUD des actualités');
+        console.log('   - CRUD des actualités avec type d\'établissement');
         console.log('   - Gestion "À la Une"');
         console.log('   - Export CSV des actualités');
         console.log('   - Interface moderne avec cards');
         console.log('   - Toutes les 18 régions françaises');
+        console.log('   - Règles Firebase mises à jour');
     </script>
 
 </body>

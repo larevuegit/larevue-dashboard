@@ -577,6 +577,12 @@
             border-radius: 8px;
             border: 1px solid #4B5563;
             cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .review-photo:hover {
+            transform: scale(1.1);
+            border-color: #3B82F6;
         }
 
         .user-avatar {
@@ -1287,7 +1293,7 @@
             `).join('');
         }
 
-        // ✅ RENDU DES AVIS
+        // ✅ RENDU DES AVIS AVEC CORRECTION PHOTOS
         function renderReviews(reviewsData) {
             const container = document.getElementById('establishments-list');
             
@@ -1358,17 +1364,27 @@
                             <p class="text-gray-200">${review.comment}</p>
                         </div>
                         
-                        <!-- Photos -->
+                        <!-- ✅ PHOTOS CORRIGÉES -->
                         ${review.photos && review.photos.length > 0 ? `
                             <div class="review-photos">
                                 <p class="text-sm text-gray-400 mb-2">📸 Photos (${review.photos.length})</p>
                                 <div class="flex space-x-2">
-                                    ${review.photos.slice(0, 6).map(photo => `
-                                        <img src="${photo.uploadURL || photo.uri}" 
-                                             alt="Photo avis" 
-                                             class="review-photo"
-                                             onclick="openPhotoModal('${photo.uploadURL || photo.uri}')">
-                                    `).join('')}
+                                    ${review.photos.slice(0, 6).map((photo, index) => {
+                                        // ✅ CORRECTION : Utiliser 'url' au lieu de 'uploadURL'
+                                        const photoUrl = photo.url || photo.uploadURL || photo.downloadURL || photo.uri || '';
+                                        
+                                        return photoUrl ? `
+                                            <img src="${photoUrl}" 
+                                                 alt="Photo avis ${index + 1}" 
+                                                 class="review-photo"
+                                                 onclick="openPhotoModal('${photoUrl}')"
+                                                 onerror="console.error('❌ Erreur photo:', this.src); this.style.opacity='0.5'; this.title='Erreur de chargement';">
+                                        ` : `
+                                            <div class="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-image text-gray-400"></i>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                     ${review.photos.length > 6 ? `
                                         <div class="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center">
                                             <span class="text-xs text-gray-400">+${review.photos.length - 6}</span>
@@ -2231,15 +2247,10 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
         });
 
         // ✅ INITIALISATION
-        console.log('🎉 Dashboard La Revue avec Actualités et Avis initialisé !');
-        console.log('📰 Fonctionnalités disponibles :');
-        console.log('   - Établissements (Hôtels/Restaurants/Spas)');
-        console.log('   - Actualités avec type d\'établissement');
-        console.log('   - Modération des avis utilisateurs');
-        console.log('   - CRUD complet pour tous les contenus');
-        console.log('   - Gestion "Featured" et "À la Une"');
-        console.log('   - Export CSV/JSON des données');
-        console.log('   - Interface moderne avec Firebase v10');
+        console.log('🎉 Dashboard La Revue avec Photos d\'Avis corrigées !');
+        console.log('📸 Correction : Utilisation de photo.url au lieu de photo.uploadURL');
+        console.log('🔍 Structure détectée dans Firebase : photos[].url');
+        console.log('✅ Les photos des avis devraient maintenant s\'afficher correctement !');
     </script>
 
 </body>

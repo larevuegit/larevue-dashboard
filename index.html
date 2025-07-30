@@ -241,7 +241,7 @@
             // ✅ NOUVEAU : Support des deux formats (category ET type)
             const docType = data.category || data.type;
             
-            if (docType === type) {
+            if (docType === type || (type === 'spas' && docType === 'spa') || (type === 'hotels' && docType === 'hotel') || (type === 'restaurants' && docType === 'restaurant')) {
                 establishments.push({
                     id: doc.id,
                     name: data.name || 'Sans nom',

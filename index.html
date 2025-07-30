@@ -804,17 +804,18 @@
         <!-- Liste des établissements -->
         <section class="bg-gray-800 rounded-xl border border-gray-700">
             <div class="p-6 border-b border-gray-700">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold" id="section-title">🏨 Classement des Hôtels</h2>
-                    <div class="flex items-center space-x-4">
-                        <input type="text" id="search-input" placeholder="Rechercher..." class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" onkeyup="filterEstablishments()">
-                        <button onclick="loadCurrentTab()" class="bg-gray-600 hover:bg-gray-500 p-2 rounded-lg">
-                            <i class="fas fa-refresh"></i>
-                        </button>
-                    </div>
-                </div>
-                <p class="text-gray-400 mt-2" id="section-description">Glissez-déposez pour modifier le classement • Cliquez pour modifier</p>
-            </div>
+    <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold" id="section-title">🏨 Classement des Hôtels</h2>
+        <div class="flex items-center space-x-4">
+            <input type="text" id="search-input" placeholder="Rechercher..." class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" onkeyup="filterEstablishments()">
+            <!-- ✅ BOUTON RAFRAÎCHIR AMÉLIORÉ -->
+            <button onclick="forceRefresh()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                <i class="fas fa-sync-alt mr-2"></i>Rafraîchir
+            </button>
+        </div>
+    </div>
+    <p class="text-gray-400 mt-2" id="section-description">Glissez-déposez pour modifier le classement • Cliquez pour modifier</p>
+</div>
             
             <!-- Loading -->
             <div id="loading" class="p-12 text-center">
@@ -2286,6 +2287,45 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                 }
             }
         });
+
+        // ✅ FONCTION RAFRAÎCHISSEMENT FORCÉ
+        window.forceRefresh = async () => {
+            const refreshBtn = event.target;
+            const originalContent = refreshBtn.innerHTML;
+            
+            // Animation bouton
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Actualisation...';
+            refreshBtn.disabled = true;
+            
+            try {
+                // Vider le cache
+                window.currentEstablishments = [];
+                window.currentNews = [];
+                window.currentReviews = [];
+                
+                // Recharger selon l'onglet
+                if (currentTab === 'news') {
+                    await loadNewsTab();
+                } else if (currentTab === 'reviews') {
+                    await loadReviewsTab();
+                } else {
+                    await loadDashboard();
+                }
+                
+                showSuccess('✅ Données actualisées !');
+                
+            } catch (error) {
+                console.error('Erreur rafraîchissement:', error);
+                showError('Erreur lors de l\'actualisation');
+            } finally {
+                // Restaurer le bouton
+                setTimeout(() => {
+                    refreshBtn.innerHTML = originalContent;
+                    refreshBtn.disabled = false;
+                }, 1000);
+            }
+        };
+
 
         // ✅ INITIALISATION
         console.log('🎉 Dashboard La Revue avec textes dynamiques corrigé !');

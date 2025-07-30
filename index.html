@@ -228,50 +228,54 @@
 
         // Fonctions Firebase existantes
         window.loadEstablishments = async (type = 'hotels') => {
-            try {
-                console.log(`🔥 Chargement des ${type}...`);
-                const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
-                const snapshot = await getDocs(establishmentsRef);
-                
-                const establishments = [];
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    console.log('🔍 Document trouvé:', data);
-                    
-                    if (data.category === type) {
-                        establishments.push({
-                            id: doc.id,
-                            name: data.name || 'Sans nom',
-                            address: data.address || 'Sans adresse',
-                            laRevueRating: data.rating || 7,
-                            userRating: data.userRating || 7,
-                            rank: data.topPosition || 1,
-                            priceLevel: data.priceLevel || 3,
-                            description: data.description || '',
-                            category: data.category || type,
-                            region: data.region || 'ile-de-france',
-                            promoCode: data.promoCode || '',
-                            promoDiscount: data.promoDiscount || '',
-                            images: data.images || [],
-                            isFeatured: data.isFeatured || false,
-                            reservationUrl: data.reservationUrl || '',
-                            positiveReviews: data.positiveReviews || '89%',
-                            negativeReviews: data.negativeReviews || '11%',
-                            positiveReviewExample: data.positiveReviewExample || '',
-                            negativeReviewExample: data.negativeReviewExample || ''
-                        });
-                    }
+    try {
+        console.log(`🔥 Chargement des ${type}...`);
+        const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
+        const snapshot = await getDocs(establishmentsRef);
+        
+        const establishments = [];
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            console.log('🔍 Document trouvé:', data);
+            
+            // ✅ NOUVEAU : Support des deux formats (category ET type)
+            const docType = data.category || data.type;
+            
+            if (docType === type) {
+                establishments.push({
+                    id: doc.id,
+                    name: data.name || 'Sans nom',
+                    address: data.address || 'Sans adresse',
+                    // ✅ NOUVEAU : Mapping des champs spas
+                    laRevueRating: data.overallRating || data.rating || 7,
+                    userRating: data.userRating || 7,
+                    rank: data.topPosition || data.rank || 1,
+                    priceLevel: data.priceLevel || 3,
+                    description: data.longDescription || data.shortDescription || data.description || '',
+                    category: docType,
+                    region: data.region || data.city || 'ile-de-france',
+                    promoCode: data.promoCode || '',
+                    promoDiscount: data.promoDiscount || '',
+                    images: data.images || [],
+                    isFeatured: data.isFeatured || false,
+                    reservationUrl: data.reservationUrl || '',
+                    positiveReviews: data.positiveReviews || '89%',
+                    negativeReviews: data.negativeReviews || '11%',
+                    positiveReviewExample: data.positiveReviewExample || '',
+                    negativeReviewExample: data.negativeReviewExample || ''
                 });
-                
-                establishments.sort((a, b) => (a.rank || 999) - (b.rank || 999));
-                window.currentEstablishments = establishments;
-                console.log(`✅ ${establishments.length} établissements ${type} chargés`);
-                return establishments;
-            } catch (error) {
-                console.error('❌ Erreur chargement:', error);
-                return [];
             }
-        };
+        });
+        
+        establishments.sort((a, b) => (a.rank || 999) - (b.rank || 999));
+        window.currentEstablishments = establishments;
+        console.log(`✅ ${establishments.length} établissements ${type} chargés`);
+        return establishments;
+    } catch (error) {
+        console.error('❌ Erreur chargement:', error);
+        return [];
+    }
+};
 
         // Autres fonctions Firebase
         window.updateEstablishmentRank = async (id, newRank) => {

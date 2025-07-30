@@ -825,7 +825,7 @@
         </section>
     </main>
 
-    <!-- ✅ MODAL ÉTABLISSEMENT AVEC RÉGION -->
+    <!-- ✅ MODAL ÉTABLISSEMENT AVEC TEXTE DYNAMIQUE -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
         <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-4xl w-full max-h-screen overflow-y-auto">
             <div class="p-6 border-b border-gray-700">
@@ -846,7 +846,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Type *</label>
-                        <select id="form-type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                        <select id="form-type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" onchange="updateFeaturedLabels()">
                             <option value="hotels">Hôtel</option>
                             <option value="restaurants">Restaurant</option>
                             <option value="spas">Spa</option>
@@ -906,16 +906,16 @@
                     </div>
                 </div>
 
-                <!-- ✅ SECTION FEATURED -->
+                <!-- ✅ SECTION FEATURED DYNAMIQUE -->
                 <div class="bg-yellow-500 bg-opacity-20 p-4 rounded-lg border-l-4 border-yellow-500">
                     <h4 class="text-lg font-semibold text-yellow-400 mb-4">
-                        <i class="fas fa-star mr-2"></i>Notre Hôtel Favori du Moment
+                        <i class="fas fa-star mr-2"></i><span id="featured-title">Notre Établissement Favori du Moment</span>
                     </h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">
                                 <input type="checkbox" id="form-is-featured" class="mr-2">
-                                Marquer comme "Notre Hôtel Favori du Moment"
+                                <span id="featured-checkbox-label">Marquer comme "Notre Établissement Favori du Moment"</span>
                             </label>
                             <p class="text-xs text-gray-400">Cet établissement apparaîtra en premier dans l'app</p>
                         </div>
@@ -1117,6 +1117,33 @@
                 'all': 'Tous types'
             };
             return labels[type] || 'Tous types';
+        }
+
+        // ✅ FONCTION POUR METTRE À JOUR LES TEXTES SELON LE TYPE
+        function updateFeaturedLabels() {
+            const type = document.getElementById('form-type').value;
+            const featuredTitle = document.getElementById('featured-title');
+            const featuredCheckboxLabel = document.getElementById('featured-checkbox-label');
+            
+            const labels = {
+                'hotels': {
+                    title: 'Notre Hôtel Favori du Moment',
+                    checkbox: 'Marquer comme "Notre Hôtel Favori du Moment"'
+                },
+                'restaurants': {
+                    title: 'Notre Restaurant Favori du Moment',
+                    checkbox: 'Marquer comme "Notre Restaurant Favori du Moment"'
+                },
+                'spas': {
+                    title: 'Notre Spa Favori du Moment',
+                    checkbox: 'Marquer comme "Notre Spa Favori du Moment"'
+                }
+            };
+            
+            if (featuredTitle && featuredCheckboxLabel) {
+                featuredTitle.textContent = labels[type]?.title || 'Notre Établissement Favori du Moment';
+                featuredCheckboxLabel.textContent = labels[type]?.checkbox || 'Marquer comme "Notre Établissement Favori du Moment"';
+            }
         }
 
         // ✅ FONCTION POUR METTRE À JOUR LES ACTIONS
@@ -1730,7 +1757,7 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                 hotels: '🏨 Classement des Hôtels',
                 restaurants: '🍽️ Classement des Restaurants',
                 spas: '🧘 Classement des Spas',
-                news: '📰 Actualités Hôtels',
+                news: '📰 Actualités',
                 reviews: '💬 Modération des Avis'
             };
             
@@ -1862,7 +1889,7 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             document.getElementById('form-images').dispatchEvent(new Event('change'));
         }
 
-        // ✅ FONCTION RENDU ÉTABLISSEMENTS
+        // ✅ FONCTION RENDU ÉTABLISSEMENTS AVEC TEXTE DYNAMIQUE
         function renderEstablishments(establishments) {
             const container = document.getElementById('establishments-list');
             
@@ -1893,7 +1920,7 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                         
                         ${establishment.isFeatured ? `
                             <div class="featured-badge px-4 py-2 rounded-full text-sm font-bold text-black mb-4 inline-flex items-center">
-                                <i class="fas fa-star mr-2"></i>Notre ${currentTab.slice(0, -1)} Favori du Moment
+                                <i class="fas fa-star mr-2"></i>Notre ${currentTab === 'hotels' ? 'Hôtel' : currentTab === 'restaurants' ? 'Restaurant' : currentTab === 'spas' ? 'Spa' : 'Établissement'} Favori du Moment
                             </div>
                         ` : ''}
                         
@@ -2008,13 +2035,17 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             }, 5000);
         }
 
-        // ✅ FONCTIONS MODAL ÉTABLISSEMENT
+        // ✅ FONCTIONS MODAL ÉTABLISSEMENT AVEC MISE À JOUR LABELS
         function openAddModal() {
             editingId = null;
             document.getElementById('modal-title').textContent = 'Ajouter un établissement';
             document.getElementById('form-submit-text').textContent = 'Ajouter';
             document.getElementById('establishment-form').reset();
             document.getElementById('form-type').value = currentTab;
+            
+            // ✅ NOUVEAU : Mettre à jour les labels
+            updateFeaturedLabels();
+            
             document.getElementById('edit-modal').classList.remove('hidden');
             document.getElementById('images-preview').innerHTML = '';
             selectedImages = [];
@@ -2045,6 +2076,9 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             document.getElementById('form-negative-example').value = establishment.negativeReviewExample || '';
             document.getElementById('form-promo-code').value = establishment.promoCode || '';
             document.getElementById('form-promo-discount').value = establishment.promoDiscount || '';
+            
+            // ✅ NOUVEAU : Mettre à jour les labels après remplissage
+            updateFeaturedLabels();
             
             document.getElementById('edit-modal').classList.remove('hidden');
         }
@@ -2239,7 +2273,10 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
         // ✅ GESTION AUTOMATIQUE DU FEATURED POUR ÉTABLISSEMENTS
         document.getElementById('form-is-featured').addEventListener('change', function(e) {
             if (e.target.checked) {
-                if (!confirm('⚠️ Attention : Un seul établissement peut être "Notre Favori du Moment" à la fois.\n\nEn activant cette option, tous les autres établissements perdront ce statut.\n\nContinuer ?')) {
+                const type = document.getElementById('form-type').value;
+                const typeName = type === 'hotels' ? 'hôtel' : type === 'restaurants' ? 'restaurant' : type === 'spas' ? 'spa' : 'établissement';
+                
+                if (!confirm(`⚠️ Attention : Un seul ${typeName} peut être "Notre ${type === 'hotels' ? 'Hôtel' : type === 'restaurants' ? 'Restaurant' : type === 'spas' ? 'Spa' : 'Établissement'} Favori du Moment" à la fois.\n\nEn activant cette option, tous les autres ${type} perdront ce statut.\n\nContinuer ?`)) {
                     e.target.checked = false;
                     return;
                 }
@@ -2247,10 +2284,8 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
         });
 
         // ✅ INITIALISATION
-        console.log('🎉 Dashboard La Revue avec Photos d\'Avis corrigées !');
-        console.log('📸 Correction : Utilisation de photo.url au lieu de photo.uploadURL');
-        console.log('🔍 Structure détectée dans Firebase : photos[].url');
-        console.log('✅ Les photos des avis devraient maintenant s\'afficher correctement !');
+        console.log('🎉 Dashboard La Revue avec textes dynamiques corrigé !');
+        console.log('✅ Maintenant "Notre Spa Favori du Moment" s\'affiche correctement !');
     </script>
 
 </body>

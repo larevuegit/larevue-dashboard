@@ -168,7 +168,10 @@ window.sortByRating = async () => {
 
                 await Promise.all(updatePromises);
                 
-                showSuccess(`✅ Classement trié par notes ! Le meilleur établissement (${sortedEstablishments[0].name} - ${sortedEstablishments[0].laRevueRating}/10) est maintenant #1`);
+                const topEstablishment = sortedEstablishments[0];
+const topRating = topEstablishment.overallRating || topEstablishment.rating || topEstablishment.laRevueRating;
+
+showSuccess(`✅ Classement trié par note générale ! Le meilleur établissement (${topEstablishment.name} - ${topRating}/10) est maintenant #1`);
                 
                 // Recharger la liste
                 await loadDashboard();

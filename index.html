@@ -2471,28 +2471,39 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                                 </div>
                             </div>
                             
-                            <!-- Notes et actions -->
-                            <div class="flex items-center space-x-6">
-                                <!-- Notes -->
-                                <div class="text-center">
-                                    <div class="text-sm text-gray-400 mb-1">La Revue</div>
-                                    <div class="flex items-center">
-                                        <span class="text-2xl font-bold text-yellow-400" onclick="editRating('${establishment.id}', 'laRevueRating')">${establishment.laRevueRating}/10</span>
-                                        <button class="ml-2 text-xs text-gray-500 hover:text-yellow-400" onclick="editRating('${establishment.id}', 'laRevueRating')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div class="text-center">
-                                    <div class="text-sm text-gray-400 mb-1">Utilisateurs</div>
-                                    <div class="flex items-center">
-                                        <span class="text-2xl font-bold text-blue-400" onclick="editRating('${establishment.id}', 'userRating')">${establishment.userRating}/10</span>
-                                        <button class="ml-2 text-xs text-gray-500 hover:text-blue-400" onclick="editRating('${establishment.id}', 'userRating')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                            <!-- ✅ CORRECTION : Afficher NOTE GÉNÉRALE en premier -->
+<div class="flex items-center space-x-6">
+    <!-- Note Générale (PRINCIPALE) -->
+    <div class="text-center">
+        <div class="text-sm text-gray-400 mb-1">Note Générale</div>
+        <div class="flex items-center">
+            <span class="text-3xl font-bold text-green-400" onclick="editRating('${establishment.id}', 'overallRating')">${establishment.overallRating || establishment.rating || establishment.laRevueRating || 0}/10</span>
+            <button class="ml-2 text-xs text-gray-500 hover:text-green-400" onclick="editRating('${establishment.id}', 'overallRating')">
+                <i class="fas fa-edit"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Note La Revue (SECONDAIRE) -->
+    <div class="text-center">
+        <div class="text-sm text-gray-400 mb-1">La Revue</div>
+        <div class="flex items-center">
+            <span class="text-2xl font-bold text-yellow-400" onclick="editRating('${establishment.id}', 'laRevueRating')">${establishment.laRevueRating}/10</span>
+            <button class="ml-2 text-xs text-gray-500 hover:text-yellow-400" onclick="editRating('${establishment.id}', 'laRevueRating')">
+                <i class="fas fa-edit"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="text-center">
+        <div class="text-sm text-gray-400 mb-1">Utilisateurs</div>
+        <div class="flex items-center">
+            <span class="text-2xl font-bold text-blue-400" onclick="editRating('${establishment.id}', 'userRating')">${establishment.userRating}/10</span>
+            <button class="ml-2 text-xs text-gray-500 hover:text-blue-400" onclick="editRating('${establishment.id}', 'userRating')">
+                <i class="fas fa-edit"></i>
+            </button>
+        </div>
+    </div>
                                 
                                 <!-- Actions -->
                                 <div class="flex space-x-2">

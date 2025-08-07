@@ -78,6 +78,58 @@
             }
         };
 
+        // ✅ NOUVELLE FONCTION CORRECTION CATÉGORIES
+        window.fixCategories = async () => {
+            try {
+                console.log('🔧 Correction des catégories en cours...');
+                const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
+                const snapshot = await getDocs(establishmentsRef);
+                
+                const corrections = [];
+                const categoryMap = {
+                    'hotels': 'hotel',
+                    'restaurants': 'restaurant',
+                    'spas': 'spa'
+                };
+                
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const currentCategory = data.category;
+                    
+                    if (categoryMap[currentCategory]) {
+                        corrections.push({
+                            id: docSnap.id,
+                            from: currentCategory,
+                            to: categoryMap[currentCategory]
+                        });
+                    }
+                });
+                
+                if (corrections.length === 0) {
+                    showSuccess('✅ Aucune correction nécessaire !');
+                    return;
+                }
+                
+                // Appliquer les corrections
+                const updatePromises = corrections.map(correction => {
+                    const docRef = doc(db, COLLECTIONS.ESTABLISHMENTS, correction.id);
+                    return updateDoc(docRef, { category: correction.to });
+                });
+                
+                await Promise.all(updatePromises);
+                
+                showSuccess(`✅ ${corrections.length} catégories corrigées !`);
+                console.log('✅ Corrections appliquées:', corrections);
+                
+                // Recharger la page
+                loadDashboard();
+                
+            } catch (error) {
+                console.error('❌ Erreur correction catégories:', error);
+                showError('Erreur lors de la correction des catégories');
+            }
+        };
+
         // ✅ FONCTIONS GESTION ACTUALITÉS
         window.loadNews = async () => {
             try {
@@ -226,56 +278,72 @@
             }
         };
 
-        // Fonctions Firebase existantes
+        // ✅ FONCTION CHARGEMENT ÉTABLISSEMENTS CORRIGÉE POUR LES SPAS
         window.loadEstablishments = async (type = 'hotels') => {
-    try {
-        console.log(`🔥 Chargement des ${type}...`);
-        const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
-        const snapshot = await getDocs(establishmentsRef);
-        
-        const establishments = [];
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            console.log('🔍 Document trouvé:', data);
-            
-            // ✅ NOUVEAU : Support des deux formats (category ET type)
-            const docType = data.category || data.type;
-            
-            if (docType === type || (type === 'spas' && docType === 'spa') || (type === 'hotels' && docType === 'hotel') || (type === 'restaurants' && docType === 'restaurant')) {
-                establishments.push({
-                    id: doc.id,
-                    name: data.name || 'Sans nom',
-                    address: data.address || 'Sans adresse',
-                    // ✅ NOUVEAU : Mapping des champs spas
-                    laRevueRating: data.overallRating || data.rating || 7,
-                    userRating: data.userRating || 7,
-                    rank: data.topPosition || data.rank || 1,
-                    priceLevel: data.priceLevel || 3,
-                    description: data.longDescription || data.shortDescription || data.description || '',
-                    category: docType,
-                    region: data.region || data.city || 'ile-de-france',
-                    promoCode: data.promoCode || '',
-                    promoDiscount: data.promoDiscount || '',
-                    images: data.images || [],
-                    isFeatured: data.isFeatured || false,
-                    reservationUrl: data.reservationUrl || '',
-                    positiveReviews: data.positiveReviews || '89%',
-                    negativeReviews: data.negativeReviews || '11%',
-                    positiveReviewExample: data.positiveReviewExample || '',
-                    negativeReviewExample: data.negativeReviewExample || ''
+            try {
+                console.log(`🔥 Chargement des ${type}...`);
+                const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
+                const snapshot = await getDocs(establishmentsRef);
+                
+                const establishments = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    console.log('🔍 Document trouvé:', doc.id, data);
+                    
+                    // ✅ CORRECTION PRINCIPALE : Support complet des formats pluriels et singuliers
+                    const docType = data.category || data.type;
+                    let shouldInclude = false;
+                    
+                    // Vérification selon le type demandé
+                    if (type === 'hotels') {
+                        shouldInclude = docType === 'hotels' || docType === 'hotel';
+                    } else if (type === 'restaurants') {
+                        shouldInclude = docType === 'restaurants' || docType === 'restaurant';
+                    } else if (type === 'spas') {
+                        shouldInclude = docType === 'spas' || docType === 'spa';
+                    } else {
+                        shouldInclude = docType === type;
+                    }
+                    
+                    if (shouldInclude) {
+                        console.log(`✅ Établissement ${docType} inclus pour la recherche ${type}:`, data.name);
+                        
+                        establishments.push({
+                            id: doc.id,
+                            name: data.name || 'Sans nom',
+                            address: data.address || 'Sans adresse',
+                            // ✅ NOUVEAU : Mapping des champs avec plusieurs sources possibles
+                            laRevueRating: data.overallRating || data.rating || 7,
+                            userRating: data.userRating || 7,
+                            rank: data.topPosition || data.rank || establishments.length + 1,
+                            priceLevel: data.priceLevel || 3,
+                            description: data.longDescription || data.shortDescription || data.description || '',
+                            category: docType,
+                            region: data.region || data.city || 'ile-de-france',
+                            promoCode: data.promoCode || '',
+                            promoDiscount: data.promoDiscount || '',
+                            images: data.images || [],
+                            isFeatured: data.isFeatured || false,
+                            reservationUrl: data.reservationUrl || '',
+                            positiveReviews: data.positiveReviews || '89%',
+                            negativeReviews: data.negativeReviews || '11%',
+                            positiveReviewExample: data.positiveReviewExample || '',
+                            negativeReviewExample: data.negativeReviewExample || ''
+                        });
+                    } else {
+                        console.log(`❌ Établissement ${docType} EXCLU pour la recherche ${type}:`, data.name);
+                    }
                 });
+                
+                establishments.sort((a, b) => (a.rank || 999) - (b.rank || 999));
+                window.currentEstablishments = establishments;
+                console.log(`✅ ${establishments.length} établissements ${type} chargés au final`);
+                return establishments;
+            } catch (error) {
+                console.error('❌ Erreur chargement:', error);
+                return [];
             }
-        });
-        
-        establishments.sort((a, b) => (a.rank || 999) - (b.rank || 999));
-        window.currentEstablishments = establishments;
-        console.log(`✅ ${establishments.length} établissements ${type} chargés`);
-        return establishments;
-    } catch (error) {
-        console.error('❌ Erreur chargement:', error);
-        return [];
-    }
-};
+        };
 
         // Autres fonctions Firebase
         window.updateEstablishmentRank = async (id, newRank) => {
@@ -795,6 +863,10 @@
                 <button onclick="recalculateRankings()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fas fa-calculator mr-2"></i>Recalculer le classement
                 </button>
+                <!-- ✅ NOUVEAU BOUTON CORRECTION -->
+                <button onclick="window.fixCategories()" class="bg-orange-600 hover:bg-orange-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-wrench mr-2"></i>Corriger Catégories
+                </button>
                 <button onclick="exportData()" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fas fa-download mr-2"></i>Exporter les données
                 </button>
@@ -852,9 +924,9 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Type *</label>
                         <select id="form-type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" onchange="updateFeaturedLabels()">
-                            <option value="hotels">Hôtel</option>
-                            <option value="restaurants">Restaurant</option>
-                            <option value="spas">Spa</option>
+                            <option value="hotel">Hôtel</option>
+                            <option value="restaurant">Restaurant</option>
+                            <option value="spa">Spa</option>
                         </select>
                     </div>
                 </div>
@@ -1131,15 +1203,15 @@
             const featuredCheckboxLabel = document.getElementById('featured-checkbox-label');
             
             const labels = {
-                'hotels': {
+                'hotel': {
                     title: 'Notre Hôtel Favori du Moment',
                     checkbox: 'Marquer comme "Notre Hôtel Favori du Moment"'
                 },
-                'restaurants': {
+                'restaurant': {
                     title: 'Notre Restaurant Favori du Moment',
                     checkbox: 'Marquer comme "Notre Restaurant Favori du Moment"'
                 },
-                'spas': {
+                'spa': {
                     title: 'Notre Spa Favori du Moment',
                     checkbox: 'Marquer comme "Notre Spa Favori du Moment"'
                 }
@@ -1180,13 +1252,16 @@
                     </button>
                 `;
             } else {
-                // Actions par défaut pour les établissements
+                // Actions par défaut pour les établissements avec bouton correction
                 actionsContainer.innerHTML = `
                     <button onclick="openAddModal()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
                         <i class="fas fa-plus mr-2"></i>Ajouter un établissement
                     </button>
                     <button onclick="recalculateRankings()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-colors">
                         <i class="fas fa-calculator mr-2"></i>Recalculer le classement
+                    </button>
+                    <button onclick="window.fixCategories()" class="bg-orange-600 hover:bg-orange-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-wrench mr-2"></i>Corriger Catégories
                     </button>
                     <button onclick="exportData()" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-medium transition-colors">
                         <i class="fas fa-download mr-2"></i>Exporter les données
@@ -2046,7 +2121,15 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             document.getElementById('modal-title').textContent = 'Ajouter un établissement';
             document.getElementById('form-submit-text').textContent = 'Ajouter';
             document.getElementById('establishment-form').reset();
-            document.getElementById('form-type').value = currentTab;
+            
+            // ✅ CORRECTION : Utiliser les valeurs singulières pour le formulaire
+            const typeMap = {
+                'hotels': 'hotel',
+                'restaurants': 'restaurant', 
+                'spas': 'spa'
+            };
+            
+            document.getElementById('form-type').value = typeMap[currentTab] || 'hotel';
             
             // ✅ NOUVEAU : Mettre à jour les labels
             updateFeaturedLabels();
@@ -2064,9 +2147,19 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             document.getElementById('modal-title').textContent = 'Modifier l\'établissement';
             document.getElementById('form-submit-text').textContent = 'Modifier';
             
+            // ✅ CORRECTION : Mapping pour le formulaire
+            const categoryToFormType = {
+                'hotels': 'hotel',
+                'restaurants': 'restaurant',
+                'spas': 'spa',
+                'hotel': 'hotel',
+                'restaurant': 'restaurant', 
+                'spa': 'spa'
+            };
+            
             // Remplir le formulaire
             document.getElementById('form-name').value = establishment.name || '';
-            document.getElementById('form-type').value = establishment.category || currentTab;
+            document.getElementById('form-type').value = categoryToFormType[establishment.category] || 'hotel';
             document.getElementById('form-address').value = establishment.address || '';
             document.getElementById('form-region').value = establishment.region || 'ile-de-france';
             document.getElementById('form-larevue-rating').value = establishment.laRevueRating || '';
@@ -2279,9 +2372,9 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
         document.getElementById('form-is-featured').addEventListener('change', function(e) {
             if (e.target.checked) {
                 const type = document.getElementById('form-type').value;
-                const typeName = type === 'hotels' ? 'hôtel' : type === 'restaurants' ? 'restaurant' : type === 'spas' ? 'spa' : 'établissement';
+                const typeName = type === 'hotel' ? 'hôtel' : type === 'restaurant' ? 'restaurant' : type === 'spa' ? 'spa' : 'établissement';
                 
-                if (!confirm(`⚠️ Attention : Un seul ${typeName} peut être "Notre ${type === 'hotels' ? 'Hôtel' : type === 'restaurants' ? 'Restaurant' : type === 'spas' ? 'Spa' : 'Établissement'} Favori du Moment" à la fois.\n\nEn activant cette option, tous les autres ${type} perdront ce statut.\n\nContinuer ?`)) {
+                if (!confirm(`⚠️ Attention : Un seul ${typeName} peut être "Notre ${type === 'hotel' ? 'Hôtel' : type === 'restaurant' ? 'Restaurant' : type === 'spa' ? 'Spa' : 'Établissement'} Favori du Moment" à la fois.\n\nEn activant cette option, tous les autres ${type}s perdront ce statut.\n\nContinuer ?`)) {
                     e.target.checked = false;
                     return;
                 }
@@ -2326,10 +2419,9 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             }
         };
 
-
         // ✅ INITIALISATION
-        console.log('🎉 Dashboard La Revue avec textes dynamiques corrigé !');
-        console.log('✅ Maintenant "Notre Spa Favori du Moment" s\'affiche correctement !');
+        console.log('🎉 Dashboard La Revue avec correction spas !');
+        console.log('✅ Les spas avec category "spas" devraient maintenant s\'afficher !');
     </script>
 
 </body>

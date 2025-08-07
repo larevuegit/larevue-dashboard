@@ -130,6 +130,59 @@
             }
         };
 
+
+        // Fonction pour recalculer toutes les notes générales
+        async function recalculateAllRatings() {
+            const confirmRecalc = confirm("Voulez-vous recalculer toutes les notes générales basées sur les notes La Revue et Utilisateurs ?");
+            if (!confirmRecalc) return;
+            
+            try {
+                const snapshot = await getDocs(collection(db, COLLECTIONS.ESTABLISHMENTS));
+                const batch = db.batch();
+                let updated = 0;
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const laRevueRating = parseFloat(data.rating || data.laRevueRating) || 0;
+                    const userRating = parseFloat(data.userRating) || 0;
+                    
+                    // Calcul de la moyenne pondérée (vous pouvez ajuster la formule)
+                    let newOverallRating;
+                    if (laRevueRating > 0 && userRating > 0) {
+                        // Moyenne des deux notes
+                        newOverallRating = ((laRevueRating + userRating) / 2);
+                    } else if (laRevueRating > 0) {
+                        // Seulement note La Revue
+                        newOverallRating = laRevueRating;
+                    } else if (userRating > 0) {
+                        // Seulement note Utilisateurs
+                        newOverallRating = userRating;
+                    } else {
+                        // Aucune note valide, garder 7 par défaut
+                        newOverallRating = 7;
+                    }
+                    
+                    // Arrondir à 1 décimale
+                    newOverallRating = Math.round(newOverallRating * 10) / 10;
+                    
+                    const docRef = doc.ref;
+                    batch.update(docRef, { overallRating: newOverallRating });
+                    updated++;
+                });
+                
+                await batch.commit();
+                showSuccess(`✅ ${updated} établissements mis à jour avec succès !`);
+                loadDashboard(); // Recharger l'affichage
+                
+            } catch (error) {
+                console.error('Erreur lors du recalcul:', error);
+                showError('❌ Erreur lors du recalcul des notes');
+            }
+        }
+
+
+
+
         // ✅ NOUVELLE FONCTION TRI PAR NOTES
 window.sortByRating = async () => {
     try {

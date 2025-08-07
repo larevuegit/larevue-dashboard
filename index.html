@@ -49,6 +49,23 @@
         window.currentReviews = [];
         window.currentStats = { hotels: 0, restaurants: 0, spas: 0, totalReviews: 0 };
 
+        // ✅ NOUVELLE FONCTION DE CALCUL DE LA NOTE GÉNÉRALE
+        function calculateOverallRating(laRevueRating, usersRating) {
+            const laRevue = parseFloat(laRevueRating) || 0;
+            const users = parseFloat(usersRating) || 0;
+            
+            // Si les deux notes sont à 0, retourner 0
+            if (laRevue === 0 && users === 0) return 0;
+            
+            // Si une seule note est disponible, la retourner
+            if (laRevue === 0) return users;
+            if (users === 0) return laRevue;
+            
+            // Calculer la moyenne des deux notes
+            return parseFloat(((laRevue + users) / 2).toFixed(1));
+        }
+        window.calculateOverallRating = calculateOverallRating;
+
         // ✅ FONCTION UPLOAD IMAGES
         window.uploadImages = async (files) => {
             const urls = [];
@@ -130,80 +147,70 @@
             }
         };
 
-
-        // Fonction pour recalculer toutes les notes générales
-        async function recalculateAllRatings() {
-            const confirmRecalc = confirm("Voulez-vous recalculer toutes les notes générales basées sur les notes La Revue et Utilisateurs ?");
-            if (!confirmRecalc) return;
+        // ✅ FONCTION RECALCUL GLOBAL DES NOTES GÉNÉRALES
+        window.recalculateAllRatings = async () => {
+            if (!confirm('Voulez-vous vraiment recalculer toutes les notes générales ? Cette action mettra à jour Firebase.')) {
+                return;
+            }
+            
+            showMessage('Recalcul en cours...', 'info');
             
             try {
-                const snapshot = await getDocs(collection(db, COLLECTIONS.ESTABLISHMENTS));
-                const batch = db.batch();
+                const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
+                const snapshot = await getDocs(establishmentsRef);
                 let updated = 0;
                 
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const laRevueRating = parseFloat(data.rating || data.laRevueRating) || 0;
-                    const userRating = parseFloat(data.userRating) || 0;
+                const updatePromises = [];
+                
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const laRevueRating = data.laRevueRating || data.rating || 0;
+                    const usersRating = data.usersRating || data.userRating || 0;
                     
-                    // Calcul de la moyenne pondérée (vous pouvez ajuster la formule)
-                    let newOverallRating;
-                    if (laRevueRating > 0 && userRating > 0) {
-                        // Moyenne des deux notes
-                        newOverallRating = ((laRevueRating + userRating) / 2);
-                    } else if (laRevueRating > 0) {
-                        // Seulement note La Revue
-                        newOverallRating = laRevueRating;
-                    } else if (userRating > 0) {
-                        // Seulement note Utilisateurs
-                        newOverallRating = userRating;
-                    } else {
-                        // Aucune note valide, garder 7 par défaut
-                        newOverallRating = 7;
+                    const newOverallRating = calculateOverallRating(laRevueRating, usersRating);
+                    
+                    if (newOverallRating !== (data.overallRating || 0)) {
+                        const docRef = doc(db, COLLECTIONS.ESTABLISHMENTS, docSnap.id);
+                        updatePromises.push(
+                            updateDoc(docRef, { overallRating: newOverallRating })
+                        );
+                        updated++;
                     }
-                    
-                    // Arrondir à 1 décimale
-                    newOverallRating = Math.round(newOverallRating * 10) / 10;
-                    
-                    const docRef = doc.ref;
-                    batch.update(docRef, { overallRating: newOverallRating });
-                    updated++;
                 });
                 
-                await batch.commit();
-                showSuccess(`✅ ${updated} établissements mis à jour avec succès !`);
-                loadDashboard(); // Recharger l'affichage
+                await Promise.all(updatePromises);
+                
+                showMessage(`✅ ${updated} notes générales recalculées !`, 'success');
+                
+                // Recharger les données
+                await loadDashboard();
                 
             } catch (error) {
                 console.error('Erreur lors du recalcul:', error);
-                showError('❌ Erreur lors du recalcul des notes');
+                showMessage('❌ Erreur lors du recalcul des notes', 'danger');
             }
-        }
+        };
 
+        // ✅ FONCTION TRI PAR NOTES CORRIGÉE
+        window.sortByRating = async () => {
+            try {
+                if (!window.currentEstablishments || window.currentEstablishments.length === 0) {
+                    showError('Aucun établissement à trier');
+                    return;
+                }
 
+                console.log('📊 Tri par note générale en cours...');
+                showLoading(true);
 
-
-        // ✅ NOUVELLE FONCTION TRI PAR NOTES
-window.sortByRating = async () => {
-    try {
-        if (!window.currentEstablishments || window.currentEstablishments.length === 0) {
-            showError('Aucun établissement à trier');
-            return;
-        }
-
-        console.log('📊 Tri par note générale en cours...');
-        showLoading(true);
-
-        // ✅ CORRECTION : Trier par note générale (overallRating ou rating)
-        const sortedEstablishments = [...window.currentEstablishments].sort((a, b) => {
-            // Utiliser la note générale, puis laRevueRating en fallback
-            const ratingA = parseFloat(a.overallRating || a.rating || a.laRevueRating || 0);
-            const ratingB = parseFloat(b.overallRating || b.rating || b.laRevueRating || 0);
-            
-            console.log(`Comparaison: ${a.name} (${ratingA}) vs ${b.name} (${ratingB})`);
-            
-            return ratingB - ratingA; // Tri décroissant (plus haute note = rang 1)
-        });
+                // ✅ CORRECTION : Trier par note générale calculée
+                const sortedEstablishments = [...window.currentEstablishments].sort((a, b) => {
+                    const ratingA = calculateOverallRating(a.laRevueRating, a.usersRating);
+                    const ratingB = calculateOverallRating(b.laRevueRating, b.usersRating);
+                    
+                    console.log(`Comparaison: ${a.name} (${ratingA}) vs ${b.name} (${ratingB})`);
+                    
+                    return ratingB - ratingA; // Tri décroissant
+                });
 
                 // Mettre à jour les rangs dans Firebase
                 const updatePromises = sortedEstablishments.map(async (establishment, index) => {
@@ -222,9 +229,9 @@ window.sortByRating = async () => {
                 await Promise.all(updatePromises);
                 
                 const topEstablishment = sortedEstablishments[0];
-const topRating = topEstablishment.overallRating || topEstablishment.rating || topEstablishment.laRevueRating;
+                const topRating = calculateOverallRating(topEstablishment.laRevueRating, topEstablishment.usersRating);
 
-showSuccess(`✅ Classement trié par note générale ! Le meilleur établissement (${topEstablishment.name} - ${topRating}/10) est maintenant #1`);
+                showSuccess(`✅ Classement trié par note générale ! Le meilleur établissement (${topEstablishment.name} - ${topRating}/10) est maintenant #1`);
                 
                 // Recharger la liste
                 await loadDashboard();
@@ -260,14 +267,18 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
                         }
 
                         // Normaliser les données
+                        const laRevueRating = parseFloat(establishment.rating || establishment.laRevueRating || 7);
+                        const usersRating = parseFloat(establishment.userRating || establishment.usersRating || 7);
+                        const overallRating = calculateOverallRating(laRevueRating, usersRating);
+
                         const normalizedData = {
                             name: establishment.name,
                             category: establishment.category,
                             address: establishment.address || 'Adresse non renseignée',
                             region: establishment.region || 'ile-de-france',
-                            rating: parseFloat(establishment.rating || establishment.laRevueRating || 7),
-                            overallRating: parseFloat(establishment.rating || establishment.laRevueRating || 7),
-                            userRating: parseFloat(establishment.userRating || 7),
+                            laRevueRating: laRevueRating,
+                            usersRating: usersRating,
+                            overallRating: overallRating,
                             priceLevel: parseInt(establishment.priceLevel || 3),
                             description: establishment.description || '',
                             longDescription: establishment.longDescription || establishment.description || '',
@@ -495,13 +506,16 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
                     if (shouldInclude) {
                         console.log(`✅ Établissement ${docType} inclus pour la recherche ${type}:`, data.name);
                         
+                        const laRevueRating = parseFloat(data.laRevueRating || data.rating || 7);
+                        const usersRating = parseFloat(data.usersRating || data.userRating || 7);
+                        
                         establishments.push({
                             id: doc.id,
                             name: data.name || 'Sans nom',
                             address: data.address || 'Sans adresse',
-                            // ✅ NOUVEAU : Mapping des champs avec plusieurs sources possibles
-                            laRevueRating: data.overallRating || data.rating || 7,
-                            userRating: data.userRating || 7,
+                            laRevueRating: laRevueRating,
+                            usersRating: usersRating,
+                            overallRating: data.overallRating || calculateOverallRating(laRevueRating, usersRating),
                             rank: data.topPosition || data.rank || establishments.length + 1,
                             priceLevel: data.priceLevel || 3,
                             description: data.longDescription || data.shortDescription || data.description || '',
@@ -545,11 +559,39 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
             }
         };
 
+        // ✅ FONCTION MISE À JOUR NOTE CORRIGÉE AVEC CALCUL AUTO DE LA NOTE GÉNÉRALE
         window.updateEstablishmentRating = async (id, rating, type = 'rating') => {
             try {
+                const establishment = window.currentEstablishments.find(e => e.id === id);
+                if (!establishment) {
+                    console.error('Établissement non trouvé:', id);
+                    return false;
+                }
+
+                const updates = {};
+                
+                // Mettre à jour le champ spécifique
+                if (type === 'overallRating') {
+                    updates.overallRating = rating;
+                } else if (type === 'laRevueRating' || type === 'rating') {
+                    updates.laRevueRating = rating;
+                    updates.rating = rating; // Pour compatibilité
+                    
+                    // Recalculer la note générale
+                    const newOverallRating = calculateOverallRating(rating, establishment.usersRating);
+                    updates.overallRating = newOverallRating;
+                } else if (type === 'usersRating' || type === 'userRating') {
+                    updates.usersRating = rating;
+                    updates.userRating = rating; // Pour compatibilité
+                    
+                    // Recalculer la note générale
+                    const newOverallRating = calculateOverallRating(establishment.laRevueRating, rating);
+                    updates.overallRating = newOverallRating;
+                }
+
                 const docRef = doc(db, COLLECTIONS.ESTABLISHMENTS, id);
-                await updateDoc(docRef, { [type]: rating });
-                console.log(`✅ Note ${type} mise à jour pour ${id}`);
+                await updateDoc(docRef, updates);
+                console.log(`✅ Note ${type} mise à jour pour ${id}:`, updates);
                 return true;
             } catch (error) {
                 console.error('❌ Erreur mise à jour note:', error);
@@ -560,12 +602,21 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
         window.addNewEstablishment = async (data) => {
             try {
                 console.log('🔥 Création nouvel établissement:', data);
-                const docRef = await addDoc(collection(db, COLLECTIONS.ESTABLISHMENTS), {
+                
+                // Calculer la note générale
+                const overallRating = calculateOverallRating(data.rating || data.laRevueRating, data.userRating || data.usersRating);
+                
+                const establishmentData = {
                     ...data,
+                    laRevueRating: data.rating || data.laRevueRating || 7,
+                    usersRating: data.userRating || data.usersRating || 7,
+                    overallRating: overallRating,
                     createdAt: new Date(),
                     topPosition: window.currentEstablishments.length + 1,
                     isActive: true
-                });
+                };
+                
+                const docRef = await addDoc(collection(db, COLLECTIONS.ESTABLISHMENTS), establishmentData);
                 console.log(`✅ Nouvel établissement créé: ${docRef.id}`);
                 return docRef.id;
             } catch (error) {
@@ -583,6 +634,25 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
                 console.error('❌ Erreur suppression:', error);
                 return false;
             }
+        };
+
+        // Fonction utilitaire pour les messages
+        window.showMessage = (message, type = 'info') => {
+            const colors = {
+                success: 'bg-green-600',
+                error: 'bg-red-600',
+                danger: 'bg-red-600',
+                info: 'bg-blue-600'
+            };
+            
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         };
 
         // Initialisation
@@ -1023,7 +1093,6 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
                 <button onclick="switchTab('news')" id="tab-news" class="nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600">
                     <i class="fas fa-newspaper mr-2"></i>Actualités
                 </button>
-                <!-- ✅ NOUVEL ONGLET AVIS -->
                 <button onclick="switchTab('reviews')" id="tab-reviews" class="nav-tab px-6 py-3 rounded-lg font-medium transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600">
                     <i class="fas fa-comments mr-2"></i>Avis
                 </button>
@@ -1091,26 +1160,21 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
                 <button onclick="openAddModal()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fas fa-plus mr-2"></i>Ajouter un établissement
                 </button>
-                <!-- ✅ NOUVEAU BOUTON TRI PAR NOTES -->
                 <button onclick="window.sortByRating()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fas fa-sort-numeric-down mr-2"></i>Trier par notes
                 </button>
                 <button onclick="recalculateRankings()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fas fa-calculator mr-2"></i>Recalculer le classement
                 </button>
-                <!-- ✅ NOUVEAU BOUTON IMPORT -->
                 <button onclick="openImportModal()" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fas fa-upload mr-2"></i>Importer des établissements
                 </button>
-                <!-- ✅ NOUVEAU BOUTON CORRECTION -->
                 <button onclick="window.fixCategories()" class="bg-orange-600 hover:bg-orange-700 px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fas fa-wrench mr-2"></i>Corriger Catégories
                 </button>
-
-            
-
-
-
+                <button onclick="window.recalculateAllRatings()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-calculator mr-2"></i>Recalculer Notes Générales
+                </button>
                 <button onclick="exportData()" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fas fa-download mr-2"></i>Exporter les données
                 </button>
@@ -1120,18 +1184,17 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
         <!-- Liste des établissements -->
         <section class="bg-gray-800 rounded-xl border border-gray-700">
             <div class="p-6 border-b border-gray-700">
-    <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold" id="section-title">🏨 Classement des Hôtels</h2>
-        <div class="flex items-center space-x-4">
-            <input type="text" id="search-input" placeholder="Rechercher..." class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" onkeyup="filterEstablishments()">
-            <!-- ✅ BOUTON RAFRAÎCHIR AMÉLIORÉ -->
-            <button onclick="forceRefresh()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors">
-                <i class="fas fa-sync-alt mr-2"></i>Rafraîchir
-            </button>
-        </div>
-    </div>
-    <p class="text-gray-400 mt-2" id="section-description">Glissez-déposez pour modifier le classement • Cliquez pour modifier</p>
-</div>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold" id="section-title">🏨 Classement des Hôtels</h2>
+                    <div class="flex items-center space-x-4">
+                        <input type="text" id="search-input" placeholder="Rechercher..." class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" onkeyup="filterEstablishments()">
+                        <button onclick="forceRefresh()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i>Rafraîchir
+                        </button>
+                    </div>
+                </div>
+                <p class="text-gray-400 mt-2" id="section-description">Glissez-déposez pour modifier le classement • Cliquez pour modifier</p>
+            </div>
             
             <!-- Loading -->
             <div id="loading" class="p-12 text-center">
@@ -1146,7 +1209,7 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
         </section>
     </main>
 
-    <!-- ✅ NOUVELLE MODAL IMPORT -->
+    <!-- ✅ MODAL IMPORT -->
     <div id="import-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
         <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-4xl w-full max-h-screen overflow-y-auto">
             <div class="p-6 border-b border-gray-700">
@@ -1679,45 +1742,47 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
             const dragZone = document.getElementById('drag-drop-zone');
             const fileInput = document.getElementById('import-file-input');
             
-            // Gestionnaires drag & drop
-            dragZone.addEventListener('click', () => {
-                fileInput.click();
-            });
-            
-            dragZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dragZone.classList.add('drag-over');
-            });
-            
-            dragZone.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                dragZone.classList.remove('drag-over');
-            });
-            
-            dragZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dragZone.classList.remove('drag-over');
+            if (dragZone && fileInput) {
+                // Gestionnaires drag & drop
+                dragZone.addEventListener('click', () => {
+                    fileInput.click();
+                });
                 
-                const files = e.dataTransfer.files;
-                if (files.length > 0 && files[0].type === 'application/json') {
-                    fileInput.files = files;
-                    showSuccess('📄 Fichier JSON détecté !');
-                } else {
-                    showError('Veuillez déposer un fichier JSON valide');
-                }
-            });
-            
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    const file = e.target.files[0];
-                    if (file.type === 'application/json') {
-                        showSuccess(`📄 Fichier sélectionné: ${file.name}`);
+                dragZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dragZone.classList.add('drag-over');
+                });
+                
+                dragZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    dragZone.classList.remove('drag-over');
+                });
+                
+                dragZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dragZone.classList.remove('drag-over');
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0 && files[0].type === 'application/json') {
+                        fileInput.files = files;
+                        showSuccess('📄 Fichier JSON détecté !');
                     } else {
-                        showError('Veuillez sélectionner un fichier JSON');
-                        e.target.value = '';
+                        showError('Veuillez déposer un fichier JSON valide');
                     }
-                }
-            });
+                });
+                
+                fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        const file = e.target.files[0];
+                        if (file.type === 'application/json') {
+                            showSuccess(`📄 Fichier sélectionné: ${file.name}`);
+                        } else {
+                            showError('Veuillez sélectionner un fichier JSON');
+                            e.target.value = '';
+                        }
+                    }
+                });
+            }
         });
 
         // ✅ FONCTION POUR METTRE À JOUR LES ACTIONS
@@ -1766,7 +1831,7 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
                     <button onclick="window.fixCategories()" class="bg-orange-600 hover:bg-orange-700 px-6 py-3 rounded-lg font-medium transition-colors">
                         <i class="fas fa-wrench mr-2"></i>Corriger Catégories
                     </button>
-                    <button onclick="recalculateAllRatings()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                    <button onclick="window.recalculateAllRatings()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
                         <i class="fas fa-calculator mr-2"></i>Recalculer Notes Générales
                     </button>
                     <button onclick="exportData()" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-medium transition-colors">
@@ -2042,8 +2107,7 @@ showSuccess(`✅ Classement trié par note générale ! Le meilleur établisseme
         function getEstablishmentName(establishmentId) {
             // Chercher dans tous les établissements chargés
             const allEstablishments = [
-                ...window.currentEstablishments,
-                // Si on a d'autres types chargés, les inclure aussi
+                ...window.currentEstablishments
             ];
             
             const establishment = allEstablishments.find(e => e.id === establishmentId);
@@ -2426,7 +2490,7 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             } else {
                 statTotal.textContent = data.length;
                 const avgRating = data.length > 0 ? 
-                    (data.reduce((sum, item) => sum + (item.laRevueRating || 0), 0) / data.length).toFixed(1) : 
+                    (data.reduce((sum, item) => sum + (window.calculateOverallRating(item.laRevueRating, item.usersRating) || 0), 0) / data.length).toFixed(1) : 
                     '0.0';
                 statAverage.textContent = avgRating;
                 statThirdTitle.textContent = 'Top 3';
@@ -2475,7 +2539,7 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             document.getElementById('form-images').dispatchEvent(new Event('change'));
         }
 
-        // ✅ FONCTION RENDU ÉTABLISSEMENTS AVEC TEXTE DYNAMIQUE
+        // ✅ FONCTION RENDU ÉTABLISSEMENTS AVEC CALCUL AUTOMATIQUE NOTE GÉNÉRALE
         function renderEstablishments(establishments) {
             const container = document.getElementById('establishments-list');
             
@@ -2498,6 +2562,9 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             container.innerHTML = establishments.map((establishment, index) => {
                 const isTop3 = establishment.rank <= 3;
                 const trophyIcon = establishment.rank === 1 ? '🏆' : establishment.rank === 2 ? '🥈' : establishment.rank === 3 ? '🥉' : '';
+                
+                // ✅ CALCUL AUTOMATIQUE DE LA NOTE GÉNÉRALE
+                const calculatedOverallRating = window.calculateOverallRating(establishment.laRevueRating, establishment.usersRating);
                 
                 return `
                     <div class="ranking-item p-6 border-b border-gray-700 last:border-b-0 ${establishment.isFeatured ? 'featured-item' : ''}" 
@@ -2532,40 +2599,41 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                                 </div>
                             </div>
                             
-                            <!-- ✅ CORRECTION : Afficher NOTE GÉNÉRALE en premier -->
-<div class="flex items-center space-x-6">
-    <!-- Note Générale (PRINCIPALE) -->
-    <div class="text-center">
-        <div class="text-sm text-gray-400 mb-1">Note Générale</div>
-        <div class="flex items-center">
-            <span class="text-3xl font-bold text-green-400" onclick="editRating('${establishment.id}', 'overallRating')">${establishment.overallRating || establishment.rating || establishment.laRevueRating || 0}/10</span>
-            <button class="ml-2 text-xs text-gray-500 hover:text-green-400" onclick="editRating('${establishment.id}', 'overallRating')">
-                <i class="fas fa-edit"></i>
-            </button>
-        </div>
-    </div>
-    
-    <!-- Note La Revue (SECONDAIRE) -->
-    <div class="text-center">
-        <div class="text-sm text-gray-400 mb-1">La Revue</div>
-        <div class="flex items-center">
-            <span class="text-2xl font-bold text-yellow-400" onclick="editRating('${establishment.id}', 'laRevueRating')">${establishment.laRevueRating}/10</span>
-            <button class="ml-2 text-xs text-gray-500 hover:text-yellow-400" onclick="editRating('${establishment.id}', 'laRevueRating')">
-                <i class="fas fa-edit"></i>
-            </button>
-        </div>
-    </div>
-    
-    <div class="text-center">
-        <div class="text-sm text-gray-400 mb-1">Utilisateurs</div>
-        <div class="flex items-center">
-            <span class="text-2xl font-bold text-blue-400" onclick="editRating('${establishment.id}', 'userRating')">${establishment.userRating}/10</span>
-            <button class="ml-2 text-xs text-gray-500 hover:text-blue-400" onclick="editRating('${establishment.id}', 'userRating')">
-                <i class="fas fa-edit"></i>
-            </button>
-        </div>
-    </div>
+                            <!-- ✅ AFFICHAGE NOTES AVEC CALCUL AUTOMATIQUE -->
+                            <div class="flex items-center space-x-6">
+                                <!-- Note Générale (CALCULÉE AUTOMATIQUEMENT) -->
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-400 mb-1">Note Générale</div>
+                                    <div class="flex items-center">
+                                        <span class="text-3xl font-bold text-green-400" onclick="editRating('${establishment.id}', 'overallRating')">${calculatedOverallRating}/10</span>
+                                        <button class="ml-2 text-xs text-gray-500 hover:text-green-400" onclick="editRating('${establishment.id}', 'overallRating')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
                                 
+                                <!-- Note La Revue -->
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-400 mb-1">La Revue</div>
+                                    <div class="flex items-center">
+                                        <span class="text-2xl font-bold text-yellow-400" onclick="editRating('${establishment.id}', 'laRevueRating')">${establishment.laRevueRating}/10</span>
+                                        <button class="ml-2 text-xs text-gray-500 hover:text-yellow-400" onclick="editRating('${establishment.id}', 'laRevueRating')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Note Utilisateurs -->
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-400 mb-1">Utilisateurs</div>
+                                    <div class="flex items-center">
+                                        <span class="text-2xl font-bold text-blue-400" onclick="editRating('${establishment.id}', 'usersRating')">${establishment.usersRating}/10</span>
+                                        <button class="ml-2 text-xs text-gray-500 hover:text-blue-400" onclick="editRating('${establishment.id}', 'usersRating')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                    
                                 <!-- Actions -->
                                 <div class="flex space-x-2">
                                     <button onclick="editEstablishment('${establishment.id}')" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors">
@@ -2578,421 +2646,405 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                             </div>
                         </div>
                         
-                        <!-- Images preview
-Copier
-Recherche approfondie
-la suite stp, reprend depuis : 
-
-<!-- Actions -->
-Copy                        <!-- Actions -->
-                        <div class="flex space-x-2">
-                            <button onclick="editEstablishment('${establishment.id}')" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors">
-                                <i class="fas fa-edit mr-1"></i>Modifier
-                            </button>
-                            <button onclick="deleteEstablishmentItem('${establishment.id}')" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
-                                <i class="fas fa-trash mr-1"></i>Supprimer
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Images preview -->
-                ${establishment.images && establishment.images.length > 0 ? `
-                    <div class="mt-4 flex space-x-2 overflow-x-auto">
-                        ${establishment.images.slice(0, 4).map(img => `
-                            <img src="${img}" alt="Preview" class="w-16 h-16 object-cover rounded-lg border border-gray-600">
-                        `).join('')}
-                        ${establishment.images.length > 4 ? `
-                            <div class="w-16 h-16 bg-gray-700 rounded-lg border border-gray-600 flex items-center justify-center">
-                                <span class="text-xs text-gray-400">+${establishment.images.length - 4}</span>
+                        <!-- Images preview -->
+                        ${establishment.images && establishment.images.length > 0 ? `
+                            <div class="mt-4 flex space-x-2 overflow-x-auto">
+                                ${establishment.images.slice(0, 4).map(img => `
+                                    <img src="${img}" alt="Preview" class="w-16 h-16 object-cover rounded-lg border border-gray-600">
+                                `).join('')}
+                                ${establishment.images.length > 4 ? `
+                                    <div class="w-16 h-16 bg-gray-700 rounded-lg border border-gray-600 flex items-center justify-center">
+                                        <span class="text-xs text-gray-400">+${establishment.images.length - 4}</span>
+                                    </div>
+                                ` : ''}
                             </div>
                         ` : ''}
                     </div>
-                ` : ''}
-            </div>
-        `;
-    }).join('');
-}
-
-// ✅ FONCTIONS UTILITAIRES
-function showLoading(show) {
-    const loading = document.getElementById('loading');
-    const list = document.getElementById('establishments-list');
-    
-    if (show) {
-        loading.classList.remove('hidden');
-        list.classList.add('hidden');
-    } else {
-        loading.classList.add('hidden');
-        list.classList.remove('hidden');
-    }
-}
-
-function showSuccess(message) {
-    const notification = document.createElement('div');
-    notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-    notification.innerHTML = `<i class="fas fa-check mr-2"></i>${message}`;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-
-function showError(message) {
-    const notification = document.createElement('div');
-    notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-    notification.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 5000);
-}
-
-// ✅ FONCTIONS MODAL ÉTABLISSEMENT AVEC MISE À JOUR LABELS
-function openAddModal() {
-    editingId = null;
-    document.getElementById('modal-title').textContent = 'Ajouter un établissement';
-    document.getElementById('form-submit-text').textContent = 'Ajouter';
-    document.getElementById('establishment-form').reset();
-    
-    // ✅ CORRECTION : Utiliser les valeurs singulières pour le formulaire
-    const typeMap = {
-        'hotels': 'hotel',
-        'restaurants': 'restaurant', 
-        'spas': 'spa'
-    };
-    
-    document.getElementById('form-type').value = typeMap[currentTab] || 'hotel';
-    
-    // ✅ NOUVEAU : Mettre à jour les labels
-    updateFeaturedLabels();
-    
-    document.getElementById('edit-modal').classList.remove('hidden');
-    document.getElementById('images-preview').innerHTML = '';
-    selectedImages = [];
-}
-
-function editEstablishment(id) {
-    const establishment = window.currentEstablishments.find(e => e.id === id);
-    if (!establishment) return;
-    
-    editingId = id;
-    document.getElementById('modal-title').textContent = 'Modifier l\'établissement';
-    document.getElementById('form-submit-text').textContent = 'Modifier';
-    
-    // ✅ CORRECTION : Mapping pour le formulaire
-    const categoryToFormType = {
-        'hotels': 'hotel',
-        'restaurants': 'restaurant',
-        'spas': 'spa',
-        'hotel': 'hotel',
-        'restaurant': 'restaurant', 
-        'spa': 'spa'
-    };
-    
-    // Remplir le formulaire
-    document.getElementById('form-name').value = establishment.name || '';
-    document.getElementById('form-type').value = categoryToFormType[establishment.category] || 'hotel';
-    document.getElementById('form-address').value = establishment.address || '';
-    document.getElementById('form-region').value = establishment.region || 'ile-de-france';
-    document.getElementById('form-larevue-rating').value = establishment.laRevueRating || '';
-    document.getElementById('form-user-rating').value = establishment.userRating || '';
-    document.getElementById('form-price-level').value = establishment.priceLevel || 3;
-    document.getElementById('form-description').value = establishment.description || '';
-    document.getElementById('form-is-featured').checked = establishment.isFeatured || false;
-    document.getElementById('form-reservation-url').value = establishment.reservationUrl || '';
-    document.getElementById('form-positive-reviews').value = establishment.positiveReviews || '';
-    document.getElementById('form-negative-reviews').value = establishment.negativeReviews || '';
-    document.getElementById('form-positive-example').value = establishment.positiveReviewExample || '';
-    document.getElementById('form-negative-example').value = establishment.negativeReviewExample || '';
-    document.getElementById('form-promo-code').value = establishment.promoCode || '';
-    document.getElementById('form-promo-discount').value = establishment.promoDiscount || '';
-    
-    // ✅ NOUVEAU : Mettre à jour les labels après remplissage
-    updateFeaturedLabels();
-    
-    document.getElementById('edit-modal').classList.remove('hidden');
-}
-
-function closeModal() {
-    document.getElementById('edit-modal').classList.add('hidden');
-    editingId = null;
-    selectedImages = [];
-}
-
-// ✅ GESTION FORMULAIRE ÉTABLISSEMENT
-document.getElementById('establishment-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const submitBtn = document.querySelector('#establishment-form button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enregistrement...';
-    submitBtn.disabled = true;
-    
-    try {
-        // Upload des images si présentes
-        let imageUrls = [];
-        if (selectedImages.length > 0) {
-            console.log('📸 Upload des images...');
-            imageUrls = await window.uploadImages(selectedImages);
+                `;
+            }).join('');
         }
-        
-        const formData = {
-            name: document.getElementById('form-name').value,
-            category: document.getElementById('form-type').value,
-            address: document.getElementById('form-address').value,
-            region: document.getElementById('form-region').value,
-            rating: parseFloat(document.getElementById('form-larevue-rating').value) || 7,
-            userRating: parseFloat(document.getElementById('form-user-rating').value) || 7,
-            priceLevel: parseInt(document.getElementById('form-price-level').value) || 3,
-            description: document.getElementById('form-description').value,
-            isFeatured: document.getElementById('form-is-featured').checked,
-            reservationUrl: document.getElementById('form-reservation-url').value,
-            positiveReviews: document.getElementById('form-positive-reviews').value,
-            negativeReviews: document.getElementById('form-negative-reviews').value,
-            positiveReviewExample: document.getElementById('form-positive-example').value,
-            negativeReviewExample: document.getElementById('form-negative-example').value,
-            promoCode: document.getElementById('form-promo-code').value,
-            promoDiscount: document.getElementById('form-promo-discount').value,
-            images: imageUrls
-        };
-        
-        console.log('📝 Données établissement à sauvegarder:', formData);
-        
-        if (editingId) {
-            // MISE À JOUR
-            const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId);
-            await window.firebaseModules.updateDoc(docRef, formData);
-            showSuccess(`Établissement ${formData.isFeatured ? '⭐ marqué comme favori' : 'modifié'} avec succès !`);
-        } else {
-            // CRÉATION
-            const result = await window.addNewEstablishment(formData);
-            if (result) {
-                showSuccess(`Établissement ${formData.isFeatured ? '⭐ créé et marqué comme favori' : 'créé'} avec succès !`);
+
+        // ✅ FONCTIONS UTILITAIRES
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const list = document.getElementById('establishments-list');
+            
+            if (show) {
+                loading.classList.remove('hidden');
+                list.classList.add('hidden');
             } else {
-                showError('Erreur lors de la création');
-                return;
+                loading.classList.add('hidden');
+                list.classList.remove('hidden');
             }
         }
-        
-        closeModal();
-        loadDashboard();
-        
-    } catch (error) {
-        console.error('❌ Erreur formulaire:', error);
-        showError('Erreur lors de la sauvegarde: ' + error.message);
-    } finally {
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    }
-});
 
-// ✅ AUTRES FONCTIONS UTILITAIRES
-async function editRating(id, type) {
-    const establishment = window.currentEstablishments.find(e => e.id === id);
-    if (!establishment) return;
-    
-    let currentValue, fieldName, displayName;
-    
-    switch(type) {
-        case 'overallRating':
-            currentValue = establishment.overallRating || establishment.rating || 0;
-            fieldName = 'overallRating';
-            displayName = 'générale';
-            break;
-        case 'laRevueRating':
-            currentValue = establishment.laRevueRating || 0;
-            fieldName = 'rating';
-            displayName = 'La Revue';
-            break;
-        case 'userRating':
-            currentValue = establishment.userRating || 0;
-            fieldName = 'userRating';
-            displayName = 'utilisateurs';
-            break;
-        default:
-            return;
-    }
-    
-    const newValue = prompt(`Nouvelle note ${displayName} (/10):`, currentValue);
-    
-    if (newValue === null || newValue === '') return;
-    
-    const rating = parseFloat(newValue);
-    if (isNaN(rating) || rating < 0 || rating > 10) {
-        showError('La note doit être entre 0 et 10');
-        return;
-    }
-    
-    const success = await window.updateEstablishmentRating(id, rating, fieldName);
-    if (success) {
-        showSuccess(`Note ${displayName} mise à jour !`);
-        
-        // ✅ Si c'est la note générale, recalculer automatiquement le classement
-        if (type === 'overallRating') {
-            showSuccess('Note générale mise à jour ! Recalcul du classement...');
+        function showSuccess(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.innerHTML = `<i class="fas fa-check mr-2"></i>${message}`;
+            document.body.appendChild(notification);
+            
             setTimeout(() => {
-                window.sortByRating();
-            }, 1000);
-        } else {
-            loadDashboard();
+                notification.remove();
+            }, 3000);
         }
-    } else {
-        showError('Erreur lors de la mise à jour');
-    }
-}
 
-async function deleteEstablishmentItem(id) {
-    const establishment = window.currentEstablishments.find(e => e.id === id);
-    if (!establishment) return;
-    
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer "${establishment.name}" ?`)) return;
-    
-    const success = await window.deleteEstablishment(id);
-    if (success) {
-        showSuccess('Établissement supprimé !');
-        loadDashboard();
-    } else {
-        showError('Erreur lors de la suppression');
-    }
-}
-
-function filterEstablishments() {
-    const query = document.getElementById('search-input').value.toLowerCase();
-    
-    if (currentTab === 'news') {
-        const items = document.querySelectorAll('.news-item');
-        items.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            const visible = text.includes(query);
-            item.style.display = visible ? 'block' : 'none';
-        });
-    } else if (currentTab === 'reviews') {
-        const items = document.querySelectorAll('.review-item');
-        items.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            const visible = text.includes(query);
-            item.style.display = visible ? 'block' : 'none';
-        });
-    } else {
-        const items = document.querySelectorAll('.ranking-item');
-        items.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            const visible = text.includes(query);
-            item.style.display = visible ? 'block' : 'none';
-        });
-    }
-}
-
-function recalculateRankings() {
-    if (!confirm('Recalculer automatiquement tous les classements ?')) return;
-    
-    showLoading(true);
-    
-    setTimeout(() => {
-        showSuccess('Classements recalculés !');
-        loadDashboard();
-    }, 2000);
-}
-
-function exportData() {
-    if (currentTab === 'news') {
-        exportNewsData();
-        return;
-    }
-    
-    if (currentTab === 'reviews') {
-        exportReviewsData();
-        return;
-    }
-    
-    const data = {
-        type: currentTab,
-        establishments: window.currentEstablishments,
-        exportDate: new Date().toISOString()
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `larevue-${currentTab}-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    showSuccess('Données exportées !');
-}
-
-// ✅ EVENT LISTENERS
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeModal();
-        closeNewsModal();
-        closeImportModal();
-    }
-});
-
-// ✅ GESTION AUTOMATIQUE DU FEATURED POUR ÉTABLISSEMENTS
-document.getElementById('form-is-featured').addEventListener('change', function(e) {
-    if (e.target.checked) {
-        const type = document.getElementById('form-type').value;
-        const typeName = type === 'hotel' ? 'hôtel' : type === 'restaurant' ? 'restaurant' : type === 'spa' ? 'spa' : 'établissement';
-        
-        if (!confirm(`⚠️ Attention : Un seul ${typeName} peut être "Notre ${type === 'hotel' ? 'Hôtel' : type === 'restaurant' ? 'Restaurant' : type === 'spa' ? 'Spa' : 'Établissement'} Favori du Moment" à la fois.\n\nEn activant cette option, tous les autres ${type}s perdront ce statut.\n\nContinuer ?`)) {
-            e.target.checked = false;
-            return;
+        function showError(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
         }
-    }
-});
 
-// ✅ FONCTION RAFRAÎCHISSEMENT FORCÉ
-window.forceRefresh = async () => {
-    const refreshBtn = event.target;
-    const originalContent = refreshBtn.innerHTML;
-    
-    // Animation bouton
-    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Actualisation...';
-    refreshBtn.disabled = true;
-    
-    try {
-        // Vider le cache
-        window.currentEstablishments = [];
-        window.currentNews = [];
-        window.currentReviews = [];
-        
-        // Recharger selon l'onglet
-        if (currentTab === 'news') {
-            await loadNewsTab();
-        } else if (currentTab === 'reviews') {
-            await loadReviewsTab();
-        } else {
-            await loadDashboard();
+        // ✅ FONCTIONS MODAL ÉTABLISSEMENT AVEC CALCUL AUTO NOTE GÉNÉRALE
+        function openAddModal() {
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Ajouter un établissement';
+            document.getElementById('form-submit-text').textContent = 'Ajouter';
+            document.getElementById('establishment-form').reset();
+            
+            // ✅ CORRECTION : Utiliser les valeurs singulières pour le formulaire
+            const typeMap = {
+                'hotels': 'hotel',
+                'restaurants': 'restaurant', 
+                'spas': 'spa'
+            };
+            
+            document.getElementById('form-type').value = typeMap[currentTab] || 'hotel';
+            
+            // ✅ NOUVEAU : Mettre à jour les labels
+            updateFeaturedLabels();
+            
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('images-preview').innerHTML = '';
+            selectedImages = [];
         }
-        
-        showSuccess('✅ Données actualisées !');
-        
-    } catch (error) {
-        console.error('Erreur rafraîchissement:', error);
-        showError('Erreur lors de l\'actualisation');
-    } finally {
-        // Restaurer le bouton
-        setTimeout(() => {
-            refreshBtn.innerHTML = originalContent;
-            refreshBtn.disabled = false;
-        }, 1000);
-    }
-};
 
-// ✅ INITIALISATION
-console.log('🎉 Dashboard La Revue avec tri par notes et import JSON !');
-console.log('✅ Nouvelles fonctionnalités ajoutées :');
-console.log('📊 Tri automatique par notes décroissantes');
-console.log('📦 Import d\'établissements via fichiers JSON');
-console.log('🔧 Correction des catégories spas/spa automatique');
+        function editEstablishment(id) {
+            const establishment = window.currentEstablishments.find(e => e.id === id);
+            if (!establishment) return;
+            
+            editingId = id;
+            document.getElementById('modal-title').textContent = 'Modifier l\'établissement';
+            document.getElementById('form-submit-text').textContent = 'Modifier';
+            
+            // ✅ CORRECTION : Mapping pour le formulaire
+            const categoryToFormType = {
+                'hotels': 'hotel',
+                'restaurants': 'restaurant',
+                'spas': 'spa',
+                'hotel': 'hotel',
+                'restaurant': 'restaurant', 
+                'spa': 'spa'
+            };
+            
+            // Remplir le formulaire
+            document.getElementById('form-name').value = establishment.name || '';
+            document.getElementById('form-type').value = categoryToFormType[establishment.category] || 'hotel';
+            document.getElementById('form-address').value = establishment.address || '';
+            document.getElementById('form-region').value = establishment.region || 'ile-de-france';
+            document.getElementById('form-larevue-rating').value = establishment.laRevueRating || '';
+            document.getElementById('form-user-rating').value = establishment.usersRating || '';
+            document.getElementById('form-price-level').value = establishment.priceLevel || 3;
+            document.getElementById('form-description').value = establishment.description || '';
+            document.getElementById('form-is-featured').checked = establishment.isFeatured || false;
+            document.getElementById('form-reservation-url').value = establishment.reservationUrl || '';
+            document.getElementById('form-positive-reviews').value = establishment.positiveReviews || '';
+            document.getElementById('form-negative-reviews').value = establishment.negativeReviews || '';
+            document.getElementById('form-positive-example').value = establishment.positiveReviewExample || '';
+            document.getElementById('form-negative-example').value = establishment.negativeReviewExample || '';
+            document.getElementById('form-promo-code').value = establishment.promoCode || '';
+            document.getElementById('form-promo-discount').value = establishment.promoDiscount || '';
+            
+            // ✅ NOUVEAU : Mettre à jour les labels après remplissage
+            updateFeaturedLabels();
+            
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
 
-</script>
+        function closeModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            editingId = null;
+            selectedImages = [];
+        }
+
+        // ✅ GESTION FORMULAIRE ÉTABLISSEMENT AVEC CALCUL AUTO NOTE GÉNÉRALE
+        document.getElementById('establishment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.querySelector('#establishment-form button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enregistrement...';
+            submitBtn.disabled = true;
+            
+            try {
+                // Upload des images si présentes
+                let imageUrls = [];
+                if (selectedImages.length > 0) {
+                    console.log('📸 Upload des images...');
+                    imageUrls = await window.uploadImages(selectedImages);
+                }
+                
+                const laRevueRating = parseFloat(document.getElementById('form-larevue-rating').value) || 7;
+                const usersRating = parseFloat(document.getElementById('form-user-rating').value) || 7;
+                
+                const formData = {
+                    name: document.getElementById('form-name').value,
+                    category: document.getElementById('form-type').value,
+                    address: document.getElementById('form-address').value,
+                    region: document.getElementById('form-region').value,
+                    laRevueRating: laRevueRating,
+                    rating: laRevueRating, // Pour compatibilité
+                    usersRating: usersRating,
+                    userRating: usersRating, // Pour compatibilité
+                    overallRating: window.calculateOverallRating(laRevueRating, usersRating), // ✅ CALCUL AUTO
+                    priceLevel: parseInt(document.getElementById('form-price-level').value) || 3,
+                    description: document.getElementById('form-description').value,
+                    isFeatured: document.getElementById('form-is-featured').checked,
+                    reservationUrl: document.getElementById('form-reservation-url').value,
+                    positiveReviews: document.getElementById('form-positive-reviews').value,
+                    negativeReviews: document.getElementById('form-negative-reviews').value,
+                    positiveReviewExample: document.getElementById('form-positive-example').value,
+                    negativeReviewExample: document.getElementById('form-negative-example').value,
+                    promoCode: document.getElementById('form-promo-code').value,
+                    promoDiscount: document.getElementById('form-promo-discount').value,
+                    images: imageUrls
+                };
+                
+                console.log('📝 Données établissement à sauvegarder:', formData);
+                
+                if (editingId) {
+                    // MISE À JOUR
+                    const docRef = window.firebaseModules.doc(window.firebaseApp.db, window.firebaseApp.COLLECTIONS.ESTABLISHMENTS, editingId);
+                    await window.firebaseModules.updateDoc(docRef, formData);
+                    showSuccess(`Établissement ${formData.isFeatured ? '⭐ marqué comme favori' : 'modifié'} avec succès !`);
+                } else {
+                    // CRÉATION
+                    const result = await window.addNewEstablishment(formData);
+                    if (result) {
+                        showSuccess(`Établissement ${formData.isFeatured ? '⭐ créé et marqué comme favori' : 'créé'} avec succès !`);
+                    } else {
+                        showError('Erreur lors de la création');
+                        return;
+                    }
+                }
+                
+                closeModal();
+                loadDashboard();
+                
+            } catch (error) {
+                console.error('❌ Erreur formulaire:', error);
+                showError('Erreur lors de la sauvegarde: ' + error.message);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // ✅ FONCTION EDIT RATING AVEC RECALCUL AUTO NOTE GÉNÉRALE
+        async function editRating(id, type) {
+            const establishment = window.currentEstablishments.find(e => e.id === id);
+            if (!establishment) return;
+            
+            let currentValue, fieldName, displayName;
+            
+            switch(type) {
+                case 'overallRating':
+                    currentValue = window.calculateOverallRating(establishment.laRevueRating, establishment.usersRating);
+                    fieldName = 'overallRating';
+                    displayName = 'générale';
+                    break;
+                case 'laRevueRating':
+                    currentValue = establishment.laRevueRating || 0;
+                    fieldName = 'laRevueRating';
+                    displayName = 'La Revue';
+                    break;
+                case 'usersRating':
+                    currentValue = establishment.usersRating || 0;
+                    fieldName = 'usersRating';
+                    displayName = 'utilisateurs';
+                    break;
+                default:
+                    return;
+            }
+            
+            const newValue = prompt(`Nouvelle note ${displayName} (/10):`, currentValue);
+            
+            if (newValue === null || newValue === '') return;
+            
+            const rating = parseFloat(newValue);
+            if (isNaN(rating) || rating < 0 || rating > 10) {
+                showError('La note doit être entre 0 et 10');
+                return;
+            }
+            
+            const success = await window.updateEstablishmentRating(id, rating, fieldName);
+            if (success) {
+                showSuccess(`Note ${displayName} mise à jour !`);
+                
+                // ✅ Recharger pour voir le nouveau calcul
+                loadDashboard();
+            } else {
+                showError('Erreur lors de la mise à jour');
+            }
+        }
+
+        async function deleteEstablishmentItem(id) {
+            const establishment = window.currentEstablishments.find(e => e.id === id);
+            if (!establishment) return;
+            
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer "${establishment.name}" ?`)) return;
+            
+            const success = await window.deleteEstablishment(id);
+            if (success) {
+                showSuccess('Établissement supprimé !');
+                loadDashboard();
+            } else {
+                showError('Erreur lors de la suppression');
+            }
+        }
+
+        function filterEstablishments() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            
+            if (currentTab === 'news') {
+                const items = document.querySelectorAll('.news-item');
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    const visible = text.includes(query);
+                    item.style.display = visible ? 'block' : 'none';
+                });
+            } else if (currentTab === 'reviews') {
+                const items = document.querySelectorAll('.review-item');
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    const visible = text.includes(query);
+                    item.style.display = visible ? 'block' : 'none';
+                });
+            } else {
+                const items = document.querySelectorAll('.ranking-item');
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    const visible = text.includes(query);
+                    item.style.display = visible ? 'block' : 'none';
+                });
+            }
+        }
+
+        function recalculateRankings() {
+            if (!confirm('Recalculer automatiquement tous les classements ?')) return;
+            
+            showLoading(true);
+            
+            setTimeout(() => {
+                showSuccess('Classements recalculés !');
+                loadDashboard();
+            }, 2000);
+        }
+
+        function exportData() {
+            if (currentTab === 'news') {
+                exportNewsData();
+                return;
+            }
+            
+            if (currentTab === 'reviews') {
+                exportReviewsData();
+                return;
+            }
+            
+            const data = {
+                type: currentTab,
+                establishments: window.currentEstablishments,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `larevue-${currentTab}-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showSuccess('Données exportées !');
+        }
+
+        // ✅ EVENT LISTENERS
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeNewsModal();
+                closeImportModal();
+            }
+        });
+
+        // ✅ GESTION AUTOMATIQUE DU FEATURED POUR ÉTABLISSEMENTS
+        document.getElementById('form-is-featured').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                const type = document.getElementById('form-type').value;
+                const typeName = type === 'hotel' ? 'hôtel' : type === 'restaurant' ? 'restaurant' : type === 'spa' ? 'spa' : 'établissement';
+                
+                if (!confirm(`⚠️ Attention : Un seul ${typeName} peut être "Notre ${type === 'hotel' ? 'Hôtel' : type === 'restaurant' ? 'Restaurant' : type === 'spa' ? 'Spa' : 'Établissement'} Favori du Moment" à la fois.\n\nEn activant cette option, tous les autres ${type}s perdront ce statut.\n\nContinuer ?`)) {
+                    e.target.checked = false;
+                    return;
+                }
+            }
+        });
+
+        // ✅ FONCTION RAFRAÎCHISSEMENT FORCÉ
+        window.forceRefresh = async () => {
+            const refreshBtn = event.target;
+            const originalContent = refreshBtn.innerHTML;
+            
+            // Animation bouton
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Actualisation...';
+            refreshBtn.disabled = true;
+            
+            try {
+                // Vider le cache
+                window.currentEstablishments = [];
+                window.currentNews = [];
+                window.currentReviews = [];
+                
+                // Recharger selon l'onglet
+                if (currentTab === 'news') {
+                    await loadNewsTab();
+                } else if (currentTab === 'reviews') {
+                    await loadReviewsTab();
+                } else {
+                    await loadDashboard();
+                }
+                
+                showSuccess('✅ Données actualisées !');
+                
+            } catch (error) {
+                console.error('Erreur rafraîchissement:', error);
+                showError('Erreur lors de l\'actualisation');
+            } finally {
+                // Restaurer le bouton
+                setTimeout(() => {
+                    refreshBtn.innerHTML = originalContent;
+                    refreshBtn.disabled = false;
+                }, 1000);
+            }
+        };
+
+        // ✅ INITIALISATION
+        console.log('🎉 Dashboard La Revue avec calcul automatique des notes générales !');
+        console.log('✅ Nouvelles fonctionnalités :');
+        console.log('🧮 Calcul automatique : Note Générale = Moyenne(La Revue + Clients)');
+        console.log('📊 Tri par notes corrigé avec vraies moyennes');
+        console.log('🔄 Bouton recalcul global pour corriger les anciennes données');
+        console.log('📦 Import JSON avec calcul automatique des notes');
+        console.log('📰 Gestion complète des actualités');
+        console.log('💬 Modération complète des avis');
+
+    </script>
 
 </body>
 </html>

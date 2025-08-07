@@ -2733,8 +2733,29 @@ async function editRating(id, type) {
     const establishment = window.currentEstablishments.find(e => e.id === id);
     if (!establishment) return;
     
-    const currentValue = type === 'laRevueRating' ? establishment.laRevueRating : establishment.userRating;
-    const newValue = prompt(`Nouvelle note ${type === 'laRevueRating' ? 'La Revue' : 'utilisateurs'} (/10):`, currentValue);
+    let currentValue, fieldName, displayName;
+    
+    switch(type) {
+        case 'overallRating':
+            currentValue = establishment.overallRating || establishment.rating || 0;
+            fieldName = 'overallRating';
+            displayName = 'générale';
+            break;
+        case 'laRevueRating':
+            currentValue = establishment.laRevueRating || 0;
+            fieldName = 'rating';
+            displayName = 'La Revue';
+            break;
+        case 'userRating':
+            currentValue = establishment.userRating || 0;
+            fieldName = 'userRating';
+            displayName = 'utilisateurs';
+            break;
+        default:
+            return;
+    }
+    
+    const newValue = prompt(`Nouvelle note ${displayName} (/10):`, currentValue);
     
     if (newValue === null || newValue === '') return;
     
@@ -2744,10 +2765,19 @@ async function editRating(id, type) {
         return;
     }
     
-    const success = await window.updateEstablishmentRating(id, rating, type === 'laRevueRating' ? 'rating' : 'userRating');
+    const success = await window.updateEstablishmentRating(id, rating, fieldName);
     if (success) {
-        showSuccess('Note mise à jour !');
-        loadDashboard();
+        showSuccess(`Note ${displayName} mise à jour !`);
+        
+        // ✅ Si c'est la note générale, recalculer automatiquement le classement
+        if (type === 'overallRating') {
+            showSuccess('Note générale mise à jour ! Recalcul du classement...');
+            setTimeout(() => {
+                window.sortByRating();
+            }, 1000);
+        } else {
+            loadDashboard();
+        }
     } else {
         showError('Erreur lors de la mise à jour');
     }

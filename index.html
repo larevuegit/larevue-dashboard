@@ -131,22 +131,26 @@
         };
 
         // ✅ NOUVELLE FONCTION TRI PAR NOTES
-        window.sortByRating = async () => {
-            try {
-                if (!window.currentEstablishments || window.currentEstablishments.length === 0) {
-                    showError('Aucun établissement à trier');
-                    return;
-                }
+window.sortByRating = async () => {
+    try {
+        if (!window.currentEstablishments || window.currentEstablishments.length === 0) {
+            showError('Aucun établissement à trier');
+            return;
+        }
 
-                console.log('📊 Tri par notes en cours...');
-                showLoading(true);
+        console.log('📊 Tri par note générale en cours...');
+        showLoading(true);
 
-                // Trier par note décroissante (La Revue rating)
-                const sortedEstablishments = [...window.currentEstablishments].sort((a, b) => {
-                    const ratingA = parseFloat(a.laRevueRating || 0);
-                    const ratingB = parseFloat(b.laRevueRating || 0);
-                    return ratingB - ratingA; // Tri décroissant
-                });
+        // ✅ CORRECTION : Trier par note générale (overallRating ou rating)
+        const sortedEstablishments = [...window.currentEstablishments].sort((a, b) => {
+            // Utiliser la note générale, puis laRevueRating en fallback
+            const ratingA = parseFloat(a.overallRating || a.rating || a.laRevueRating || 0);
+            const ratingB = parseFloat(b.overallRating || b.rating || b.laRevueRating || 0);
+            
+            console.log(`Comparaison: ${a.name} (${ratingA}) vs ${b.name} (${ratingB})`);
+            
+            return ratingB - ratingA; // Tri décroissant (plus haute note = rang 1)
+        });
 
                 // Mettre à jour les rangs dans Firebase
                 const updatePromises = sortedEstablishments.map(async (establishment, index) => {

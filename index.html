@@ -486,22 +486,29 @@
             }
         };
 
+        // ✅ FONCTION MODIFIÉE POUR GÉRER MULTIPLE FEATURED PAR TYPE D'ÉTABLISSEMENT
         window.addNewNews = async (data) => {
             try {
                 console.log('🔥 Création nouvelle actualité:', data);
                 
-                // Si featured, désactiver les autres
+                // Si featured, désactiver les autres actualités du MÊME type d'établissement
                 if (data.isFeatured) {
-                    const allNews = await getDocs(collection(db, COLLECTIONS.NEWS));
+                    const featuredNewsQuery = await getDocs(
+                        query(
+                            collection(db, COLLECTIONS.NEWS),
+                            where('isFeatured', '==', true),
+                            where('establishmentType', '==', data.establishmentType)
+                        )
+                    );
+                    
                     const updatePromises = [];
-                    allNews.forEach((doc) => {
-                        const newsData = doc.data();
-                        if (newsData.isFeatured === true) {
-                            const docRef = window.firebaseModules.doc(db, COLLECTIONS.NEWS, doc.id);
-                            updatePromises.push(window.firebaseModules.updateDoc(docRef, { isFeatured: false }));
-                        }
+                    featuredNewsQuery.forEach((doc) => {
+                        const docRef = window.firebaseModules.doc(db, COLLECTIONS.NEWS, doc.id);
+                        updatePromises.push(window.firebaseModules.updateDoc(docRef, { isFeatured: false }));
                     });
                     await Promise.all(updatePromises);
+                    
+                    console.log(`✅ ${updatePromises.length} actualité(s) ${data.establishmentType} désactivée(s) de "à la une"`);
                 }
                 
                 const docRef = await addDoc(collection(db, COLLECTIONS.NEWS), {
@@ -517,20 +524,30 @@
             }
         };
 
+        // ✅ FONCTION MODIFIÉE POUR GÉRER MULTIPLE FEATURED PAR TYPE D'ÉTABLISSEMENT
         window.updateNews = async (id, data) => {
             try {
-                // Si featured, désactiver les autres
+                // Si featured, désactiver les autres actualités du MÊME type d'établissement
                 if (data.isFeatured) {
-                    const allNews = await getDocs(collection(db, COLLECTIONS.NEWS));
+                    const featuredNewsQuery = await getDocs(
+                        query(
+                            collection(db, COLLECTIONS.NEWS),
+                            where('isFeatured', '==', true),
+                            where('establishmentType', '==', data.establishmentType)
+                        )
+                    );
+                    
                     const updatePromises = [];
-                    allNews.forEach((doc) => {
-                        const newsData = doc.data();
-                        if (newsData.isFeatured === true && doc.id !== id) {
+                    featuredNewsQuery.forEach((doc) => {
+                        // Ne pas désactiver l'actualité qu'on est en train de modifier
+                        if (doc.id !== id) {
                             const docRef = window.firebaseModules.doc(db, COLLECTIONS.NEWS, doc.id);
                             updatePromises.push(window.firebaseModules.updateDoc(docRef, { isFeatured: false }));
                         }
                     });
                     await Promise.all(updatePromises);
+                    
+                    console.log(`✅ ${updatePromises.length} autre(s) actualité(s) ${data.establishmentType} désactivée(s) de "à la une"`);
                 }
                 
                 const docRef = doc(db, COLLECTIONS.NEWS, id);
@@ -1635,7 +1652,7 @@
                             <input type="checkbox" id="news-featured" class="mr-2">
                             Marquer comme "Actualité à la Une"
                         </label>
-                        <p class="text-xs text-gray-400">Cette actualité apparaîtra en premier dans l'app</p>
+                        <p class="text-xs text-gray-400">Cette actualité apparaîtra en premier dans l'app pour ce type d'établissement</p>
                     </div>
                 </div>
 
@@ -2417,7 +2434,10 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
         // ✅ GESTION AUTOMATIQUE DU FEATURED POUR ACTUALITÉS
         document.getElementById('news-featured').addEventListener('change', function(e) {
             if (e.target.checked) {
-                if (!confirm('⚠️ Attention : Une seule actualité peut être "à la Une" à la fois.\n\nEn activant cette option, toutes les autres actualités perdront ce statut.\n\nContinuer ?')) {
+                const establishmentType = document.getElementById('news-establishment-type').value;
+                const typeLabel = getEstablishmentLabel(establishmentType);
+                
+                if (!confirm(`⚠️ Attention : Une seule actualité peut être "à la Une" pour les ${typeLabel} à la fois.\n\nEn activant cette option, toutes les autres actualités ${typeLabel} perdront ce statut.\n\nContinuer ?`)) {
                     e.target.checked = false;
                     return;
                 }
@@ -3128,15 +3148,16 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
         };
 
         // ✅ INITIALISATION
-        console.log('🎉 Dashboard La Revue avec tri automatique après recalcul !');
+        console.log('🎉 Dashboard La Revue avec actualités "à la une" par type d\'établissement !');
         console.log('✅ Nouvelles fonctionnalités :');
         console.log('🧮 Calcul automatique : Note Générale = Moyenne(La Revue + Clients)');
         console.log('📊 Tri par notes corrigé avec vraies moyennes');
         console.log('🔄 Recalcul avec proposition de tri automatique');
         console.log('🎯 Nouveau bouton "Recalculer + Trier" pour action combinée');
         console.log('📦 Import JSON avec calcul automatique des notes');
-        console.log('📰 Gestion complète des actualités');
+        console.log('📰 Gestion complète des actualités avec featured par type');
         console.log('💬 Modération complète des avis');
+        console.log('🏆 NOUVEAU : Une actualité "à la une" par type d\'établissement !');
 
     </script>
 

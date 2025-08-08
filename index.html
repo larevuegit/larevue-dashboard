@@ -49,19 +49,15 @@
         window.currentReviews = [];
         window.currentStats = { hotels: 0, restaurants: 0, spas: 0, totalReviews: 0 };
 
-        // ✅ NOUVELLE FONCTION DE CALCUL DE LA NOTE GÉNÉRALE
+        // ✅ FONCTION DE CALCUL DE LA NOTE GÉNÉRALE
         function calculateOverallRating(laRevueRating, usersRating) {
             const laRevue = parseFloat(laRevueRating) || 0;
             const users = parseFloat(usersRating) || 0;
             
-            // Si les deux notes sont à 0, retourner 0
             if (laRevue === 0 && users === 0) return 0;
-            
-            // Si une seule note est disponible, la retourner
             if (laRevue === 0) return users;
             if (users === 0) return laRevue;
             
-            // Calculer la moyenne des deux notes
             return parseFloat(((laRevue + users) / 2).toFixed(1));
         }
         window.calculateOverallRating = calculateOverallRating;
@@ -127,7 +123,6 @@
                     return;
                 }
                 
-                // Appliquer les corrections
                 const updatePromises = corrections.map(correction => {
                     const docRef = doc(db, COLLECTIONS.ESTABLISHMENTS, correction.id);
                     return updateDoc(docRef, { category: correction.to });
@@ -138,7 +133,6 @@
                 showSuccess(`✅ ${corrections.length} catégories corrigées !`);
                 console.log('✅ Corrections appliquées:', corrections);
                 
-                // Recharger la page
                 loadDashboard();
                 
             } catch (error) {
@@ -182,10 +176,8 @@
                 
                 showMessage(`✅ ${updated} notes générales recalculées !`, 'success');
                 
-                // Recharger les données
                 await loadDashboard();
                 
-                // ✅ NOUVEAU : Proposer le tri automatique
                 if (updated > 0) {
                     setTimeout(() => {
                         if (confirm(`🏆 ${updated} notes ont été mises à jour !\n\nVoulez-vous trier automatiquement le classement par notes générales ?`)) {
@@ -209,7 +201,6 @@
             try {
                 showMessage('🔄 Étape 1/2 : Recalcul des notes générales...', 'info');
                 
-                // Étape 1 : Recalculer les notes
                 const establishmentsRef = collection(db, COLLECTIONS.ESTABLISHMENTS);
                 const snapshot = await getDocs(establishmentsRef);
                 let updated = 0;
@@ -236,13 +227,10 @@
                 
                 showMessage(`✅ Étape 1/2 terminée : ${updated} notes recalculées !`, 'success');
                 
-                // Étape 2 : Recharger et trier
                 showMessage('🔄 Étape 2/2 : Tri par notes générales...', 'info');
                 
-                // Recharger les données avec les nouvelles notes
                 await loadDashboard();
                 
-                // Attendre un peu puis trier
                 setTimeout(async () => {
                     await window.sortByRating();
                     showMessage('🎉 Action terminée : Notes recalculées et classement trié !', 'success');
@@ -266,24 +254,21 @@
                 showMessage('🔄 Tri du classement par notes générales...', 'info');
                 showLoading(true);
 
-                // Calculer et trier par note générale
                 const sortedEstablishments = [...window.currentEstablishments].sort((a, b) => {
                     const ratingA = calculateOverallRating(a.laRevueRating, a.usersRating);
                     const ratingB = calculateOverallRating(b.laRevueRating, b.usersRating);
                     
                     console.log(`Comparaison: ${a.name} (${ratingA}) vs ${b.name} (${ratingB})`);
                     
-                    return ratingB - ratingA; // Tri décroissant
+                    return ratingB - ratingA;
                 });
 
-                // ✅ AFFICHER LE TOP 3 DANS LE MESSAGE
                 const top3 = sortedEstablishments.slice(0, 3).map((est, index) => {
                     const rating = calculateOverallRating(est.laRevueRating, est.usersRating);
                     const medal = index === 0 ? '🏆' : index === 1 ? '🥈' : '🥉';
                     return `${medal} ${est.name} (${rating}/10)`;
                 }).join('\n');
 
-                // Mettre à jour les rangs dans Firebase
                 const updatePromises = sortedEstablishments.map(async (establishment, index) => {
                     const newRank = index + 1;
                     
@@ -302,19 +287,15 @@
                 const topEstablishment = sortedEstablishments[0];
                 const topRating = calculateOverallRating(topEstablishment.laRevueRating, topEstablishment.usersRating);
 
-                // ✅ MESSAGE DÉTAILLÉ AVEC TOP 3
                 setTimeout(() => {
                     showMessage(`🏆 Classement mis à jour !\n\nNouveau podium :\n${top3}`, 'success');
                     
-                    // Petit délai puis afficher une alerte avec plus de détails
                     setTimeout(() => {
                         if (confirm(`🎯 Tri terminé avec succès !\n\n${top3}\n\nVoulez-vous voir le classement complet ?`)) {
-                            // Le classement est déjà affiché, pas besoin de recharger
                         }
                     }, 2000);
                 }, 500);
                 
-                // Recharger la liste pour afficher le nouveau tri
                 await loadDashboard();
                 
             } catch (error) {
@@ -340,14 +321,12 @@
 
                 for (const establishment of jsonData) {
                     try {
-                        // Validation des données requises
                         if (!establishment.name || !establishment.category) {
                             errors.push(`Établissement sans nom ou catégorie : ${JSON.stringify(establishment)}`);
                             errorCount++;
                             continue;
                         }
 
-                        // Normaliser les données
                         const laRevueRating = parseFloat(establishment.rating || establishment.laRevueRating || 7);
                         const usersRating = parseFloat(establishment.userRating || establishment.usersRating || 7);
                         const overallRating = calculateOverallRating(laRevueRating, usersRating);
@@ -373,12 +352,18 @@
                             promoCode: establishment.promoCode || '',
                             promoDiscount: establishment.promoDiscount || '',
                             images: establishment.images || [],
+                            // ✅ NOUVEAU : Champs d'évaluation détaillée
+                            detailedEvaluation: establishment.detailedEvaluation || {
+                                criteriaRatings: {},
+                                strengths: [],
+                                weaknesses: [],
+                                summary: ''
+                            },
                             topPosition: establishment.rank || establishment.topPosition || (window.currentEstablishments.length + successCount + 1),
                             createdAt: new Date(),
                             isActive: true
                         };
 
-                        // Ajouter à Firebase
                         const docRef = await addDoc(collection(db, COLLECTIONS.ESTABLISHMENTS), normalizedData);
                         console.log(`✅ Établissement créé: ${normalizedData.name} (${docRef.id})`);
                         successCount++;
@@ -390,7 +375,6 @@
                     }
                 }
 
-                // Afficher les résultats
                 if (successCount > 0) {
                     showSuccess(`✅ ${successCount} établissement${successCount > 1 ? 's' : ''} importé${successCount > 1 ? 's' : ''} avec succès !`);
                 }
@@ -400,7 +384,6 @@
                     showError(`❌ ${errorCount} erreur${errorCount > 1 ? 's' : ''} lors de l'import. Voir la console pour les détails.`);
                 }
 
-                // Recharger la liste
                 await loadDashboard();
 
             } catch (error) {
@@ -491,7 +474,6 @@
             try {
                 console.log('🔥 Création nouvelle actualité:', data);
                 
-                // Si featured, désactiver les autres actualités du MÊME type d'établissement
                 if (data.isFeatured) {
                     const featuredNewsQuery = await getDocs(
                         query(
@@ -524,10 +506,8 @@
             }
         };
 
-        // ✅ FONCTION MODIFIÉE POUR GÉRER MULTIPLE FEATURED PAR TYPE D'ÉTABLISSEMENT
         window.updateNews = async (id, data) => {
             try {
-                // Si featured, désactiver les autres actualités du MÊME type d'établissement
                 if (data.isFeatured) {
                     const featuredNewsQuery = await getDocs(
                         query(
@@ -539,7 +519,6 @@
                     
                     const updatePromises = [];
                     featuredNewsQuery.forEach((doc) => {
-                        // Ne pas désactiver l'actualité qu'on est en train de modifier
                         if (doc.id !== id) {
                             const docRef = window.firebaseModules.doc(db, COLLECTIONS.NEWS, doc.id);
                             updatePromises.push(window.firebaseModules.updateDoc(docRef, { isFeatured: false }));
@@ -586,11 +565,9 @@
                     const data = doc.data();
                     console.log('🔍 Document trouvé:', doc.id, data);
                     
-                    // ✅ CORRECTION PRINCIPALE : Support complet des formats pluriels et singuliers
                     const docType = data.category || data.type;
                     let shouldInclude = false;
                     
-                    // Vérification selon le type demandé
                     if (type === 'hotels') {
                         shouldInclude = docType === 'hotels' || docType === 'hotel';
                     } else if (type === 'restaurants') {
@@ -627,7 +604,14 @@
                             positiveReviews: data.positiveReviews || '89%',
                             negativeReviews: data.negativeReviews || '11%',
                             positiveReviewExample: data.positiveReviewExample || '',
-                            negativeReviewExample: data.negativeReviewExample || ''
+                            negativeReviewExample: data.negativeReviewExample || '',
+                            // ✅ NOUVEAU : Évaluation détaillée
+                            detailedEvaluation: data.detailedEvaluation || {
+                                criteriaRatings: {},
+                                strengths: [],
+                                weaknesses: [],
+                                summary: ''
+                            }
                         });
                     } else {
                         console.log(`❌ Établissement ${docType} EXCLU pour la recherche ${type}:`, data.name);
@@ -668,21 +652,18 @@
 
                 const updates = {};
                 
-                // Mettre à jour le champ spécifique
                 if (type === 'overallRating') {
                     updates.overallRating = rating;
                 } else if (type === 'laRevueRating' || type === 'rating') {
                     updates.laRevueRating = rating;
-                    updates.rating = rating; // Pour compatibilité
+                    updates.rating = rating;
                     
-                    // Recalculer la note générale
                     const newOverallRating = calculateOverallRating(rating, establishment.usersRating);
                     updates.overallRating = newOverallRating;
                 } else if (type === 'usersRating' || type === 'userRating') {
                     updates.usersRating = rating;
-                    updates.userRating = rating; // Pour compatibilité
+                    updates.userRating = rating;
                     
-                    // Recalculer la note générale
                     const newOverallRating = calculateOverallRating(establishment.laRevueRating, rating);
                     updates.overallRating = newOverallRating;
                 }
@@ -697,11 +678,23 @@
             }
         };
 
+        // ✅ NOUVELLE FONCTION MISE À JOUR ÉVALUATION DÉTAILLÉE
+        window.updateEstablishmentDetailedEvaluation = async (id, detailedEvaluation) => {
+            try {
+                const docRef = doc(db, COLLECTIONS.ESTABLISHMENTS, id);
+                await updateDoc(docRef, { detailedEvaluation });
+                console.log(`✅ Évaluation détaillée mise à jour pour ${id}:`, detailedEvaluation);
+                return true;
+            } catch (error) {
+                console.error('❌ Erreur mise à jour évaluation détaillée:', error);
+                return false;
+            }
+        };
+
         window.addNewEstablishment = async (data) => {
             try {
                 console.log('🔥 Création nouvel établissement:', data);
                 
-                // Calculer la note générale
                 const overallRating = calculateOverallRating(data.rating || data.laRevueRating, data.userRating || data.usersRating);
                 
                 const establishmentData = {
@@ -709,6 +702,13 @@
                     laRevueRating: data.rating || data.laRevueRating || 7,
                     usersRating: data.userRating || data.usersRating || 7,
                     overallRating: overallRating,
+                    // ✅ NOUVEAU : Initialiser l'évaluation détaillée
+                    detailedEvaluation: data.detailedEvaluation || {
+                        criteriaRatings: {},
+                        strengths: [],
+                        weaknesses: [],
+                        summary: ''
+                    },
                     createdAt: new Date(),
                     topPosition: window.currentEstablishments.length + 1,
                     isActive: true
@@ -746,12 +746,10 @@
             const notification = document.createElement('div');
             notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-md`;
             
-            // ✅ SUPPORT MULTI-LIGNES
             notification.innerHTML = `<pre class="whitespace-pre-wrap font-sans">${message}</pre>`;
             
             document.body.appendChild(notification);
             
-            // ✅ DURÉE ADAPTÉE AU CONTENU
             const duration = message.includes('\n') ? 5000 : 3000;
             
             setTimeout(() => {
@@ -810,7 +808,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ✅ STYLES POUR IMAGES */
         .image-preview {
             position: relative;
             overflow: hidden;
@@ -839,7 +836,6 @@
             justify-content: center;
         }
 
-        /* ✅ STYLES FEATURED */
         .featured-badge {
             background: linear-gradient(135deg, #fbbf24, #f59e0b);
             border: 2px solid #fbbf24;
@@ -851,7 +847,6 @@
             background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
         }
 
-        /* ✅ STYLES POUR LES ACTUALITÉS */
         .news-item {
             transition: all 0.3s ease;
             border: 1px solid #374151;
@@ -962,7 +957,6 @@
             font-weight: bold;
         }
 
-        /* ✅ STYLES POUR LES AVIS */
         .review-item {
             transition: all 0.3s ease;
             border: 1px solid #374151;
@@ -1068,7 +1062,6 @@
             font-weight: bold;
         }
 
-        /* ✅ STYLES POUR LAYOUT FEATURED CORRIGÉ */
         .featured-scores-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -1112,7 +1105,6 @@
             color: #FBBF24;
         }
 
-        /* ✅ STYLES POUR LA ZONE DE DRAG & DROP */
         .drag-drop-zone {
             border: 2px dashed #4B5563;
             border-radius: 12px;
@@ -1155,6 +1147,172 @@
             white-space: pre-wrap;
             color: #E5E7EB;
         }
+
+        /* ✅ NOUVEAUX STYLES POUR ÉVALUATION DÉTAILLÉE */
+        .detailed-evaluation-section {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(67, 56, 202, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .evaluation-criteria-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .criteria-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .criteria-input {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .criteria-input label {
+            min-width: 120px;
+            font-size: 14px;
+            color: #D1D5DB;
+        }
+
+        .criteria-input input {
+            flex: 1;
+            background: #374151;
+            border: 1px solid #4B5563;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .strengths-weaknesses-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .strength-weakness-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .strength-weakness-section h5 {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .strength-weakness-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .strength-weakness-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+        }
+
+        .strength-weakness-item input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 14px;
+        }
+
+        .strength-weakness-item input:focus {
+            outline: none;
+        }
+
+        .strength-weakness-item .remove-btn {
+            background: rgba(239, 68, 68, 0.8);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .add-item-btn {
+            background: rgba(34, 197, 94, 0.8);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .evaluation-summary textarea {
+            width: 100%;
+            min-height: 100px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid #4B5563;
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .evaluation-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(75, 85, 99, 0.5);
+        }
+
+        .evaluation-preview {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .evaluation-preview h4 {
+            color: #FBBF24;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .evaluation-preview-content {
+            color: #D1D5DB;
+            font-size: 14px;
+            line-height: 1.6;
+        }
     </style>
 </head>
 
@@ -1170,7 +1328,7 @@
                     </div>
                     <div>
                         <h1 class="text-4xl font-bold text-yellow-400">Dashboard Admin - La Revue</h1>
-                        <p class="text-gray-300 text-lg mt-1">Gestion du classement et des établissements</p>
+                        <p class="text-gray-300 text-lg mt-1">Gestion du classement et des établissements avec évaluations détaillées</p>
                     </div>
                 </div>
                 
@@ -1402,9 +1560,9 @@
         </div>
     </div>
 
-    <!-- ✅ MODAL ÉTABLISSEMENT AVEC TEXTE DYNAMIQUE -->
+    <!-- ✅ MODAL ÉTABLISSEMENT AVEC ÉVALUATION DÉTAILLÉE -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
-        <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-4xl w-full max-h-screen overflow-y-auto">
+        <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-6xl w-full max-h-screen overflow-y-auto">
             <div class="p-6 border-b border-gray-700">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold" id="modal-title">Ajouter un établissement</h3>
@@ -1431,7 +1589,7 @@
                     </div>
                 </div>
 
-                <!-- ✅ ADRESSE ET RÉGION AVEC 18 RÉGIONS -->
+                <!-- Adresse et région -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Adresse *</label>
@@ -1483,7 +1641,77 @@
                     </div>
                 </div>
 
-                <!-- ✅ SECTION FEATURED DYNAMIQUE -->
+                <!-- ✅ NOUVELLE SECTION : ÉVALUATION DÉTAILLÉE -->
+                <div class="detailed-evaluation-section">
+                    <h4 class="text-xl font-bold text-indigo-400 mb-6 flex items-center">
+                        <i class="fas fa-chart-line mr-3"></i>Évaluation Détaillée
+                    </h4>
+                    
+                    <!-- Notes par critères -->
+                    <div class="evaluation-criteria-grid" id="criteria-ratings-container">
+                        <div class="criteria-input-group">
+                            <h5 class="text-lg font-semibold text-gray-300 mb-3">Notes par Critères (/10)</h5>
+                            <!-- Les critères seront générés dynamiquement selon le type d'établissement -->
+                        </div>
+                    </div>
+                    
+                    <!-- Points forts et faibles -->
+                    <div class="strengths-weaknesses-container">
+                        <div class="strength-weakness-section">
+                            <h5 class="text-green-400">
+                                <i class="fas fa-plus-circle"></i>
+                                Points Forts
+                            </h5>
+                            <ul class="strength-weakness-list" id="strengths-list">
+                                <!-- Les points forts seront ajoutés dynamiquement -->
+                            </ul>
+                            <button type="button" class="add-item-btn" onclick="addStrength()">
+                                <i class="fas fa-plus"></i>
+                                Ajouter un point fort
+                            </button>
+                        </div>
+                        
+                        <div class="strength-weakness-section">
+                            <h5 class="text-red-400">
+                                <i class="fas fa-minus-circle"></i>
+                                Points Faibles
+                            </h5>
+                            <ul class="strength-weakness-list" id="weaknesses-list">
+                                <!-- Les points faibles seront ajoutés dynamiquement -->
+                            </ul>
+                            <button type="button" class="add-item-btn" onclick="addWeakness()">
+                                <i class="fas fa-plus"></i>
+                                Ajouter un point faible
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Résumé de l'évaluation -->
+                    <div class="evaluation-summary">
+                        <h5 class="text-lg font-semibold text-gray-300 mb-3">Résumé de l'Évaluation</h5>
+                        <textarea id="evaluation-summary-text" placeholder="Résumé détaillé de votre évaluation de cet établissement..." class="evaluation-summary textarea"></textarea>
+                    </div>
+                    
+                    <!-- Actions évaluation -->
+                    <div class="evaluation-actions">
+                        <button type="button" onclick="previewEvaluation()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium">
+                            <i class="fas fa-eye mr-2"></i>Prévisualiser
+                        </button>
+                        <button type="button" onclick="resetEvaluation()" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-medium">
+                            <i class="fas fa-undo mr-2"></i>Réinitialiser
+                        </button>
+                    </div>
+                    
+                    <!-- Prévisualisation -->
+                    <div id="evaluation-preview" class="evaluation-preview hidden">
+                        <h4><i class="fas fa-preview"></i>Aperçu de l'Évaluation</h4>
+                        <div id="evaluation-preview-content" class="evaluation-preview-content">
+                            <!-- Le contenu sera généré dynamiquement -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section featured -->
                 <div class="bg-yellow-500 bg-opacity-20 p-4 rounded-lg border-l-4 border-yellow-500">
                     <h4 class="text-lg font-semibold text-yellow-400 mb-4">
                         <i class="fas fa-star mr-2"></i><span id="featured-title">Notre Établissement Favori du Moment</span>
@@ -1525,7 +1753,7 @@
                     </div>
                 </div>
 
-                <!-- ✅ CODES PROMO PREMIUM -->
+                <!-- Codes promo -->
                 <div class="bg-gray-700 p-4 rounded-lg border-l-4 border-yellow-500">
                     <h4 class="text-lg font-semibold text-yellow-400 mb-4">
                         <i class="fas fa-gift mr-2"></i>Codes Promo Premium
@@ -1542,7 +1770,7 @@
                     </div>
                 </div>
 
-                <!-- ✅ UPLOAD D'IMAGES -->
+                <!-- Upload d'images -->
                 <div class="bg-gray-700 p-4 rounded-lg border-l-4 border-blue-500">
                     <h4 class="text-lg font-semibold text-blue-400 mb-4">
                         <i class="fas fa-camera mr-2"></i>Photos de l'établissement
@@ -1574,7 +1802,28 @@
         </div>
     </div>
 
-    <!-- ✅ MODAL ACTUALITÉ AVEC TYPE D'ÉTABLISSEMENT -->
+    <!-- ✅ MODAL ÉVALUATION DÉTAILLÉE SÉPARÉE -->
+    <div id="detailed-evaluation-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-5xl w-full max-h-screen overflow-y-auto">
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-chart-line text-indigo-400 mr-3"></i>
+                        <span id="detailed-evaluation-title">Évaluation Détaillée</span>
+                    </h3>
+                    <button onclick="closeDetailedEvaluationModal()" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6" id="detailed-evaluation-content">
+                <!-- Le contenu sera généré dynamiquement -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ACTUALITÉ -->
     <div id="news-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal z-50 flex items-center justify-center p-4">
         <div class="bg-gray-800 rounded-xl border border-gray-700 max-w-3xl w-full max-h-screen overflow-y-auto">
             <div class="p-6 border-b border-gray-700">
@@ -1587,7 +1836,7 @@
             </div>
             
             <form id="news-form" class="p-6 space-y-6">
-                <!-- ✅ INFORMATIONS DE BASE AVEC TYPE D'ÉTABLISSEMENT -->
+                <!-- Informations de base avec type d'établissement -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Titre *</label>
@@ -1603,7 +1852,6 @@
                             <option value="Interview">Interview</option>
                         </select>
                     </div>
-                    <!-- ✅ NOUVEAU CHAMP : TYPE D'ÉTABLISSEMENT -->
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Type d'établissement *</label>
                         <select id="news-establishment-type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
@@ -1642,7 +1890,7 @@
                     </div>
                 </div>
 
-                <!-- ✅ SECTION À LA UNE -->
+                <!-- Section à la une -->
                 <div class="bg-yellow-500 bg-opacity-20 p-4 rounded-lg border-l-4 border-yellow-500">
                     <h4 class="text-lg font-semibold text-yellow-400 mb-4">
                         <i class="fas fa-star mr-2"></i>Actualité à la Une
@@ -1676,6 +1924,45 @@
         let selectedImages = [];
         let importData = null;
 
+        // ✅ NOUVELLES VARIABLES POUR ÉVALUATION DÉTAILLÉE
+        let currentEvaluationData = {
+            criteriaRatings: {},
+            strengths: [],
+            weaknesses: [],
+            summary: ''
+        };
+
+        // ✅ CRITÈRES D'ÉVALUATION PAR TYPE D'ÉTABLISSEMENT
+        const EVALUATION_CRITERIA = {
+            hotel: {
+                'localisation': 'Localisation',
+                'service': 'Service & Accueil',
+                'confort': 'Confort des Chambres',
+                'proprete': 'Propreté',
+                'equipements': 'Équipements',
+                'restauration': 'Restauration',
+                'rapport-qualite-prix': 'Rapport Qualité-Prix'
+            },
+            restaurant: {
+                'cuisine': 'Qualité de la Cuisine',
+                'service': 'Service & Accueil',
+                'ambiance': 'Ambiance & Décor',
+                'proprete': 'Propreté',
+                'carte': 'Variété de la Carte',
+                'rapport-qualite-prix': 'Rapport Qualité-Prix',
+                'localisation': 'Localisation'
+            },
+            spa: {
+                'soins': 'Qualité des Soins',
+                'service': 'Service & Accueil',
+                'equipements': 'Équipements Bien-être',
+                'ambiance': 'Ambiance & Détente',
+                'proprete': 'Propreté & Hygiène',
+                'professionnalisme': 'Professionnalisme Équipe',
+                'rapport-qualite-prix': 'Rapport Qualité-Prix'
+            }
+        };
+
         // ✅ FONCTIONS UTILITAIRES POUR TYPE D'ÉTABLISSEMENT
         function getEstablishmentIcon(type) {
             const icons = {
@@ -1697,7 +1984,7 @@
             return labels[type] || 'Tous types';
         }
 
-        // ✅ FONCTION POUR METTRE À JOUR LES TEXTES SELON LE TYPE
+        // ✅ NOUVELLES FONCTIONS POUR ÉVALUATION DÉTAILLÉE
         function updateFeaturedLabels() {
             const type = document.getElementById('form-type').value;
             const featuredTitle = document.getElementById('featured-title');
@@ -1722,6 +2009,456 @@
                 featuredTitle.textContent = labels[type]?.title || 'Notre Établissement Favori du Moment';
                 featuredCheckboxLabel.textContent = labels[type]?.checkbox || 'Marquer comme "Notre Établissement Favori du Moment"';
             }
+            
+            // ✅ NOUVEAU : Mettre à jour les critères d'évaluation
+            updateCriteriaRatings(type);
+        }
+
+        // ✅ FONCTION POUR GÉNÉRER LES CRITÈRES D'ÉVALUATION
+        function updateCriteriaRatings(type) {
+            const container = document.getElementById('criteria-ratings-container');
+            if (!container) return;
+            
+            const criteria = EVALUATION_CRITERIA[type] || {};
+            
+            let html = `
+                <div class="criteria-input-group">
+                    <h5 class="text-lg font-semibold text-gray-300 mb-3">Notes par Critères (/10)</h5>
+            `;
+            
+            Object.entries(criteria).forEach(([key, label]) => {
+                html += `
+                    <div class="criteria-input">
+                        <label>${label}</label>
+                        <input type="number" 
+                               id="criteria-${key}" 
+                               min="1" max="10" step="0.1" 
+                               class="w-24"
+                               value="${currentEvaluationData.criteriaRatings[key] || ''}"
+                               onchange="updateCriteriaRating('${key}', this.value)">
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ✅ FONCTION POUR METTRE À JOUR UNE NOTE DE CRITÈRE
+        function updateCriteriaRating(criterion, value) {
+            if (value && !isNaN(parseFloat(value))) {
+                currentEvaluationData.criteriaRatings[criterion] = parseFloat(value);
+            } else {
+                delete currentEvaluationData.criteriaRatings[criterion];
+            }
+        }
+
+        // ✅ FONCTION POUR AJOUTER UN POINT FORT
+        function addStrength() {
+            const strengthsList = document.getElementById('strengths-list');
+            const index = currentEvaluationData.strengths.length;
+            
+            const li = document.createElement('li');
+            li.className = 'strength-weakness-item';
+            li.innerHTML = `
+                <i class="fas fa-plus text-green-400"></i>
+                <input type="text" 
+                       placeholder="Saisissez un point fort..." 
+                       onchange="updateStrength(${index}, this.value)"
+                       onkeydown="handleStrengthWeaknessEnter(event, 'strength')">
+                <button type="button" class="remove-btn" onclick="removeStrength(${index})">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            strengthsList.appendChild(li);
+            currentEvaluationData.strengths.push('');
+            
+            // Focus sur le nouvel input
+            li.querySelector('input').focus();
+        }
+
+        // ✅ FONCTION POUR AJOUTER UN POINT FAIBLE
+        function addWeakness() {
+            const weaknessesList = document.getElementById('weaknesses-list');
+            const index = currentEvaluationData.weaknesses.length;
+            
+            const li = document.createElement('li');
+            li.className = 'strength-weakness-item';
+            li.innerHTML = `
+                <i class="fas fa-minus text-red-400"></i>
+                <input type="text" 
+                       placeholder="Saisissez un point faible..." 
+                       onchange="updateWeakness(${index}, this.value)"
+                       onkeydown="handleStrengthWeaknessEnter(event, 'weakness')">
+                <button type="button" class="remove-btn" onclick="removeWeakness(${index})">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            weaknessesList.appendChild(li);
+            currentEvaluationData.weaknesses.push('');
+            
+            // Focus sur le nouvel input
+            li.querySelector('input').focus();
+        }
+
+        // ✅ FONCTION POUR GÉRER ENTRÉE SUR POINTS FORTS/FAIBLES
+        function handleStrengthWeaknessEnter(event, type) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (type === 'strength') {
+                    addStrength();
+                } else {
+                    addWeakness();
+                }
+            }
+        }
+
+        // ✅ FONCTIONS DE MISE À JOUR ET SUPPRESSION
+        function updateStrength(index, value) {
+            currentEvaluationData.strengths[index] = value.trim();
+        }
+
+        function updateWeakness(index, value) {
+            currentEvaluationData.weaknesses[index] = value.trim();
+        }
+
+        function removeStrength(index) {
+            currentEvaluationData.strengths.splice(index, 1);
+            refreshStrengthsWeaknessesList();
+        }
+
+        function removeWeakness(index) {
+            currentEvaluationData.weaknesses.splice(index, 1);
+            refreshStrengthsWeaknessesList();
+        }
+
+        // ✅ FONCTION POUR RAFRAÎCHIR LES LISTES
+        function refreshStrengthsWeaknessesList() {
+            const strengthsList = document.getElementById('strengths-list');
+            const weaknessesList = document.getElementById('weaknesses-list');
+            
+            // Régénérer les points forts
+            strengthsList.innerHTML = '';
+            currentEvaluationData.strengths.forEach((strength, index) => {
+                const li = document.createElement('li');
+                li.className = 'strength-weakness-item';
+                li.innerHTML = `
+                    <i class="fas fa-plus text-green-400"></i>
+                    <input type="text" 
+                           value="${strength}" 
+                           placeholder="Saisissez un point fort..." 
+                           onchange="updateStrength(${index}, this.value)"
+                           onkeydown="handleStrengthWeaknessEnter(event, 'strength')">
+                    <button type="button" class="remove-btn" onclick="removeStrength(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                strengthsList.appendChild(li);
+            });
+            
+            // Régénérer les points faibles
+            weaknessesList.innerHTML = '';
+            currentEvaluationData.weaknesses.forEach((weakness, index) => {
+                const li = document.createElement('li');
+                li.className = 'strength-weakness-item';
+                li.innerHTML = `
+                    <i class="fas fa-minus text-red-400"></i>
+                    <input type="text" 
+                           value="${weakness}" 
+                           placeholder="Saisissez un point faible..." 
+                           onchange="updateWeakness(${index}, this.value)"
+                           onkeydown="handleStrengthWeaknessEnter(event, 'weakness')">
+                    <button type="button" class="remove-btn" onclick="removeWeakness(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                weaknessesList.appendChild(li);
+            });
+        }
+
+        // ✅ FONCTION PRÉVISUALISATION ÉVALUATION
+        function previewEvaluation() {
+            const type = document.getElementById('form-type').value;
+            const criteria = EVALUATION_CRITERIA[type] || {};
+            const summary = document.getElementById('evaluation-summary-text').value.trim();
+            
+            // Mettre à jour le résumé
+            currentEvaluationData.summary = summary;
+            
+            // Filtrer les points forts/faibles vides
+            const validStrengths = currentEvaluationData.strengths.filter(s => s.trim());
+            const validWeaknesses = currentEvaluationData.weaknesses.filter(w => w.trim());
+            
+            let previewHTML = '<div class="space-y-4">';
+            
+            // Notes par critères
+            if (Object.keys(currentEvaluationData.criteriaRatings).length > 0) {
+                previewHTML += `
+                    <div>
+                        <h5 class="text-lg font-semibold text-indigo-400 mb-2">📊 Notes par Critères</h5>
+                        <div class="grid grid-cols-2 gap-2">
+                `;
+                
+                Object.entries(currentEvaluationData.criteriaRatings).forEach(([key, rating]) => {
+                    const label = criteria[key] || key;
+                    previewHTML += `
+                        <div class="flex justify-between bg-gray-700 p-2 rounded">
+                            <span>${label}</span>
+                            <span class="font-bold text-blue-400">${rating}/10</span>
+                        </div>
+                    `;
+                });
+                
+                previewHTML += '</div></div>';
+            }
+            
+            // Points forts
+            if (validStrengths.length > 0) {
+                previewHTML += `
+                    <div>
+                        <h5 class="text-lg font-semibold text-green-400 mb-2">✅ Points Forts</h5>
+                        <ul class="space-y-1">
+                `;
+                
+                validStrengths.forEach(strength => {
+                    previewHTML += `<li class="flex items-center"><i class="fas fa-plus-circle text-green-400 mr-2"></i>${strength}</li>`;
+                });
+                
+                previewHTML += '</ul></div>';
+            }
+            
+            // Points faibles
+            if (validWeaknesses.length > 0) {
+                previewHTML += `
+                    <div>
+                        <h5 class="text-lg font-semibold text-red-400 mb-2">❌ Points Faibles</h5>
+                        <ul class="space-y-1">
+                `;
+                
+                validWeaknesses.forEach(weakness => {
+                    previewHTML += `<li class="flex items-center"><i class="fas fa-minus-circle text-red-400 mr-2"></i>${weakness}</li>`;
+                });
+                
+                previewHTML += '</ul></div>';
+            }
+            
+            // Résumé
+            if (summary) {
+                previewHTML += `
+                    <div>
+                        <h5 class="text-lg font-semibold text-blue-400 mb-2">📝 Résumé</h5>
+                        <p class="bg-gray-700 p-3 rounded">${summary}</p>
+                    </div>
+                `;
+            }
+            
+            previewHTML += '</div>';
+            
+            // Afficher la prévisualisation
+            document.getElementById('evaluation-preview-content').innerHTML = previewHTML;
+            document.getElementById('evaluation-preview').classList.remove('hidden');
+            
+            // Scroll vers la prévisualisation
+            document.getElementById('evaluation-preview').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'nearest' 
+            });
+        }
+
+        // ✅ FONCTION RÉINITIALISER ÉVALUATION
+        function resetEvaluation() {
+            if (!confirm('Êtes-vous sûr de vouloir réinitialiser toute l\'évaluation détaillée ?')) {
+                return;
+            }
+            
+            // Réinitialiser les données
+            currentEvaluationData = {
+                criteriaRatings: {},
+                strengths: [],
+                weaknesses: [],
+                summary: ''
+            };
+            
+            // Réinitialiser l'interface
+            const type = document.getElementById('form-type').value;
+            updateCriteriaRatings(type);
+            refreshStrengthsWeaknessesList();
+            document.getElementById('evaluation-summary-text').value = '';
+            document.getElementById('evaluation-preview').classList.add('hidden');
+            
+            showSuccess('Évaluation réinitialisée !');
+        }
+
+        // ✅ FONCTION POUR OUVRIR MODAL ÉVALUATION DÉTAILLÉE SÉPARÉE
+        function openDetailedEvaluationModal(establishmentId) {
+            const establishment = window.currentEstablishments.find(e => e.id === establishmentId);
+            if (!establishment) return;
+            
+            document.getElementById('detailed-evaluation-title').textContent = `Évaluation Détaillée - ${establishment.name}`;
+            
+            // Générer le contenu de l'évaluation
+            generateDetailedEvaluationContent(establishment);
+            
+            document.getElementById('detailed-evaluation-modal').classList.remove('hidden');
+        }
+
+        // ✅ FONCTION POUR GÉNÉRER LE CONTENU DE L'ÉVALUATION DÉTAILLÉE
+        function generateDetailedEvaluationContent(establishment) {
+            const evaluation = establishment.detailedEvaluation || {
+                criteriaRatings: {},
+                strengths: [],
+                weaknesses: [],
+                summary: ''
+            };
+            
+            const type = establishment.category === 'hotels' || establishment.category === 'hotel' ? 'hotel' :
+                        establishment.category === 'restaurants' || establishment.category === 'restaurant' ? 'restaurant' :
+                        establishment.category === 'spas' || establishment.category === 'spa' ? 'spa' : 'hotel';
+            
+            const criteria = EVALUATION_CRITERIA[type] || {};
+            
+            let html = `
+                <div class="detailed-evaluation-section">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Informations générales -->
+                        <div class="space-y-6">
+                            <div class="bg-gray-700 p-4 rounded-lg">
+                                <h4 class="text-lg font-bold text-blue-400 mb-3 flex items-center">
+                                    <i class="fas fa-info-circle mr-2"></i>Informations Générales
+                                </h4>
+                                <div class="space-y-2">
+                                    <p><strong>Nom:</strong> ${establishment.name}</p>
+                                    <p><strong>Type:</strong> ${type.charAt(0).toUpperCase() + type.slice(1)}</p>
+                                    <p><strong>Adresse:</strong> ${establishment.address}</p>
+                                    <p><strong>Note générale:</strong> <span class="text-green-400 font-bold">${window.calculateOverallRating(establishment.laRevueRating, establishment.usersRating)}/10</span></p>
+                                </div>
+                            </div>
+            `;
+            
+            // Notes par critères
+            if (Object.keys(evaluation.criteriaRatings).length > 0) {
+                html += `
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h4 class="text-lg font-bold text-indigo-400 mb-3 flex items-center">
+                            <i class="fas fa-chart-bar mr-2"></i>Notes par Critères
+                        </h4>
+                        <div class="space-y-2">
+                `;
+                
+                Object.entries(evaluation.criteriaRatings).forEach(([key, rating]) => {
+                    const label = criteria[key] || key;
+                    const colorClass = rating >= 8 ? 'text-green-400' : rating >= 6 ? 'text-yellow-400' : 'text-red-400';
+                    html += `
+                        <div class="flex justify-between items-center bg-gray-600 p-2 rounded">
+                            <span>${label}</span>
+                            <span class="font-bold ${colorClass}">${rating}/10</span>
+                        </div>
+                    `;
+                });
+                
+                html += '</div></div>';
+            }
+            
+            html += `
+                        </div>
+                        
+                        <!-- Points forts et faibles -->
+                        <div class="space-y-6">
+            `;
+            
+            // Points forts
+            if (evaluation.strengths && evaluation.strengths.length > 0) {
+                const validStrengths = evaluation.strengths.filter(s => s && s.trim());
+                if (validStrengths.length > 0) {
+                    html += `
+                        <div class="bg-green-900 bg-opacity-30 p-4 rounded-lg border-l-4 border-green-400">
+                            <h4 class="text-lg font-bold text-green-400 mb-3 flex items-center">
+                                <i class="fas fa-thumbs-up mr-2"></i>Points Forts
+                            </h4>
+                            <ul class="space-y-2">
+                    `;
+                    
+                    validStrengths.forEach(strength => {
+                        html += `
+                            <li class="flex items-start">
+                                <i class="fas fa-plus-circle text-green-400 mt-1 mr-2"></i>
+                                <span>${strength}</span>
+                            </li>
+                        `;
+                    });
+                    
+                    html += '</ul></div>';
+                }
+            }
+            
+            // Points faibles
+            if (evaluation.weaknesses && evaluation.weaknesses.length > 0) {
+                const validWeaknesses = evaluation.weaknesses.filter(w => w && w.trim());
+                if (validWeaknesses.length > 0) {
+                    html += `
+                        <div class="bg-red-900 bg-opacity-30 p-4 rounded-lg border-l-4 border-red-400">
+                            <h4 class="text-lg font-bold text-red-400 mb-3 flex items-center">
+                                <i class="fas fa-thumbs-down mr-2"></i>Points Faibles
+                            </h4>
+                            <ul class="space-y-2">
+                    `;
+                    
+                    validWeaknesses.forEach(weakness => {
+                        html += `
+                            <li class="flex items-start">
+                                <i class="fas fa-minus-circle text-red-400 mt-1 mr-2"></i>
+                                <span>${weakness}</span>
+                            </li>
+                        `;
+                    });
+                    
+                    html += '</ul></div>';
+                }
+            }
+            
+            html += `
+                        </div>
+                    </div>
+            `;
+            
+            // Résumé
+            if (evaluation.summary && evaluation.summary.trim()) {
+                html += `
+                    <div class="mt-6 bg-blue-900 bg-opacity-30 p-4 rounded-lg border-l-4 border-blue-400">
+                        <h4 class="text-lg font-bold text-blue-400 mb-3 flex items-center">
+                            <i class="fas fa-file-alt mr-2"></i>Résumé de l'Évaluation
+                        </h4>
+                        <p class="text-gray-200 leading-relaxed">${evaluation.summary}</p>
+                    </div>
+                `;
+            }
+            
+            html += `
+                    <div class="mt-6 flex justify-between items-center">
+                        <button onclick="editEstablishmentEvaluation('${establishment.id}')" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg font-medium">
+                            <i class="fas fa-edit mr-2"></i>Modifier l'Évaluation
+                        </button>
+                        <button onclick="closeDetailedEvaluationModal()" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg font-medium">
+                            Fermer
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detailed-evaluation-content').innerHTML = html;
+        }
+
+        // ✅ FONCTION POUR FERMER MODAL ÉVALUATION DÉTAILLÉE
+        function closeDetailedEvaluationModal() {
+            document.getElementById('detailed-evaluation-modal').classList.add('hidden');
+        }
+
+        // ✅ FONCTION POUR MODIFIER L'ÉVALUATION D'UN ÉTABLISSEMENT
+        function editEstablishmentEvaluation(id) {
+            closeDetailedEvaluationModal();
+            editEstablishment(id);
         }
 
         // ✅ FONCTIONS MODAL IMPORT
@@ -1742,7 +2479,6 @@
             document.getElementById('import-submit-btn').disabled = true;
             importData = null;
             
-            // Réinitialiser la zone de drag & drop
             const dragZone = document.getElementById('drag-drop-zone');
             dragZone.classList.remove('drag-over');
         }
@@ -1754,7 +2490,6 @@
             let jsonString = '';
             
             if (fileInput.files.length > 0) {
-                // Lire le fichier
                 const file = fileInput.files[0];
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -1775,7 +2510,6 @@
                 const parsedData = JSON.parse(jsonString);
                 importData = Array.isArray(parsedData) ? parsedData : [parsedData];
                 
-                // Validation basique
                 const validItems = [];
                 const invalidItems = [];
                 
@@ -1787,7 +2521,6 @@
                     }
                 });
                 
-                // Afficher la prévisualisation
                 const previewDiv = document.getElementById('import-preview');
                 const statsDiv = document.getElementById('import-stats');
                 const jsonDisplay = document.getElementById('import-json-display');
@@ -1850,7 +2583,6 @@
             const fileInput = document.getElementById('import-file-input');
             
             if (dragZone && fileInput) {
-                // Gestionnaires drag & drop
                 dragZone.addEventListener('click', () => {
                     fileInput.click();
                 });
@@ -1921,7 +2653,6 @@
                     </button>
                 `;
             } else {
-                // ✅ NOUVEAU BOUTON RECALCULER + TRIER
                 actionsContainer.innerHTML = `
                     <button onclick="openAddModal()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
                         <i class="fas fa-plus mr-2"></i>Ajouter un établissement
@@ -1986,7 +2717,6 @@
             try {
                 const reviews = await window.loadReviews();
                 
-                // Charger aussi les établissements pour les noms
                 await Promise.all([
                     window.loadEstablishments('hotels'),
                     window.loadEstablishments('restaurants'),
@@ -2039,7 +2769,6 @@
                         <div class="news-content">
                             <div class="flex items-center gap-2 mb-2">
                                 <div class="news-badge">${news.category}</div>
-                                <!-- ✅ NOUVEAU : BADGE TYPE D'ÉTABLISSEMENT -->
                                 <div class="establishment-type-badge">
                                     ${getEstablishmentIcon(news.establishmentType)} ${getEstablishmentLabel(news.establishmentType)}
                                 </div>
@@ -2152,13 +2881,12 @@
                             <p class="text-gray-200">${review.comment}</p>
                         </div>
                         
-                        <!-- ✅ PHOTOS CORRIGÉES -->
+                        <!-- Photos -->
                         ${review.photos && review.photos.length > 0 ? `
                             <div class="review-photos">
                                 <p class="text-sm text-gray-400 mb-2">📸 Photos (${review.photos.length})</p>
                                 <div class="flex space-x-2">
                                     ${review.photos.slice(0, 6).map((photo, index) => {
-                                        // ✅ CORRECTION : Utiliser 'url' au lieu de 'uploadURL'
                                         const photoUrl = photo.url || photo.uploadURL || photo.downloadURL || photo.uri || '';
                                         
                                         return photoUrl ? `
@@ -2215,7 +2943,6 @@
 
         // ✅ FONCTION POUR OBTENIR LE NOM DE L'ÉTABLISSEMENT
         function getEstablishmentName(establishmentId) {
-            // Chercher dans tous les établissements chargés
             const allEstablishments = [
                 ...window.currentEstablishments
             ];
@@ -2231,7 +2958,6 @@
             document.getElementById('news-submit-text').textContent = 'Ajouter';
             document.getElementById('news-form').reset();
             document.getElementById('news-date').value = new Date().toISOString().split('T')[0];
-            // ✅ DÉFINIR LE TYPE D'ÉTABLISSEMENT PAR DÉFAUT SELON L'ONGLET ACTUEL
             document.getElementById('news-establishment-type').value = currentTab === 'news' ? 'hotels' : currentTab;
             document.getElementById('news-modal').classList.remove('hidden');
         }
@@ -2244,7 +2970,6 @@
             document.getElementById('news-modal-title').textContent = 'Modifier l\'actualité';
             document.getElementById('news-submit-text').textContent = 'Modifier';
             
-            // Remplir le formulaire
             document.getElementById('news-title').value = news.title || '';
             document.getElementById('news-category').value = news.category || 'Actualités';
             document.getElementById('news-establishment-type').value = news.establishmentType || 'hotels';
@@ -2400,7 +3125,6 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                 console.log('📝 Données actualité à sauvegarder:', formData);
                 
                 if (editingNewsId) {
-                    // MISE À JOUR
                     const success = await window.updateNews(editingNewsId, formData);
                     if (success) {
                         showSuccess(`Actualité ${formData.isFeatured ? '⭐ marquée à la Une' : 'modifiée'} avec succès !`);
@@ -2409,7 +3133,6 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                         return;
                     }
                 } else {
-                    // CRÉATION
                     const result = await window.addNewNews(formData);
                     if (result) {
                         showSuccess(`Actualité ${formData.isFeatured ? '⭐ marquée à la Une' : 'créée'} avec succès !`);
@@ -2535,7 +3258,6 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             document.getElementById('section-title').textContent = titles[tab];
             document.getElementById('section-description').textContent = descriptions[tab];
             
-            // ✅ METTRE À JOUR LES ACTIONS
             updateActionsSection();
             
             if (tab === 'news') {
@@ -2621,7 +3343,7 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             previewContainer.innerHTML = '';
             
             files.forEach((file, index) => {
-                if (index >= 8) return; // Max 8 images
+                if (index >= 8) return;
                 
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -2643,16 +3365,14 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
         function removeImage(index) {
             selectedImages.splice(index, 1);
             
-            // Recréer le FileList (simulation)
             const dt = new DataTransfer();
             selectedImages.forEach(file => dt.items.add(file));
             document.getElementById('form-images').files = dt.files;
             
-            // Re-trigger l'événement change
             document.getElementById('form-images').dispatchEvent(new Event('change'));
         }
 
-        // ✅ FONCTION RENDU ÉTABLISSEMENTS AVEC CALCUL AUTOMATIQUE NOTE GÉNÉRALE
+        // ✅ FONCTION RENDU ÉTABLISSEMENTS AVEC ÉVALUATION DÉTAILLÉE
         function renderEstablishments(establishments) {
             const container = document.getElementById('establishments-list');
             
@@ -2676,8 +3396,14 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                 const isTop3 = establishment.rank <= 3;
                 const trophyIcon = establishment.rank === 1 ? '🏆' : establishment.rank === 2 ? '🥈' : establishment.rank === 3 ? '🥉' : '';
                 
-                // ✅ CALCUL AUTOMATIQUE DE LA NOTE GÉNÉRALE
                 const calculatedOverallRating = window.calculateOverallRating(establishment.laRevueRating, establishment.usersRating);
+                
+                // ✅ NOUVEAU : Vérifier si évaluation détaillée existe
+                const hasDetailedEvaluation = establishment.detailedEvaluation && 
+                    (Object.keys(establishment.detailedEvaluation.criteriaRatings || {}).length > 0 ||
+                     (establishment.detailedEvaluation.strengths && establishment.detailedEvaluation.strengths.length > 0) ||
+                     (establishment.detailedEvaluation.weaknesses && establishment.detailedEvaluation.weaknesses.length > 0) ||
+                     (establishment.detailedEvaluation.summary && establishment.detailedEvaluation.summary.trim()));
                 
                 return `
                     <div class="ranking-item p-6 border-b border-gray-700 last:border-b-0 ${establishment.isFeatured ? 'featured-item' : ''}" 
@@ -2708,13 +3434,19 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                                         <span><i class="fas fa-map-marker-alt mr-1"></i>${establishment.region}</span>
                                         <span><i class="fas fa-euro-sign mr-1"></i>${'€'.repeat(establishment.priceLevel)}</span>
                                         ${establishment.promoCode ? `<span class="text-yellow-400"><i class="fas fa-gift mr-1"></i>Code promo</span>` : ''}
+                                        <!-- ✅ NOUVEAU : Indicateur évaluation détaillée -->
+                                        ${hasDetailedEvaluation ? `
+                                            <span class="text-indigo-400 cursor-pointer" onclick="openDetailedEvaluationModal('${establishment.id}')" title="Voir l'évaluation détaillée">
+                                                <i class="fas fa-chart-line mr-1"></i>Évaluation détaillée
+                                            </span>
+                                        ` : ''}
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- ✅ AFFICHAGE NOTES AVEC CALCUL AUTOMATIQUE -->
+                            <!-- Notes avec calcul automatique -->
                             <div class="flex items-center space-x-6">
-                                <!-- Note Générale (CALCULÉE AUTOMATIQUEMENT) -->
+                                <!-- Note Générale -->
                                 <div class="text-center">
                                     <div class="text-sm text-gray-400 mb-1">Note Générale</div>
                                     <div class="flex items-center">
@@ -2749,6 +3481,12 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                                     
                                 <!-- Actions -->
                                 <div class="flex space-x-2">
+                                    <!-- ✅ NOUVEAU : Bouton évaluation détaillée -->
+                                    ${hasDetailedEvaluation ? `
+                                        <button onclick="openDetailedEvaluationModal('${establishment.id}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors" title="Voir l'évaluation détaillée">
+                                            <i class="fas fa-chart-line mr-1"></i>Évaluation
+                                        </button>
+                                    ` : ''}
                                     <button onclick="editEstablishment('${establishment.id}')" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors">
                                         <i class="fas fa-edit mr-1"></i>Modifier
                                     </button>
@@ -2758,6 +3496,46 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- ✅ NOUVEAU : Aperçu évaluation détaillée si présente -->
+                        ${hasDetailedEvaluation ? `
+                            <div class="mt-4 bg-indigo-900 bg-opacity-20 p-4 rounded-lg border-l-4 border-indigo-400">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="text-sm font-semibold text-indigo-400 flex items-center">
+                                        <i class="fas fa-chart-line mr-2"></i>Aperçu Évaluation Détaillée
+                                    </h4>
+                                    <button onclick="openDetailedEvaluationModal('${establishment.id}')" class="text-xs text-indigo-300 hover:text-indigo-200">
+                                        Voir détails <i class="fas fa-arrow-right ml-1"></i>
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                                    ${Object.keys(establishment.detailedEvaluation.criteriaRatings || {}).length > 0 ? `
+                                        <div>
+                                            <span class="text-gray-400">Notes détaillées</span>
+                                            <div class="text-indigo-300 font-bold">${Object.keys(establishment.detailedEvaluation.criteriaRatings).length} critères</div>
+                                        </div>
+                                    ` : ''}
+                                    ${establishment.detailedEvaluation.strengths && establishment.detailedEvaluation.strengths.length > 0 ? `
+                                        <div>
+                                            <span class="text-gray-400">Points forts</span>
+                                            <div class="text-green-300 font-bold">${establishment.detailedEvaluation.strengths.filter(s => s.trim()).length}</div>
+                                        </div>
+                                    ` : ''}
+                                    ${establishment.detailedEvaluation.weaknesses && establishment.detailedEvaluation.weaknesses.length > 0 ? `
+                                        <div>
+                                            <span class="text-gray-400">Points faibles</span>
+                                            <div class="text-red-300 font-bold">${establishment.detailedEvaluation.weaknesses.filter(w => w.trim()).length}</div>
+                                        </div>
+                                    ` : ''}
+                                    ${establishment.detailedEvaluation.summary && establishment.detailedEvaluation.summary.trim() ? `
+                                        <div>
+                                            <span class="text-gray-400">Résumé</span>
+                                            <div class="text-blue-300 font-bold">Disponible</div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
                         
                         <!-- Images preview -->
                         ${establishment.images && establishment.images.length > 0 ? `
@@ -2813,14 +3591,13 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             }, 5000);
         }
 
-        // ✅ FONCTIONS MODAL ÉTABLISSEMENT AVEC CALCUL AUTO NOTE GÉNÉRALE
+        // ✅ FONCTIONS MODAL ÉTABLISSEMENT AVEC ÉVALUATION DÉTAILLÉE
         function openAddModal() {
             editingId = null;
             document.getElementById('modal-title').textContent = 'Ajouter un établissement';
             document.getElementById('form-submit-text').textContent = 'Ajouter';
             document.getElementById('establishment-form').reset();
             
-            // ✅ CORRECTION : Utiliser les valeurs singulières pour le formulaire
             const typeMap = {
                 'hotels': 'hotel',
                 'restaurants': 'restaurant', 
@@ -2829,7 +3606,14 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             
             document.getElementById('form-type').value = typeMap[currentTab] || 'hotel';
             
-            // ✅ NOUVEAU : Mettre à jour les labels
+            // ✅ NOUVEAU : Réinitialiser l'évaluation détaillée
+            currentEvaluationData = {
+                criteriaRatings: {},
+                strengths: [],
+                weaknesses: [],
+                summary: ''
+            };
+            
             updateFeaturedLabels();
             
             document.getElementById('edit-modal').classList.remove('hidden');
@@ -2845,7 +3629,6 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             document.getElementById('modal-title').textContent = 'Modifier l\'établissement';
             document.getElementById('form-submit-text').textContent = 'Modifier';
             
-            // ✅ CORRECTION : Mapping pour le formulaire
             const categoryToFormType = {
                 'hotels': 'hotel',
                 'restaurants': 'restaurant',
@@ -2873,8 +3656,18 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             document.getElementById('form-promo-code').value = establishment.promoCode || '';
             document.getElementById('form-promo-discount').value = establishment.promoDiscount || '';
             
-            // ✅ NOUVEAU : Mettre à jour les labels après remplissage
+            // ✅ NOUVEAU : Charger l'évaluation détaillée
+            currentEvaluationData = establishment.detailedEvaluation || {
+                criteriaRatings: {},
+                strengths: [],
+                weaknesses: [],
+                summary: ''
+            };
+            
+            document.getElementById('evaluation-summary-text').value = currentEvaluationData.summary || '';
+            
             updateFeaturedLabels();
+            refreshStrengthsWeaknessesList();
             
             document.getElementById('edit-modal').classList.remove('hidden');
         }
@@ -2883,9 +3676,17 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             document.getElementById('edit-modal').classList.add('hidden');
             editingId = null;
             selectedImages = [];
+            
+            // ✅ NOUVEAU : Réinitialiser l'évaluation détaillée
+            currentEvaluationData = {
+                criteriaRatings: {},
+                strengths: [],
+                weaknesses: [],
+                summary: ''
+            };
         }
 
-        // ✅ GESTION FORMULAIRE ÉTABLISSEMENT AVEC CALCUL AUTO NOTE GÉNÉRALE
+        // ✅ GESTION FORMULAIRE ÉTABLISSEMENT AVEC ÉVALUATION DÉTAILLÉE
         document.getElementById('establishment-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -2905,16 +3706,23 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                 const laRevueRating = parseFloat(document.getElementById('form-larevue-rating').value) || 7;
                 const usersRating = parseFloat(document.getElementById('form-user-rating').value) || 7;
                 
+                // ✅ NOUVEAU : Récupérer les données d'évaluation détaillée
+                currentEvaluationData.summary = document.getElementById('evaluation-summary-text').value.trim();
+                
+                // Filtrer les points forts/faibles vides
+                currentEvaluationData.strengths = currentEvaluationData.strengths.filter(s => s.trim());
+                currentEvaluationData.weaknesses = currentEvaluationData.weaknesses.filter(w => w.trim());
+                
                 const formData = {
                     name: document.getElementById('form-name').value,
                     category: document.getElementById('form-type').value,
                     address: document.getElementById('form-address').value,
                     region: document.getElementById('form-region').value,
                     laRevueRating: laRevueRating,
-                    rating: laRevueRating, // Pour compatibilité
+                    rating: laRevueRating,
                     usersRating: usersRating,
-                    userRating: usersRating, // Pour compatibilité
-                    overallRating: window.calculateOverallRating(laRevueRating, usersRating), // ✅ CALCUL AUTO
+                    userRating: usersRating,
+                    overallRating: window.calculateOverallRating(laRevueRating, usersRating),
                     priceLevel: parseInt(document.getElementById('form-price-level').value) || 3,
                     description: document.getElementById('form-description').value,
                     isFeatured: document.getElementById('form-is-featured').checked,
@@ -2925,7 +3733,9 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                     negativeReviewExample: document.getElementById('form-negative-example').value,
                     promoCode: document.getElementById('form-promo-code').value,
                     promoDiscount: document.getElementById('form-promo-discount').value,
-                    images: imageUrls
+                    images: imageUrls,
+                    // ✅ NOUVEAU : Inclure l'évaluation détaillée
+                    detailedEvaluation: currentEvaluationData
                 };
                 
                 console.log('📝 Données établissement à sauvegarder:', formData);
@@ -2998,8 +3808,6 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             const success = await window.updateEstablishmentRating(id, rating, fieldName);
             if (success) {
                 showSuccess(`Note ${displayName} mise à jour !`);
-                
-                // ✅ Recharger pour voir le nouveau calcul
                 loadDashboard();
             } else {
                 showError('Erreur lors de la mise à jour');
@@ -3093,6 +3901,7 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                 closeModal();
                 closeNewsModal();
                 closeImportModal();
+                closeDetailedEvaluationModal();
             }
         });
 
@@ -3114,17 +3923,14 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             const refreshBtn = event.target;
             const originalContent = refreshBtn.innerHTML;
             
-            // Animation bouton
             refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Actualisation...';
             refreshBtn.disabled = true;
             
             try {
-                // Vider le cache
                 window.currentEstablishments = [];
                 window.currentNews = [];
                 window.currentReviews = [];
                 
-                // Recharger selon l'onglet
                 if (currentTab === 'news') {
                     await loadNewsTab();
                 } else if (currentTab === 'reviews') {
@@ -3139,7 +3945,6 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                 console.error('Erreur rafraîchissement:', error);
                 showError('Erreur lors de l\'actualisation');
             } finally {
-                // Restaurer le bouton
                 setTimeout(() => {
                     refreshBtn.innerHTML = originalContent;
                     refreshBtn.disabled = false;
@@ -3148,16 +3953,14 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
         };
 
         // ✅ INITIALISATION
-        console.log('🎉 Dashboard La Revue avec actualités "à la une" par type d\'établissement !');
+        console.log('🎉 Dashboard La Revue avec évaluations détaillées !');
         console.log('✅ Nouvelles fonctionnalités :');
-        console.log('🧮 Calcul automatique : Note Générale = Moyenne(La Revue + Clients)');
-        console.log('📊 Tri par notes corrigé avec vraies moyennes');
-        console.log('🔄 Recalcul avec proposition de tri automatique');
-        console.log('🎯 Nouveau bouton "Recalculer + Trier" pour action combinée');
-        console.log('📦 Import JSON avec calcul automatique des notes');
-        console.log('📰 Gestion complète des actualités avec featured par type');
-        console.log('💬 Modération complète des avis');
-        console.log('🏆 NOUVEAU : Une actualité "à la une" par type d\'établissement !');
+        console.log('📊 Évaluations détaillées par critères selon le type d\'établissement');
+        console.log('✅ Points forts et points faibles dynamiques');
+        console.log('📝 Résumés d\'évaluation personnalisés');
+        console.log('👁️ Prévisualisation en temps réel des évaluations');
+        console.log('🔍 Modal dédiée pour consulter les évaluations détaillées');
+        console.log('💾 Sauvegarde automatique dans Firebase');
 
     </script>
 

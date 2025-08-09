@@ -2007,6 +2007,38 @@
                     </div>
                 </div>
 
+                <!-- ✅ NOUVEAUX CHAMPS VILLE ET RÉGION -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Ville</label>
+        <input type="text" id="news-city" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="Entrez la ville">
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Région</label>
+        <select id="news-region" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+            <option value="">Sélectionner une région</option>
+            <option value="auvergne-rhone-alpes">Auvergne-Rhône-Alpes</option>
+            <option value="bourgogne-franche-comte">Bourgogne-Franche-Comté</option>
+            <option value="bretagne">Bretagne</option>
+            <option value="centre-val-de-loire">Centre-Val de Loire</option>
+            <option value="corse">Corse</option>
+            <option value="grand-est">Grand Est</option>
+            <option value="guadeloupe">Guadeloupe</option>
+            <option value="guyane">Guyane</option>
+            <option value="hauts-de-france">Hauts-de-France</option>
+            <option value="ile-de-france">Île-de-France</option>
+            <option value="la-reunion">La Réunion</option>
+            <option value="martinique">Martinique</option>
+            <option value="mayotte">Mayotte</option>
+            <option value="normandie">Normandie</option>
+            <option value="nouvelle-aquitaine">Nouvelle-Aquitaine</option>
+            <option value="occitanie">Occitanie</option>
+            <option value="pays-de-la-loire">Pays de la Loire</option>
+            <option value="provence-alpes-cote-azur">Provence-Alpes-Côte d'Azur</option>
+        </select>
+    </div>
+</div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Auteur</label>
@@ -3083,20 +3115,20 @@ async function renderNews(newsData) {
                     <div class="flex-shrink-0 relative">
                         <img src="${news.imageUrl}" alt="${news.title}" class="news-image">
                         
-                        <!-- ✅ NOUVEAU : Overlay ville/région si établissement trouvé -->
-                        ${featuredEstablishment ? `
-                            <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-lg">
-                                <div class="flex items-center space-x-1">
-                                    <i class="fas fa-map-marker-alt text-gray-600 text-xs"></i>
-                                    <div class="text-xs">
-                                        <div class="font-semibold text-gray-800">${featuredEstablishment.city || featuredEstablishment.region}</div>
-                                        ${featuredEstablishment.city && featuredEstablishment.city !== featuredEstablishment.region ? `
-                                            <div class="text-gray-600 text-[10px]">${featuredEstablishment.region}</div>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
+                        <!-- ✅ NOUVEAU : Overlay ville/région depuis les champs directs ou établissement -->
+${(news.city || news.region || featuredEstablishment) ? `
+    <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-lg">
+        <div class="flex items-center space-x-1">
+            <i class="fas fa-map-marker-alt text-gray-600 text-xs"></i>
+            <div class="text-xs">
+                <div class="font-semibold text-gray-800">${news.city || featuredEstablishment?.city || featuredEstablishment?.region || ''}</div>
+                ${(news.region || (featuredEstablishment?.city && featuredEstablishment?.region && featuredEstablishment.city !== featuredEstablishment.region)) ? `
+                    <div class="text-gray-600 text-[10px]">${news.region || featuredEstablishment?.region || ''}</div>
+                ` : ''}
+            </div>
+        </div>
+    </div>
+` : ''}
                     </div>
                     
                     <!-- Contenu -->
@@ -3316,38 +3348,46 @@ async function renderNews(newsData) {
 
         // ✅ FONCTIONS MODAL ACTUALITÉS AVEC TYPE D'ÉTABLISSEMENT
         function openNewsModal() {
-            editingNewsId = null;
-            document.getElementById('news-modal-title').textContent = 'Ajouter une actualité';
-            document.getElementById('news-submit-text').textContent = 'Ajouter';
-            document.getElementById('news-form').reset();
-            document.getElementById('news-date').value = new Date().toISOString().split('T')[0];
-            document.getElementById('news-establishment-type').value = currentTab === 'news' ? 'hotels' : currentTab;
-            document.getElementById('news-modal').classList.remove('hidden');
-        }
+    editingNewsId = null;
+    document.getElementById('news-modal-title').textContent = 'Ajouter une actualité';
+    document.getElementById('news-submit-text').textContent = 'Ajouter';
+    document.getElementById('news-form').reset();
+    document.getElementById('news-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('news-establishment-type').value = currentTab === 'news' ? 'hotels' : currentTab;
+    
+    // ✅ RÉINITIALISER LES NOUVEAUX CHAMPS
+    document.getElementById('news-city').value = '';
+    document.getElementById('news-region').value = '';
+    
+    document.getElementById('news-modal').classList.remove('hidden');
+}
 
         function editNews(id) {
-            const news = window.currentNews.find(n => n.id === id);
-            if (!news) return;
-            
-            editingNewsId = id;
-            document.getElementById('news-modal-title').textContent = 'Modifier l\'actualité';
-            document.getElementById('news-submit-text').textContent = 'Modifier';
-            
-            document.getElementById('news-title').value = news.title || '';
-            document.getElementById('news-category').value = news.category || 'Actualités';
-            document.getElementById('news-establishment-type').value = news.establishmentType || 'hotels';
-            document.getElementById('news-summary').value = news.summary || '';
-            document.getElementById('news-image').value = news.imageUrl || '';
-            document.getElementById('news-article-url').value = news.articleUrl || '';
-            document.getElementById('news-author').value = news.author || 'La Revue';
-            document.getElementById('news-featured').checked = news.isFeatured || false;
-            
-            const date = news.publishedAt?.toDate ? news.publishedAt.toDate() : new Date(news.publishedAt);
-            document.getElementById('news-date').value = date.toISOString().split('T')[0];
-            
-            document.getElementById('news-modal').classList.remove('hidden');
-        }
-
+    const news = window.currentNews.find(n => n.id === id);
+    if (!news) return;
+    
+    editingNewsId = id;
+    document.getElementById('news-modal-title').textContent = 'Modifier l\'actualité';
+    document.getElementById('news-submit-text').textContent = 'Modifier';
+    
+    document.getElementById('news-title').value = news.title || '';
+    document.getElementById('news-category').value = news.category || 'Actualités';
+    document.getElementById('news-establishment-type').value = news.establishmentType || 'hotels';
+    document.getElementById('news-summary').value = news.summary || '';
+    document.getElementById('news-image').value = news.imageUrl || '';
+    document.getElementById('news-article-url').value = news.articleUrl || '';
+    document.getElementById('news-author').value = news.author || 'La Revue';
+    document.getElementById('news-featured').checked = news.isFeatured || false;
+    
+    // ✅ NOUVEAUX CHAMPS VILLE ET RÉGION
+    document.getElementById('news-city').value = news.city || '';
+    document.getElementById('news-region').value = news.region || '';
+    
+    const date = news.publishedAt?.toDate ? news.publishedAt.toDate() : new Date(news.publishedAt);
+    document.getElementById('news-date').value = date.toISOString().split('T')[0];
+    
+    document.getElementById('news-modal').classList.remove('hidden');
+}
         function closeNewsModal() {
             document.getElementById('news-modal').classList.add('hidden');
             editingNewsId = null;
@@ -3471,19 +3511,22 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             
             try {
                 const formData = {
-                    title: document.getElementById('news-title').value,
-                    summary: document.getElementById('news-summary').value,
-                    imageUrl: document.getElementById('news-image').value,
-                    articleUrl: document.getElementById('news-article-url').value,
-                    author: document.getElementById('news-author').value || 'La Revue',
-                    category: document.getElementById('news-category').value,
-                    establishmentType: document.getElementById('news-establishment-type').value,
-                    isFeatured: document.getElementById('news-featured').checked,
-                    publishedAt: new Date(document.getElementById('news-date').value || new Date()),
-                    isActive: true,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                };
+    title: document.getElementById('news-title').value,
+    summary: document.getElementById('news-summary').value,
+    imageUrl: document.getElementById('news-image').value,
+    articleUrl: document.getElementById('news-article-url').value,
+    author: document.getElementById('news-author').value || 'La Revue',
+    category: document.getElementById('news-category').value,
+    establishmentType: document.getElementById('news-establishment-type').value,
+    isFeatured: document.getElementById('news-featured').checked,
+    publishedAt: new Date(document.getElementById('news-date').value || new Date()),
+    // ✅ NOUVEAUX CHAMPS VILLE ET RÉGION
+    city: document.getElementById('news-city').value,
+    region: document.getElementById('news-region').value,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+};
                 
                 console.log('📝 Données actualité à sauvegarder:', formData);
                 

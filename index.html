@@ -785,6 +785,60 @@
         .ranking-item:hover {
             background: linear-gradient(135deg, #374151 0%, #4B5563 100%);
         }
+        .upload-tab-btn {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.upload-tab-btn.active {
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 1px #3B82F6;
+}
+
+.upload-section {
+    transition: all 0.3s ease;
+}
+
+.url-image-preview {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 2px solid #4B5563;
+    transition: all 0.2s ease;
+}
+
+.url-image-preview.loading {
+    border-color: #F59E0B;
+    background: linear-gradient(90deg, #374151 25%, #4B5563 50%, #374151 75%);
+    background-size: 200% 100%;
+    animation: loading-shimmer 2s infinite;
+}
+
+.url-image-preview.error {
+    border-color: #EF4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.url-image-preview.success {
+    border-color: #10B981;
+}
+
+@keyframes loading-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.url-preview-placeholder {
+    width: 100%;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #374151;
+    color: #9CA3AF;
+    font-size: 12px;
+    text-align: center;
+}
 
         .modal {
             backdrop-filter: blur(10px);
@@ -1775,19 +1829,50 @@
                 </div>
 
                 <!-- Upload d'images -->
-                <div class="bg-gray-700 p-4 rounded-lg border-l-4 border-blue-500">
-                    <h4 class="text-lg font-semibold text-blue-400 mb-4">
-                        <i class="fas fa-camera mr-2"></i>Photos de l'établissement
-                    </h4>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Sélectionner des images (max 8)</label>
-                        <input type="file" id="form-images" multiple accept="image/*" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white">
-                        <p class="text-xs text-gray-400 mt-2">Formats acceptés: JPG, PNG, WebP • Taille max: 5MB par image</p>
-                    </div>
-                    
-                    <!-- Prévisualisation des images -->
-                    <div id="images-preview" class="grid grid-cols-4 gap-4 mt-4"></div>
-                </div>
+<div class="bg-gray-700 p-4 rounded-lg border-l-4 border-blue-500">
+    <h4 class="text-lg font-semibold text-blue-400 mb-4">
+        <i class="fas fa-camera mr-2"></i>Photos de l'établissement
+    </h4>
+    
+    <!-- Onglets pour choisir le mode d'upload -->
+    <div class="flex space-x-4 mb-4">
+        <button type="button" id="upload-tab-files" onclick="switchUploadTab('files')" class="upload-tab-btn active px-4 py-2 rounded-lg bg-blue-600 text-white">
+            <i class="fas fa-upload mr-2"></i>Fichiers locaux
+        </button>
+        <button type="button" id="upload-tab-urls" onclick="switchUploadTab('urls')" class="upload-tab-btn px-4 py-2 rounded-lg bg-gray-600 text-gray-300">
+            <i class="fas fa-link mr-2"></i>URLs d'images
+        </button>
+    </div>
+    
+    <!-- Upload fichiers locaux -->
+    <div id="upload-section-files" class="upload-section">
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Sélectionner des images (max 8)</label>
+            <input type="file" id="form-images" multiple accept="image/*" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white">
+            <p class="text-xs text-gray-400 mt-2">Formats acceptés: JPG, PNG, WebP • Taille max: 5MB par image</p>
+        </div>
+    </div>
+    
+    <!-- Upload URLs d'images -->
+    <div id="upload-section-urls" class="upload-section hidden">
+        <div class="space-y-3">
+            <label class="block text-sm font-medium text-gray-300 mb-2">URLs d'images (une par ligne, max 8)</label>
+            <textarea id="image-urls-input" rows="6" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.png&#10;https://unsplash.com/photo/abc123" class="w-full bg-gray-600 border border-gray-500 rounded-lg px-4 py-2 text-white text-sm"></textarea>
+            <div class="flex space-x-2">
+                <button type="button" onclick="previewImageUrls()" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm">
+                    <i class="fas fa-eye mr-2"></i>Prévisualiser
+                </button>
+                <button type="button" onclick="clearImageUrls()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm">
+                    <i class="fas fa-eraser mr-2"></i>Effacer
+                </button>
+            </div>
+            <p class="text-xs text-gray-400">Formats acceptés: JPG, PNG, WebP, GIF • URLs publiques uniquement</p>
+        </div>
+    </div>
+    
+    <!-- Prévisualisation des images -->
+    <div id="images-preview" class="grid grid-cols-4 gap-4 mt-4"></div>
+</div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
@@ -1935,6 +2020,170 @@
             weaknesses: [],
             summary: ''
         };
+
+         // ✅ NOUVELLES VARIABLES POUR GESTION UPLOAD IMAGES
+        let uploadMode = 'files'; // 'files' ou 'urls'
+        let imageUrls = [];
+
+        // ✅ FONCTIONS GESTION UPLOAD IMAGES PAR URL
+        function switchUploadTab(mode) {
+            uploadMode = mode;
+            
+            // Mettre à jour les onglets
+            document.querySelectorAll('.upload-tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-600', 'text-gray-300');
+            });
+            
+            const activeBtn = document.getElementById(`upload-tab-${mode}`);
+            activeBtn.classList.add('active', 'bg-blue-600', 'text-white');
+            activeBtn.classList.remove('bg-gray-600', 'text-gray-300');
+            
+            // Afficher/masquer les sections
+            document.querySelectorAll('.upload-section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(`upload-section-${mode}`).classList.remove('hidden');
+            
+            // Nettoyer les prévisualisations si on change de mode
+            if (mode === 'files') {
+                imageUrls = [];
+                document.getElementById('image-urls-input').value = '';
+            } else {
+                selectedImages = [];
+                document.getElementById('form-images').value = '';
+            }
+            
+            updateImagesPreview();
+        }
+
+        async function previewImageUrls() {
+            const input = document.getElementById('image-urls-input').value.trim();
+            if (!input) {
+                showError('Veuillez saisir au moins une URL d\'image');
+                return;
+            }
+            
+            const urls = input.split('\n').map(url => url.trim()).filter(url => url);
+            
+            if (urls.length > 8) {
+                showError('Maximum 8 images autorisées');
+                return;
+            }
+            
+            // Vérifier que ce sont des URLs valides
+            const validUrls = [];
+            const invalidUrls = [];
+            
+            for (const url of urls) {
+                try {
+                    new URL(url);
+                    // Vérifier que c'est bien une image
+                    if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url) || url.includes('unsplash.com') || url.includes('images.') || url.includes('img.')) {
+                        validUrls.push(url);
+                    } else {
+                        invalidUrls.push(url);
+                    }
+                } catch (e) {
+                    invalidUrls.push(url);
+                }
+            }
+            
+            if (invalidUrls.length > 0) {
+                console.warn('URLs invalides:', invalidUrls);
+                showError(`${invalidUrls.length} URL(s) invalide(s). Vérifiez le format.`);
+            }
+            
+            if (validUrls.length === 0) {
+                showError('Aucune URL d\'image valide trouvée');
+                return;
+            }
+            
+            imageUrls = validUrls;
+            showSuccess(`✅ ${validUrls.length} URL(s) d'image détectée(s) !`);
+            updateImagesPreview();
+        }
+
+        function clearImageUrls() {
+            imageUrls = [];
+            document.getElementById('image-urls-input').value = '';
+            updateImagesPreview();
+            showSuccess('URLs effacées');
+        }
+
+        function updateImagesPreview() {
+            const previewContainer = document.getElementById('images-preview');
+            previewContainer.innerHTML = '';
+            
+            if (uploadMode === 'files' && selectedImages.length > 0) {
+                // Prévisualisation fichiers locaux (code existant)
+                selectedImages.forEach((file, index) => {
+                    if (index >= 8) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const previewDiv = document.createElement('div');
+                        previewDiv.className = 'image-preview';
+                        previewDiv.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview ${index + 1}">
+                            <button type="button" class="remove-btn" onclick="removeImage(${index})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        previewContainer.appendChild(previewDiv);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else if (uploadMode === 'urls' && imageUrls.length > 0) {
+                // Prévisualisation URLs
+                imageUrls.forEach((url, index) => {
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'url-image-preview loading';
+                    previewDiv.innerHTML = `
+                        <div class="url-preview-placeholder">
+                            <i class="fas fa-spinner fa-spin"></i><br>
+                            Chargement...
+                        </div>
+                        <button type="button" class="remove-btn" onclick="removeImageUrl(${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    previewContainer.appendChild(previewDiv);
+                    
+                    // Tester le chargement de l'image
+                    const img = new Image();
+                    img.onload = function() {
+                        previewDiv.className = 'url-image-preview success';
+                        previewDiv.innerHTML = `
+                            <img src="${url}" alt="URL Preview ${index + 1}" style="width: 100%; height: 80px; object-fit: cover;">
+                            <button type="button" class="remove-btn" onclick="removeImageUrl(${index})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                    };
+                    img.onerror = function() {
+                        previewDiv.className = 'url-image-preview error';
+                        previewDiv.innerHTML = `
+                            <div class="url-preview-placeholder" style="color: #EF4444;">
+                                <i class="fas fa-exclamation-triangle"></i><br>
+                                Erreur chargement
+                            </div>
+                            <button type="button" class="remove-btn" onclick="removeImageUrl(${index})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                    };
+                    img.src = url;
+                });
+            }
+        }
+
+        function removeImageUrl(index) {
+            imageUrls.splice(index, 1);
+            updateImagesPreview();
+        }
+
+       
 
         // ✅ CRITÈRES D'ÉVALUATION PAR TYPE D'ÉTABLISSEMENT
         const EVALUATION_CRITERIA = {
@@ -3435,7 +3684,8 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                                     <h3 class="text-xl font-bold text-white mb-1">${establishment.name}</h3>
                                     <p class="text-gray-400 mb-2">${establishment.address}</p>
                                     <div class="flex items-center space-x-4 text-sm text-gray-400">
-                                        <span><i class="fas fa-map-marker-alt mr-1"></i>${establishment.region}</span>
+                                        <span><i class="fas fa-map-marker-alt mr-1"></i>${establishment.city || establishment.region}</span>
+${establishment.city && establishment.city !== establishment.region ? `<span><i class="fas fa-globe mr-1"></i>${establishment.region}</span>` : ''}
                                         <span><i class="fas fa-euro-sign mr-1"></i>${'€'.repeat(establishment.priceLevel)}</span>
                                         ${establishment.promoCode ? `<span class="text-yellow-400"><i class="fas fa-gift mr-1"></i>Code promo</span>` : ''}
                                         <!-- ✅ NOUVEAU : Indicateur évaluation détaillée -->
@@ -3646,6 +3896,7 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             document.getElementById('form-name').value = establishment.name || '';
             document.getElementById('form-type').value = categoryToFormType[establishment.category] || 'hotel';
             document.getElementById('form-address').value = establishment.address || '';
+            document.getElementById('form-city').value = establishment.city || '';
             document.getElementById('form-region').value = establishment.region || 'ile-de-france';
             document.getElementById('form-larevue-rating').value = establishment.laRevueRating || '';
             document.getElementById('form-user-rating').value = establishment.usersRating || '';
@@ -3677,18 +3928,21 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
         }
 
         function closeModal() {
-            document.getElementById('edit-modal').classList.add('hidden');
-            editingId = null;
-            selectedImages = [];
-            
-            // ✅ NOUVEAU : Réinitialiser l'évaluation détaillée
-            currentEvaluationData = {
-                criteriaRatings: {},
-                strengths: [],
-                weaknesses: [],
-                summary: ''
-            };
-        }
+    document.getElementById('edit-modal').classList.add('hidden');
+    editingId = null;
+    selectedImages = [];
+    imageUrls = [];
+    uploadMode = 'files';
+    switchUploadTab('files');
+    
+    // ✅ NOUVEAU : Réinitialiser l'évaluation détaillée
+    currentEvaluationData = {
+        criteriaRatings: {},
+        strengths: [],
+        weaknesses: [],
+        summary: ''
+    };
+}
 
         // ✅ GESTION FORMULAIRE ÉTABLISSEMENT AVEC ÉVALUATION DÉTAILLÉE
         document.getElementById('establishment-form').addEventListener('submit', async (e) => {
@@ -3700,12 +3954,15 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
             submitBtn.disabled = true;
             
             try {
-                // Upload des images si présentes
-                let imageUrls = [];
-                if (selectedImages.length > 0) {
-                    console.log('📸 Upload des images...');
-                    imageUrls = await window.uploadImages(selectedImages);
-                }
+                // Upload des images selon le mode choisi
+let finalImageUrls = [];
+if (uploadMode === 'files' && selectedImages.length > 0) {
+    console.log('📸 Upload des fichiers images...');
+    finalImageUrls = await window.uploadImages(selectedImages);
+} else if (uploadMode === 'urls' && imageUrls.length > 0) {
+    console.log('📸 Utilisation des URLs d\'images...');
+    finalImageUrls = imageUrls;
+}
                 
                 const laRevueRating = parseFloat(document.getElementById('form-larevue-rating').value) || 7;
                 const usersRating = parseFloat(document.getElementById('form-user-rating').value) || 7;
@@ -3721,6 +3978,7 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
                     name: document.getElementById('form-name').value,
                     category: document.getElementById('form-type').value,
                     address: document.getElementById('form-address').value,
+                    city: document.getElementById('form-city').value,
                     region: document.getElementById('form-region').value,
                     laRevueRating: laRevueRating,
                     rating: laRevueRating,

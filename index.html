@@ -1589,15 +1589,19 @@
                     </div>
                 </div>
 
-                <!-- Adresse et région -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Adresse *</label>
-                        <input type="text" id="form-address" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Région *</label>
-                        <select id="form-region" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                <!-- Adresse, ville et région -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Adresse *</label>
+        <input type="text" id="form-address" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Ville *</label>
+        <input type="text" id="form-city" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="Ex: Paris, Lyon, Marseille...">
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Région *</label>
+        <select id="form-region" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
                             <option value="auvergne-rhone-alpes">Auvergne-Rhône-Alpes</option>
                             <option value="bourgogne-franche-comte">Bourgogne-Franche-Comté</option>
                             <option value="bretagne">Bretagne</option>

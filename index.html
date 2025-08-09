@@ -3379,9 +3379,9 @@ ${(news.city || news.region || featuredEstablishment) ? `
     document.getElementById('news-author').value = news.author || 'La Revue';
     document.getElementById('news-featured').checked = news.isFeatured || false;
     
-    // ✅ NOUVEAUX CHAMPS VILLE ET RÉGION
-    document.getElementById('news-city').value = news.city || '';
-    document.getElementById('news-region').value = news.region || '';
+    // ✅ CHAMPS VILLE ET RÉGION - CORRECTION CHARGEMENT
+document.getElementById('news-city').value = news.city || '';
+document.getElementById('news-region').value = news.region || '';
     
     const date = news.publishedAt?.toDate ? news.publishedAt.toDate() : new Date(news.publishedAt);
     document.getElementById('news-date').value = date.toISOString().split('T')[0];
@@ -3520,9 +3520,9 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
     establishmentType: document.getElementById('news-establishment-type').value,
     isFeatured: document.getElementById('news-featured').checked,
     publishedAt: new Date(document.getElementById('news-date').value || new Date()),
-    // ✅ NOUVEAUX CHAMPS VILLE ET RÉGION
-    city: document.getElementById('news-city').value,
-    region: document.getElementById('news-region').value,
+    // ✅ CHAMPS VILLE ET RÉGION - CORRECTION SAUVEGARDE
+    city: document.getElementById('news-city').value.trim(),
+    region: document.getElementById('news-region').value.trim(),
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date()

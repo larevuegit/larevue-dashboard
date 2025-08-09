@@ -596,6 +596,7 @@
                             description: data.longDescription || data.shortDescription || data.description || '',
                             category: docType,
                             region: data.region || data.city || 'ile-de-france',
+                            city: data.city || data.region || 'Ville non renseignée',
                             promoCode: data.promoCode || '',
                             promoDiscount: data.promoDiscount || '',
                             images: data.images || [],
@@ -1145,6 +1146,35 @@
             justify-content: center;
             gap: 0.5rem;
         }
+
+        /* ✅ NOUVEAUX STYLES OVERLAY VILLE/RÉGION ACTUALITÉS */
+.news-image {
+    position: relative;
+}
+
+.news-location-overlay {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border-radius: 8px;
+    padding: 6px 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.news-establishment-info {
+    background: linear-gradient(135deg, rgba(55, 65, 81, 0.95), rgba(75, 85, 99, 0.85));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.news-establishment-info:hover {
+    background: linear-gradient(135deg, rgba(75, 85, 99, 0.95), rgba(107, 114, 128, 0.85));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
 
         .score-edit-btn {
             font-size: 0.75rem;
@@ -1943,13 +1973,22 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Type d'établissement *</label>
-                        <select id="news-establishment-type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                        <select id="news-establishment-type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white" onchange="updateNewsLocationPreview()">
                             <option value="hotels">Hôtels</option>
                             <option value="restaurants">Restaurants</option>
                             <option value="spas">Spas</option>
                             <option value="all">Tous types</option>
                         </select>
                     </div>
+                     <!-- ✅ NOUVEAU : Aperçu localisation -->
+            <div id="news-location-preview" class="bg-blue-900 bg-opacity-20 p-4 rounded-lg border-l-4 border-blue-400 hidden">
+                <h5 class="text-blue-400 font-semibold mb-2 flex items-center">
+                    <i class="fas fa-map-marker-alt mr-2"></i>Aperçu localisation
+                </h5>
+                <div id="news-location-content" class="text-sm text-gray-300">
+                    <!-- Le contenu sera généré dynamiquement -->
+                </div>
+            </div>
                 </div>
 
                 <div>
@@ -2986,82 +3025,153 @@
             }
         }
 
-        // ✅ RENDU DES ACTUALITÉS AVEC TYPE D'ÉTABLISSEMENT
-        function renderNews(newsData) {
-            const container = document.getElementById('establishments-list');
-            
-            if (newsData.length === 0) {
-                container.innerHTML = `
-                    <div class="p-12 text-center">
-                        <div class="text-6xl mb-4">📰</div>
-                        <h3 class="text-xl font-bold text-gray-300 mb-2">Aucune actualité trouvée</h3>
-                        <p class="text-gray-400 mb-6">Commencez par ajouter votre première actualité</p>
-                        <button onclick="openNewsModal()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium">
-                            <i class="fas fa-plus mr-2"></i>Ajouter une actualité
-                        </button>
-                    </div>
-                `;
-                return;
-            }
+        // ✅ RENDU DES ACTUALITÉS AVEC TYPE D'ÉTABLISSEMENT ET INFOS ÉTABLISSEMENTS
+async function renderNews(newsData) {
+    const container = document.getElementById('establishments-list');
+    
+    if (newsData.length === 0) {
+        container.innerHTML = `
+            <div class="p-12 text-center">
+                <div class="text-6xl mb-4">📰</div>
+                <h3 class="text-xl font-bold text-gray-300 mb-2">Aucune actualité trouvée</h3>
+                <p class="text-gray-400 mb-6">Commencez par ajouter votre première actualité</p>
+                <button onclick="openNewsModal()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium">
+                    <i class="fas fa-plus mr-2"></i>Ajouter une actualité
+                </button>
+            </div>
+        `;
+        return;
+    }
 
-            container.innerHTML = newsData.map((news, index) => `
-                <div class="news-item p-6 border-b border-gray-700 last:border-b-0 ${news.isFeatured ? 'featured-news' : ''}" id="news-${news.id}">
-                    ${news.isFeatured ? `
-                        <div class="featured-news-badge px-4 py-2 rounded-full text-sm font-bold text-black mb-4 inline-flex items-center">
-                            <i class="fas fa-star mr-2"></i>Actualité à la Une
-                        </div>
-                    ` : ''}
+    // ✅ NOUVEAU : Charger les établissements pour récupérer les infos ville/région
+    const allEstablishments = [];
+    try {
+        const hotels = await window.loadEstablishments('hotels');
+        const restaurants = await window.loadEstablishments('restaurants');
+        const spas = await window.loadEstablishments('spas');
+        allEstablishments.push(...hotels, ...restaurants, ...spas);
+    } catch (error) {
+        console.error('Erreur chargement établissements pour actualités:', error);
+    }
+
+    container.innerHTML = newsData.map((news, index) => {
+        // ✅ NOUVEAU : Trouver un établissement featured du type correspondant pour afficher ville/région
+        let featuredEstablishment = null;
+        if (news.establishmentType !== 'all') {
+            const typeEstablishments = allEstablishments.filter(est => 
+                (news.establishmentType === 'hotels' && (est.category === 'hotel' || est.category === 'hotels')) ||
+                (news.establishmentType === 'restaurants' && (est.category === 'restaurant' || est.category === 'restaurants')) ||
+                (news.establishmentType === 'spas' && (est.category === 'spa' || est.category === 'spas'))
+            );
+            
+            // Privilégier l'établissement featured, sinon prendre le premier du classement
+            featuredEstablishment = typeEstablishments.find(est => est.isFeatured) || 
+                                  typeEstablishments.find(est => est.rank === 1) ||
+                                  typeEstablishments[0];
+        }
+
+        return `
+            <div class="news-item p-6 border-b border-gray-700 last:border-b-0 ${news.isFeatured ? 'featured-news' : ''}" id="news-${news.id}">
+                ${news.isFeatured ? `
+                    <div class="featured-news-badge px-4 py-2 rounded-full text-sm font-bold text-black mb-4 inline-flex items-center">
+                        <i class="fas fa-star mr-2"></i>Actualité à la Une
+                    </div>
+                ` : ''}
+                
+                <div class="flex items-start">
+                    <!-- Image avec overlay ville/région -->
+                    <div class="flex-shrink-0 relative">
+                        <img src="${news.imageUrl}" alt="${news.title}" class="news-image">
+                        
+                        <!-- ✅ NOUVEAU : Overlay ville/région si établissement trouvé -->
+                        ${featuredEstablishment ? `
+                            <div class="absolute bottom-2 left-2 bg-white bg-opacity-90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-lg">
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-map-marker-alt text-gray-600 text-xs"></i>
+                                    <div class="text-xs">
+                                        <div class="font-semibold text-gray-800">${featuredEstablishment.city || featuredEstablishment.region}</div>
+                                        ${featuredEstablishment.city && featuredEstablishment.city !== featuredEstablishment.region ? `
+                                            <div class="text-gray-600 text-[10px]">${featuredEstablishment.region}</div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
                     
-                    <div class="flex items-start">
-                        <!-- Image -->
-                        <div class="flex-shrink-0">
-                            <img src="${news.imageUrl}" alt="${news.title}" class="news-image">
+                    <!-- Contenu -->
+                    <div class="news-content">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="news-badge">${news.category}</div>
+                            <div class="establishment-type-badge">
+                                ${getEstablishmentIcon(news.establishmentType)} ${getEstablishmentLabel(news.establishmentType)}
+                            </div>
+                            <!-- ✅ NOUVEAU : Badge ville/région -->
+                            ${featuredEstablishment ? `
+                                <div class="text-xs bg-gray-600 text-gray-300 px-2 py-1 rounded-full flex items-center gap-1">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    ${featuredEstablishment.city || featuredEstablishment.region}
+                                </div>
+                            ` : ''}
                         </div>
                         
-                        <!-- Contenu -->
-                        <div class="news-content">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="news-badge">${news.category}</div>
-                                <div class="establishment-type-badge">
-                                    ${getEstablishmentIcon(news.establishmentType)} ${getEstablishmentLabel(news.establishmentType)}
+                        <h3 class="news-title">${news.title}</h3>
+                        
+                        <div class="news-meta">
+                            <span class="news-date">
+                                <i class="fas fa-calendar mr-1"></i>
+                                ${formatDate(news.publishedAt)}
+                            </span>
+                            <span class="news-author">
+                                <i class="fas fa-user mr-1"></i>
+                                ${news.author}
+                            </span>
+                        </div>
+                        
+                        <p class="news-summary">${news.summary}</p>
+                        
+                        <!-- ✅ NOUVEAU : Info établissement si trouvé -->
+                        ${featuredEstablishment ? `
+                            <div class="mt-3 p-3 bg-gray-700 bg-opacity-50 rounded-lg border-l-4 border-blue-400">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm font-semibold text-blue-400">${featuredEstablishment.isFeatured ? '⭐ ' : ''}${featuredEstablishment.name}</div>
+                                        <div class="text-xs text-gray-400">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>${featuredEstablishment.address}
+                                        </div>
+                                        ${featuredEstablishment.city && featuredEstablishment.region && featuredEstablishment.city !== featuredEstablishment.region ? `
+                                            <div class="text-xs text-gray-500">${featuredEstablishment.city}, ${featuredEstablishment.region}</div>
+                                        ` : ''}
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-sm font-bold text-green-400">${window.calculateOverallRating(featuredEstablishment.laRevueRating, featuredEstablishment.usersRating)}/10</div>
+                                        <div class="text-xs text-gray-400">Classement #${featuredEstablishment.rank}</div>
+                                    </div>
                                 </div>
                             </div>
+                        ` : ''}
+                        
+                        <div class="flex items-center justify-between mt-4">
+                            <a href="${news.articleUrl}" target="_blank" class="news-link">
+                                <i class="fas fa-external-link-alt"></i>
+                                Lire l'article complet
+                            </a>
                             
-                            <h3 class="news-title">${news.title}</h3>
-                            
-                            <div class="news-meta">
-                                <span class="news-date">
-                                    <i class="fas fa-calendar mr-1"></i>
-                                    ${formatDate(news.publishedAt)}
-                                </span>
-                                <span class="news-author">
-                                    <i class="fas fa-user mr-1"></i>
-                                    ${news.author}
-                                </span>
-                            </div>
-                            
-                            <p class="news-summary">${news.summary}</p>
-                            
-                            <div class="flex items-center justify-between">
-                                <a href="${news.articleUrl}" target="_blank" class="news-link">
-                                    <i class="fas fa-external-link-alt"></i>
-                                    Lire l'article complet
-                                </a>
-                                
-                                <div class="flex space-x-2">
-                                    <button onclick="editNews('${news.id}')" class="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button onclick="deleteNewsItem('${news.id}')" class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
+                            <div class="flex space-x-2">
+                                <button onclick="editNews('${news.id}')" class="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteNewsItem('${news.id}')" class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            `).join('');
-        }
+            </div>
+        `;
+    }).join('');
+}
 
         // ✅ RENDU DES AVIS AVEC CORRECTION PHOTOS
         function renderReviews(reviewsData) {

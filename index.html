@@ -406,18 +406,20 @@
                     console.log('📰 Actualité trouvée:', data);
                     
                     newsData.push({
-                        id: doc.id,
-                        title: data.title || 'Sans titre',
-                        summary: data.summary || '',
-                        imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',
-                        articleUrl: data.articleUrl || '',
-                        author: data.author || 'La Revue',
-                        publishedAt: data.publishedAt || new Date(),
-                        category: data.category || 'Actualités',
-                        establishmentType: data.establishmentType || 'hotels',
-                        isFeatured: data.isFeatured || false,
-                        isActive: data.isActive || true
-                    });
+                id: doc.id,
+                title: data.title || 'Sans titre',
+                summary: data.summary || '',
+                imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',
+                articleUrl: data.articleUrl || '',
+                author: data.author || 'La Revue',
+                publishedAt: data.publishedAt || new Date(),
+                category: data.category || 'Actualités',
+                establishmentType: data.establishmentType || 'hotels',
+                isFeatured: data.isFeatured || false,
+                isActive: data.isActive || true,
+                city: data.city || '',        // ← CETTE LIGNE À AJOUTER
+                region: data.region || ''     // ← CETTE LIGNE À AJOUTER
+            });
                 });
                 
                 console.log(`✅ ${newsData.length} actualités chargées`);

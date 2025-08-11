@@ -3521,8 +3521,8 @@ Type spécifique: ${review.typeSpecificData ? JSON.stringify(review.typeSpecific
     isFeatured: document.getElementById('news-featured').checked,
     publishedAt: new Date(document.getElementById('news-date').value || new Date()),
     // ✅ CHAMPS VILLE ET RÉGION - CORRECTION SAUVEGARDE
-    city: document.getElementById('news-city').value.trim(),
-    region: document.getElementById('news-region').value.trim(),
+    city: document.getElementById('news-city').value || '',
+    region: document.getElementById('news-region').value || '',
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date()

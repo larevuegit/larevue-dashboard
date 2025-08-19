@@ -1768,6 +1768,87 @@ https://example.com/image2.jpg"></textarea>
         </div>
     </div>
 
+     <!-- Edit News Modal -->
+    <div id="editNewsModal" class="modal">
+        <div class="modal-content p-6" style="width: 700px;">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-900">✏️ Modifier l'actualité</h3>
+                <button onclick="closeEditNewsModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            
+            <form id="editNewsForm" class="space-y-6">
+                <input type="hidden" id="editNewsId">
+                
+                <!-- Basic Information -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="form-label">Titre de l'actualité *</label>
+                        <input type="text" id="editNewsTitle" required class="form-input">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label">Catégorie *</label>
+                            <select id="editNewsType" required class="form-input">
+                                <option value="">Sélectionner une catégorie</option>
+                                <option value="hotel">🏨 Hôtels</option>
+                                <option value="restaurant">🍽️ Restaurants</option>
+                                <option value="spa">🧘 Spas</option>
+                                <option value="general">🌟 Général</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Statut</label>
+                            <select id="editNewsStatus" class="form-input">
+                                <option value="draft">📝 Brouillon</option>
+                                <option value="published">✅ Publié</option>
+                                <option value="scheduled">⏰ Programmé</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div>
+                    <label class="form-label">Contenu de l'actualité *</label>
+                    <textarea id="editNewsContent" required rows="6" class="form-input"></textarea>
+                </div>
+
+                <!-- Image -->
+                <div>
+                    <label class="form-label">URL d'image</label>
+                    <input type="url" id="editNewsImageUrl" class="form-input" placeholder="https://example.com/image.jpg">
+                </div>
+
+                <!-- Publishing Options -->
+                <div class="bg-gray-50 p-4 rounded-lg space-y-4">
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="editNewsFeature" class="mr-2">
+                            <span class="form-label">⭐ Mettre à la une</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tags -->
+                <div>
+                    <label class="form-label">Tags</label>
+                    <input type="text" id="editNewsTags" class="form-input" placeholder="actualité, hôtel, restaurant (séparés par des virgules)">
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="closeEditNewsModal()" class="btn btn-secondary">
+                        ❌ Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        ✅ Sauvegarder les modifications
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Review Detail Modal -->
     <div id="reviewDetailModal" class="modal">
         <div class="modal-content p-6" style="width: 800px;">
@@ -1861,6 +1942,7 @@ https://example.com/image2.jpg"></textarea>
             document.getElementById('addForm').addEventListener('submit', handleAddSubmit);
             document.getElementById('editForm').addEventListener('submit', handleEditSubmit);
             document.getElementById('addNewsForm').addEventListener('submit', handleAddNewsSubmit);
+            document.getElementById('editNewsForm').addEventListener('submit', handleEditNewsSubmit);
 
             // Image preview functionality
             document.getElementById('imageFiles').addEventListener('change', handleImagePreview);
@@ -3639,6 +3721,84 @@ https://example.com/image2.jpg"></textarea>
             
             alert(`Détails de ${establishment.name}\n\nType: ${establishment.type}\nVille: ${establishment.city}\nAdresse: ${establishment.address}\nTéléphone: ${establishment.phone || 'N/A'}\nEmail: ${establishment.email || 'N/A'}\nSite web: ${establishment.website || 'N/A'}\n\nNotes:\n- La Revue: ${establishment.laRevueRating}/5\n- Utilisateurs: ${establishment.userRating}/5\n- Générale: ${establishment.generalRating}/5`);
         }
+
+
+        // News editing functions
+        async function editNews(newsId) {
+            try {
+                const doc = await db.collection('news').doc(newsId).get();
+                if (doc.exists) {
+                    const newsData = doc.data();
+                    
+                    // Remplir le formulaire avec les données existantes
+                    document.getElementById('editNewsId').value = newsId;
+                    document.getElementById('editNewsTitle').value = newsData.title || '';
+                    document.getElementById('editNewsContent').value = newsData.content || '';
+                    document.getElementById('editNewsType').value = newsData.type || '';
+                    document.getElementById('editNewsStatus').value = newsData.status || 'draft';
+                    document.getElementById('editNewsFeature').checked = newsData.featured || false;
+                    document.getElementById('editNewsImageUrl').value = newsData.imageUrl || '';
+                    document.getElementById('editNewsTags').value = newsData.tags ? newsData.tags.join(', ') : '';
+                    
+                    // Afficher le modal
+                    document.getElementById('editNewsModal').classList.add('show');
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement de l\'actualité:', error);
+                alert('Erreur lors du chargement de l\'actualité');
+            }
+        }
+
+        function closeEditNewsModal() {
+            document.getElementById('editNewsModal').classList.remove('show');
+            document.getElementById('editNewsForm').reset();
+        }
+
+        async function handleEditNewsSubmit(e) {
+            e.preventDefault();
+            
+            try {
+                showNotification('💾 Modification en cours...', 'info');
+                
+                const newsId = document.getElementById('editNewsId').value;
+                const formData = {
+                    title: document.getElementById('editNewsTitle').value,
+                    type: document.getElementById('editNewsType').value,
+                    content: document.getElementById('editNewsContent').value,
+                    status: document.getElementById('editNewsStatus').value,
+                    featured: document.getElementById('editNewsFeature').checked,
+                    tags: document.getElementById('editNewsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Handle image
+                const imageUrl = document.getElementById('editNewsImageUrl').value;
+                if (imageUrl) {
+                    formData.imageUrl = imageUrl;
+                }
+
+                // Handle publication date
+                if (formData.status === 'published') {
+                    formData.publishedAt = firebase.firestore.FieldValue.serverTimestamp();
+                }
+
+                // Update in Firestore
+                await db.collection('news').doc(newsId).update(formData);
+                
+                closeEditNewsModal();
+                await loadNews();
+                updateFeaturedNews();
+                showNotification('✅ Actualité modifiée avec succès!', 'success');
+                
+            } catch (error) {
+                console.error('Erreur lors de la modification de l\'actualité:', error);
+                showNotification('❌ Erreur lors de la modification de l\'actualité', 'error');
+            }
+        }
+
+
+
+
 
         // Close modals when clicking outside
         window.addEventListener('click', function(e) {

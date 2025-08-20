@@ -3774,6 +3774,7 @@ https://example.com/image2.jpg"></textarea>
                     document.getElementById('editNewsTitle').value = newsData.title || '';
                     document.getElementById('editNewsContent').value = newsData.content || '';
                     document.getElementById('editNewsSummary').value = newsData.summary || '';
+                    document.getElementById('editNewsCity').value = newsData.city || '';
                     document.getElementById('editNewsType').value = newsData.type || '';
                     document.getElementById('editNewsStatus').value = newsData.status || 'draft';
                     document.getElementById('editNewsFeature').checked = newsData.featured || false;
@@ -3809,6 +3810,7 @@ https://example.com/image2.jpg"></textarea>
     content: document.getElementById('editNewsContent').value,
     summary: document.getElementById('editNewsSummary').value || 'Résumé à venir',    // ← NOUVELLE LIGNE
     articleLink: document.getElementById('editNewsArticleLink').value,
+    city: document.getElementById('editNewsCity').value || '',
     status: document.getElementById('editNewsStatus').value,
     featured: document.getElementById('editNewsFeature').checked,
     tags: document.getElementById('editNewsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),

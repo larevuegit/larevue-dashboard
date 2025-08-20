@@ -3034,31 +3034,69 @@
         window.db = db;
         window.firestoreModules = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, limit };
 
-        // 🔐 PROTECTION PAR MOT DE PASSE
-        const ADMIN_PASSWORD = "LaRevue2024!";
-        console.log('🔑 Mot de passe attendu configuré');
-        
-        window.checkPassword = function() {
-    const password = document.getElementById('adminPassword').value.trim();
+        // 🔐 PROTECTION PAR MOT DE PASSE - VERSION CORRIGÉE
+const ADMIN_PASSWORD = "LaRevue2024!";
+
+function checkPassword() {
+    console.log('🔑 Fonction checkPassword appelée');
+    
+    const passwordInput = document.getElementById('adminPassword');
     const errorDiv = document.getElementById('passwordError');
+    const overlay = document.getElementById('passwordOverlay');
+    const mainContent = document.getElementById('mainContent');
     
-    console.log('🔑 Tentative de connexion avec:', password); // Debug
-    
-    if (password === ADMIN_PASSWORD) {
-        console.log('✅ Mot de passe correct !');
-        document.getElementById('passwordOverlay').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
-        initializeDashboard();
-    } else {
-        console.log('❌ Mot de passe incorrect');
-        errorDiv.classList.remove('hidden');
-        document.getElementById('adminPassword').value = '';
-        document.getElementById('adminPassword').focus();
-        setTimeout(() => {
-            errorDiv.classList.add('hidden');
-        }, 3000);
+    if (!passwordInput) {
+        console.error('❌ Champ mot de passe non trouvé');
+        return false;
     }
-};
+    
+    const enteredPassword = passwordInput.value.trim();
+    console.log('🔍 Mot de passe saisi:', `"${enteredPassword}"`);
+    console.log('🔍 Mot de passe attendu:', `"${ADMIN_PASSWORD}"`);
+    console.log('🔍 Longueurs - saisi:', enteredPassword.length, 'attendu:', ADMIN_PASSWORD.length);
+    
+    if (enteredPassword === ADMIN_PASSWORD) {
+        console.log('✅ CONNEXION RÉUSSIE !');
+        
+        // Masquer l'overlay
+        if (overlay) overlay.style.display = 'none';
+        
+        // Afficher le contenu principal
+        if (mainContent) {
+            mainContent.style.display = 'block';
+            console.log('✅ Contenu principal affiché');
+        }
+        
+        // Initialiser le dashboard
+        try {
+            initializeDashboard();
+            console.log('✅ Dashboard initialisé');
+        } catch (error) {
+            console.error('❌ Erreur initialisation:', error);
+        }
+        
+        return true;
+    } else {
+        console.log('❌ MOT DE PASSE INCORRECT');
+        
+        // Afficher l'erreur
+        if (errorDiv) {
+            errorDiv.classList.remove('hidden');
+            setTimeout(() => {
+                errorDiv.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // Vider et focus
+        passwordInput.value = '';
+        passwordInput.focus();
+        
+        return false;
+    }
+}
+
+// Rendre la fonction globale
+window.checkPassword = checkPassword;
 
         // Permettre entrée pour valider le mot de passe
 document.addEventListener('DOMContentLoaded', function() {

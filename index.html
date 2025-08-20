@@ -3015,7 +3015,7 @@ https://example.com/image2.jpg"></textarea>
                     title: document.getElementById('newsTitle').value,
                     type: document.getElementById('newsType').value,
                     content: document.getElementById('newsContent').value,
-                    summary: document.getElementById('newsSummary').value,
+                    summary: document.getElementById('newsSummary').value || 'Résumé à venir',
                     articleLink: document.getElementById('newsArticleLink').value,
                     status: document.getElementById('newsStatus').value,
                     featured: document.getElementById('newsFeatured').checked,
@@ -3789,15 +3789,16 @@ https://example.com/image2.jpg"></textarea>
                 
                 const newsId = document.getElementById('editNewsId').value;
                 const formData = {
-                    title: document.getElementById('editNewsTitle').value,
-                    type: document.getElementById('editNewsType').value,
-                    content: document.getElementById('editNewsContent').value,
-                    articleLink: document.getElementById('editNewsArticleLink').value,
-                    status: document.getElementById('editNewsStatus').value,
-                    featured: document.getElementById('editNewsFeature').checked,
-                    tags: document.getElementById('editNewsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
+    title: document.getElementById('editNewsTitle').value,
+    type: document.getElementById('editNewsType').value,
+    content: document.getElementById('editNewsContent').value,
+    summary: document.getElementById('editNewsSummary').value || 'Résumé à venir',    // ← NOUVELLE LIGNE
+    articleLink: document.getElementById('editNewsArticleLink').value,
+    status: document.getElementById('editNewsStatus').value,
+    featured: document.getElementById('editNewsFeature').checked,
+    tags: document.getElementById('editNewsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+};
 
                 // Handle image
                 const imageUrl = document.getElementById('editNewsImageUrl').value;

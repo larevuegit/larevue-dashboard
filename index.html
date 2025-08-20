@@ -1711,6 +1711,13 @@ https://example.com/image2.jpg"></textarea>
                     <p class="text-xs text-gray-500 mt-1">Vous pouvez utiliser du HTML pour la mise en forme</p>
                 </div>
 
+                <!-- Lien de l'article -->
+                <div>
+                    <label class="form-label">Lien de l'article (optionnel)</label>
+                    <input type="url" id="newsArticleLink" class="form-input" placeholder="https://example.com/article">
+                    <p class="text-xs text-gray-500 mt-1">Lien vers l'article complet si hébergé ailleurs</p>
+                </div>
+
                 <!-- Image -->
                 <div class="space-y-4">
                     <div>
@@ -1812,6 +1819,13 @@ https://example.com/image2.jpg"></textarea>
                 <div>
                     <label class="form-label">Contenu de l'actualité *</label>
                     <textarea id="editNewsContent" required rows="6" class="form-input"></textarea>
+                </div>
+
+                <!-- Lien de l'article -->
+                <div>
+                    <label class="form-label">Lien de l'article (optionnel)</label>
+                    <input type="url" id="editNewsArticleLink" class="form-input" placeholder="https://example.com/article">
+                    <p class="text-xs text-gray-500 mt-1">Lien vers l'article complet si hébergé ailleurs</p>
                 </div>
 
                 <!-- Image -->
@@ -2257,6 +2271,7 @@ https://example.com/image2.jpg"></textarea>
                             <button onclick="toggleFeatured('${article.id}', ${!article.featured})" class="btn ${article.featured ? 'btn-warning' : 'btn-success'}">
                                 ${article.featured ? '⭐ Retirer' : '⭐ Une'}
                             </button>
+                            ${article.articleLink ? `<a href="${article.articleLink}" target="_blank" class="btn btn-secondary">🔗 Lien</a>` : ''}
                             <button onclick="deleteNews('${article.id}')" class="btn btn-danger">
                                 🗑️ Supprimer
                             </button>
@@ -2993,6 +3008,7 @@ https://example.com/image2.jpg"></textarea>
                     title: document.getElementById('newsTitle').value,
                     type: document.getElementById('newsType').value,
                     content: document.getElementById('newsContent').value,
+                    articleLink: document.getElementById('newsArticleLink').value,
                     status: document.getElementById('newsStatus').value,
                     featured: document.getElementById('newsFeatured').checked,
                     notifyUsers: document.getElementById('newsNotifyUsers').checked,
@@ -3738,6 +3754,7 @@ https://example.com/image2.jpg"></textarea>
                     document.getElementById('editNewsStatus').value = newsData.status || 'draft';
                     document.getElementById('editNewsFeature').checked = newsData.featured || false;
                     document.getElementById('editNewsImageUrl').value = newsData.imageUrl || '';
+                    document.getElementById('editNewsArticleLink').value = newsData.articleLink || '';
                     document.getElementById('editNewsTags').value = newsData.tags ? newsData.tags.join(', ') : '';
                     
                     // Afficher le modal
@@ -3765,6 +3782,7 @@ https://example.com/image2.jpg"></textarea>
                     title: document.getElementById('editNewsTitle').value,
                     type: document.getElementById('editNewsType').value,
                     content: document.getElementById('editNewsContent').value,
+                    articleLink: document.getElementById('editNewsArticleLink').value,
                     status: document.getElementById('editNewsStatus').value,
                     featured: document.getElementById('editNewsFeature').checked,
                     tags: document.getElementById('editNewsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),

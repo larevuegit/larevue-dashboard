@@ -1704,6 +1704,13 @@ https://example.com/image2.jpg"></textarea>
                     </div>
                 </div>
 
+                <!-- NOUVEAU CHAMP VILLE À AJOUTER ICI -->
+                <div>
+                    <label class="form-label">Ville (optionnel)</label>
+                    <input type="text" id="newsCity" class="form-input" placeholder="Ex: Paris, Lyon, Marseille...">
+                    <p class="text-xs text-gray-500 mt-1">Ville liée à cette actualité pour l'affichage sur l'app mobile</p>
+                </div>
+
                 <!-- Content -->
                 <div>
                     <label class="form-label">Contenu de l'actualité *</label>
@@ -1820,6 +1827,13 @@ https://example.com/image2.jpg"></textarea>
                             </select>
                         </div>
                     </div>
+                </div>
+
+                <!-- NOUVEAU CHAMP VILLE À AJOUTER ICI -->
+                <div>
+                    <label class="form-label">Ville (optionnel)</label>
+                    <input type="text" id="editNewsCity" class="form-input" placeholder="Ex: Paris, Lyon, Marseille...">
+                    <p class="text-xs text-gray-500 mt-1">Ville liée à cette actualité</p>
                 </div>
 
                 <!-- Content -->
@@ -3017,6 +3031,7 @@ https://example.com/image2.jpg"></textarea>
                     content: document.getElementById('newsContent').value,
                     summary: document.getElementById('newsSummary').value || 'Résumé à venir',
                     articleLink: document.getElementById('newsArticleLink').value,
+                    city: document.getElementById('newsCity').value || '',
                     status: document.getElementById('newsStatus').value,
                     featured: document.getElementById('newsFeatured').checked,
                     notifyUsers: document.getElementById('newsNotifyUsers').checked,

@@ -3098,6 +3098,45 @@ function checkPassword() {
 // Rendre la fonction globale
 window.checkPassword = checkPassword;
 
+        // 🔄 GESTION DES ÉVÉNEMENTS - VERSION CORRIGÉE
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Page chargée, configuration des événements...');
+    
+    // Configuration du champ mot de passe
+    const passwordInput = document.getElementById('adminPassword');
+    if (passwordInput) {
+        console.log('✅ Champ mot de passe trouvé');
+        
+        // Événement Enter
+        passwordInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                console.log('⌨️ Entrée pressée');
+                checkPassword();
+            }
+        });
+        
+        // Focus automatique
+        passwordInput.focus();
+        console.log('✅ Focus sur le champ mot de passe');
+    } else {
+        console.error('❌ Champ mot de passe non trouvé !');
+    }
+    
+    // Configuration du bouton
+    const loginButton = document.querySelector('button[onclick="checkPassword()"]');
+    if (loginButton) {
+        console.log('✅ Bouton de connexion trouvé');
+        loginButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            console.log('🖱️ Bouton cliqué');
+            checkPassword();
+        });
+    }
+});
+
+console.log('🔐 Système de connexion configuré - Mot de passe:', ADMIN_PASSWORD);
+
         // Permettre entrée pour valider le mot de passe
 document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.getElementById('adminPassword');

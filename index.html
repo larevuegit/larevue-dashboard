@@ -3060,11 +3060,18 @@
 };
 
         // Permettre entrée pour valider le mot de passe
-        document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordInput = document.getElementById('adminPassword');
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                checkPassword();
+                e.preventDefault();
+                window.checkPassword();
             }
         });
+        passwordInput.focus();
+    }
+});
 
         // Focus automatique sur le champ mot de passe
         document.getElementById('adminPassword').focus();

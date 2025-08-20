@@ -3038,23 +3038,26 @@
         const ADMIN_PASSWORD = "LaRevue2024!";
         
         window.checkPassword = function() {
-            const password = document.getElementById('adminPassword').value;
-            const errorDiv = document.getElementById('passwordError');
-            
-            if (password === ADMIN_PASSWORD) {
-                document.getElementById('passwordOverlay').style.display = 'none';
-                document.getElementById('mainContent').style.display = 'block';
-                initializeDashboard();
-                showSuccessMessage('🎉 Bienvenue dans le Dashboard Admin La Revue !');
-            } else {
-                errorDiv.classList.remove('hidden');
-                document.getElementById('adminPassword').value = '';
-                document.getElementById('adminPassword').focus();
-                setTimeout(() => {
-                    errorDiv.classList.add('hidden');
-                }, 3000);
-            }
-        };
+    const password = document.getElementById('adminPassword').value.trim();
+    const errorDiv = document.getElementById('passwordError');
+    
+    console.log('🔑 Tentative de connexion avec:', password); // Debug
+    
+    if (password === ADMIN_PASSWORD) {
+        console.log('✅ Mot de passe correct !');
+        document.getElementById('passwordOverlay').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        initializeDashboard();
+    } else {
+        console.log('❌ Mot de passe incorrect');
+        errorDiv.classList.remove('hidden');
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('adminPassword').focus();
+        setTimeout(() => {
+            errorDiv.classList.add('hidden');
+        }, 3000);
+    }
+};
 
         // Permettre entrée pour valider le mot de passe
         document.getElementById('adminPassword').addEventListener('keypress', function(e) {

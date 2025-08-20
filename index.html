@@ -1620,7 +1620,7 @@
                 Entrez le mot de passe administrateur pour accéder au dashboard
             </p>
             <input type="password" id="adminPassword" class="password-input" placeholder="••••••••" autocomplete="current-password">
-            <button onclick="checkPassword()" class="btn btn-primary" style="width: 100%; position: relative; z-index: 1;">
+            <button id="loginBtn" class="btn btn-primary" style="width: 100%; position: relative; z-index: 1;">
                 🚀 Accéder au Dashboard
             </button>
             <div id="passwordError" class="alert alert-error hidden" style="margin-top: 20px; position: relative; z-index: 1;">
@@ -3051,9 +3051,7 @@ function checkPassword() {
     }
     
     const enteredPassword = passwordInput.value.trim();
-    console.log('🔍 Mot de passe saisi:', `"${enteredPassword}"`);
-    console.log('🔍 Mot de passe attendu:', `"${ADMIN_PASSWORD}"`);
-    console.log('🔍 Longueurs - saisi:', enteredPassword.length, 'attendu:', ADMIN_PASSWORD.length);
+    console.log('🔍 Vérification mot de passe...');
     
     if (enteredPassword === ADMIN_PASSWORD) {
         console.log('✅ CONNEXION RÉUSSIE !');
@@ -3108,7 +3106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Champ mot de passe trouvé');
         
         // Événement Enter
-        passwordInput.addEventListener('keydown', function(event) {
+        passwordInput.addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 console.log('⌨️ Entrée pressée');
@@ -3124,7 +3122,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Configuration du bouton
-    const loginButton = document.querySelector('button[onclick="checkPassword()"]');
+    const loginButton = document.getElementById('loginBtn');
     if (loginButton) {
         console.log('✅ Bouton de connexion trouvé');
         loginButton.addEventListener('click', function(event) {
@@ -3132,27 +3130,14 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('🖱️ Bouton cliqué');
             checkPassword();
         });
+    } else {
+        console.error('❌ Bouton de connexion non trouvé !');
     }
 });
 
 console.log('🔐 Système de connexion configuré - Mot de passe:', ADMIN_PASSWORD);
 
-        // Permettre entrée pour valider le mot de passe
-document.addEventListener('DOMContentLoaded', function() {
-    const passwordInput = document.getElementById('adminPassword');
-    if (passwordInput) {
-        passwordInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                window.checkPassword();
-            }
-        });
-        passwordInput.focus();
-    }
-});
-
-        // Focus automatique sur le champ mot de passe
-        document.getElementById('adminPassword').focus();
+        
 
         // 🎯 SYSTÈME DE NAVIGATION PAR ONGLETS AVANCÉ
         class AdvancedTabSystem {

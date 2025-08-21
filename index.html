@@ -3035,7 +3035,7 @@ https://example.com/image2.jpg"></textarea>
     status: document.getElementById('newsStatus').value,
     featured: document.getElementById('newsFeatured').checked,
     notifyUsers: document.getElementById('newsNotifyUsers').checked,
-    author: 'Administrateur',
+    author: 'La Revue',
     tags: document.getElementById('newsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
     views: 0,
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),

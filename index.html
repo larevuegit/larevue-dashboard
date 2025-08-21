@@ -3812,6 +3812,14 @@ https://example.com/image2.jpg"></textarea>
                 showNotification('💾 Modification en cours...', 'info');
                 
                 const newsId = document.getElementById('editNewsId').value;
+                // ✅ AJOUTEZ CE MAPPING ICI (nouvelle ligne)
+        const establishmentTypeMapping = {
+            'hotel': 'hotels',
+            'restaurant': 'restaurants', 
+            'spa': 'spas',
+            'general': 'general'
+        };
+        
                 const formData = {
     title: document.getElementById('editNewsTitle').value,
     establishmentType: document.getElementById('editNewsType').value,

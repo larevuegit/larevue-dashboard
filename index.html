@@ -3025,21 +3025,29 @@ https://example.com/image2.jpg"></textarea>
             try {
                 showNotification('📰 Publication en cours...', 'info');
                 
-                const formData = {
-                    title: document.getElementById('newsTitle').value,
-                    establishmentType: document.getElementById('newsType').value,
-                    content: document.getElementById('newsContent').value,
-                    summary: document.getElementById('newsSummary').value || 'Résumé à venir',
-                    articleLink: document.getElementById('newsArticleLink').value,
-                    city: document.getElementById('newsCity').value || '',
-                    status: document.getElementById('newsStatus').value,
-                    featured: document.getElementById('newsFeatured').checked,
-                    notifyUsers: document.getElementById('newsNotifyUsers').checked,
-                    author: 'Administrateur',
-                    tags: document.getElementById('newsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
-                    views: 0,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
+                // ✅ AJOUTEZ CE MAPPING ICI (nouvelle ligne)
+        const establishmentTypeMapping = {
+            'hotel': 'hotels',
+            'restaurant': 'restaurants', 
+            'spa': 'spas',
+            'general': 'general'
+        };
+        
+        const formData = {
+            title: document.getElementById('newsTitle').value,
+            establishmentType: establishmentTypeMapping[document.getElementById('newsType').value] || document.getElementById('newsType').value, // ← MODIFIEZ CETTE LIGNE
+            content: document.getElementById('newsContent').value,
+            summary: document.getElementById('newsSummary').value || 'Résumé à venir',
+            articleLink: document.getElementById('newsArticleLink').value,
+            city: document.getElementById('newsCity').value || '',
+            status: document.getElementById('newsStatus').value,
+            featured: document.getElementById('newsFeatured').checked,
+            notifyUsers: document.getElementById('newsNotifyUsers').checked,
+            author: 'Administrateur',
+            tags: document.getElementById('newsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+            views: 0,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
 
                 // Handle scheduled publication
                 const scheduledDate = document.getElementById('newsScheduledDate').value;

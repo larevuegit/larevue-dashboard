@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -20,19 +20,19 @@
             background-color: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
         }
-        
+       
         .modal.show {
             display: flex;
             align-items: center;
             justify-content: center;
             animation: modalFadeIn 0.3s ease-out;
         }
-        
+       
         @keyframes modalFadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        
+       
         .modal-content {
             background-color: white;
             border-radius: 12px;
@@ -42,18 +42,18 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             animation: modalSlideIn 0.3s ease-out;
         }
-        
+       
         @keyframes modalSlideIn {
             from { transform: translateY(-50px) scale(0.95); }
             to { transform: translateY(0) scale(1); }
         }
-        
+       
         .star-rating {
             display: flex;
             gap: 4px;
             align-items: center;
         }
-        
+       
         .star {
             cursor: pointer;
             font-size: 24px;
@@ -61,31 +61,31 @@
             transition: all 0.2s ease;
             user-select: none;
         }
-        
+       
         .star.active {
             color: #fbbf24;
             text-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
         }
-        
+       
         .star:hover {
             color: #fbbf24;
             transform: scale(1.1);
         }
-        
+       
         .star-rating:hover .star {
             color: #e5e7eb;
         }
-        
+       
         .star-rating:hover .star:hover,
         .star-rating:hover .star:hover ~ .star {
             color: #d1d5db;
         }
-        
+       
         .star-rating:hover .star:hover,
         .star-rating .star:hover ~ .star {
             color: #fbbf24;
         }
-        
+       
         .tab {
             cursor: pointer;
             padding: 12px 24px;
@@ -95,7 +95,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+       
         .tab::before {
             content: '';
             position: absolute;
@@ -106,36 +106,36 @@
             background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
             transition: left 0.6s ease;
         }
-        
+       
         .tab:hover::before {
             left: 100%;
         }
-        
+       
         .tab.active {
             border-bottom-color: #3b82f6;
             color: #3b82f6;
             background-color: rgba(59, 130, 246, 0.05);
         }
-        
+       
         .tab:hover:not(.active) {
             background-color: rgba(59, 130, 246, 0.02);
             color: #3b82f6;
         }
-        
+       
         .tab-content {
             display: none;
             animation: tabFadeIn 0.3s ease-in-out;
         }
-        
+       
         .tab-content.active {
             display: block;
         }
-        
+       
         @keyframes tabFadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
+       
         .loading {
             display: inline-block;
             width: 20px;
@@ -145,12 +145,12 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        
+       
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
+       
         .geocoding-status {
             padding: 6px 12px;
             border-radius: 6px;
@@ -162,25 +162,25 @@
             align-items: center;
             gap: 4px;
         }
-        
+       
         .geocoding-success {
             background-color: #d1fae5;
             color: #065f46;
             border: 1px solid #a7f3d0;
         }
-        
+       
         .geocoding-error {
             background-color: #fee2e2;
             color: #991b1b;
             border: 1px solid #fecaca;
         }
-        
+       
         .geocoding-loading {
             background-color: #dbeafe;
             color: #1e40af;
             border: 1px solid #bfdbfe;
         }
-        
+       
         .btn {
             padding: 8px 16px;
             border-radius: 6px;
@@ -193,64 +193,64 @@
             gap: 6px;
             text-decoration: none;
         }
-        
+       
         .btn:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-        
+       
         .btn:active {
             transform: translateY(0);
         }
-        
+       
         .btn-primary {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: white;
         }
-        
+       
         .btn-primary:hover {
             background: linear-gradient(135deg, #2563eb, #1e40af);
         }
-        
+       
         .btn-success {
             background: linear-gradient(135deg, #10b981, #059669);
             color: white;
         }
-        
+       
         .btn-success:hover {
             background: linear-gradient(135deg, #059669, #047857);
         }
-        
+       
         .btn-purple {
             background: linear-gradient(135deg, #8b5cf6, #7c3aed);
             color: white;
         }
-        
+       
         .btn-purple:hover {
             background: linear-gradient(135deg, #7c3aed, #6d28d9);
         }
-        
+       
         .btn-danger {
             background: linear-gradient(135deg, #ef4444, #dc2626);
             color: white;
         }
-        
+       
         .btn-danger:hover {
             background: linear-gradient(135deg, #dc2626, #b91c1c);
         }
-        
+       
         .card {
             background: white;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             transition: all 0.3s ease;
         }
-        
+       
         .card:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        
+       
         .form-input {
             width: 100%;
             padding: 10px 12px;
@@ -259,17 +259,17 @@
             transition: all 0.2s ease;
             font-size: 14px;
         }
-        
+       
         .form-input:focus {
             outline: none;
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
-        
+       
         .form-input:hover {
             border-color: #9ca3af;
         }
-        
+       
         .form-label {
             display: block;
             font-size: 14px;
@@ -277,19 +277,19 @@
             color: #374151;
             margin-bottom: 6px;
         }
-        
+       
         .table-container {
             overflow-x: auto;
             border-radius: 8px;
             border: 1px solid #e5e7eb;
         }
-        
+       
         .data-table {
             width: 100%;
             border-collapse: collapse;
             background: white;
         }
-        
+       
         .data-table th {
             background: linear-gradient(135deg, #f9fafb, #f3f4f6);
             padding: 12px 16px;
@@ -301,17 +301,17 @@
             top: 0;
             z-index: 10;
         }
-        
+       
         .data-table td {
             padding: 12px 16px;
             border-bottom: 1px solid #f3f4f6;
             color: #6b7280;
         }
-        
+       
         .data-table tr:hover {
             background-color: rgba(59, 130, 246, 0.02);
         }
-        
+       
         .badge {
             padding: 4px 8px;
             border-radius: 12px;
@@ -320,34 +320,34 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
-        
+       
         .badge-success {
             background-color: #d1fae5;
             color: #065f46;
         }
-        
+       
         .badge-warning {
             background-color: #fef3c7;
             color: #92400e;
         }
-        
+       
         .badge-danger {
             background-color: #fee2e2;
             color: #991b1b;
         }
-        
+       
         .badge-info {
             background-color: #dbeafe;
             color: #1e40af;
         }
-        
+       
         .image-preview {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             margin-top: 8px;
         }
-        
+       
         .image-preview img {
             width: 80px;
             height: 80px;
@@ -356,18 +356,18 @@
             border: 2px solid #e5e7eb;
             transition: all 0.2s ease;
         }
-        
+       
         .image-preview img:hover {
             transform: scale(1.05);
             border-color: #3b82f6;
         }
-        
+       
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
         }
-        
+       
         .stat-card {
             background: white;
             padding: 20px;
@@ -376,7 +376,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+       
         .stat-card::before {
             content: '';
             position: absolute;
@@ -386,13 +386,13 @@
             height: 4px;
             background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ef4444, #10b981);
         }
-        
+       
         .stat-number {
             font-size: 2.5rem;
             font-weight: 700;
             margin: 8px 0;
         }
-        
+       
         .stat-label {
             font-size: 0.875rem;
             font-weight: 600;
@@ -400,7 +400,7 @@
             letter-spacing: 0.05em;
             opacity: 0.8;
         }
-        
+       
         .filter-section {
             background: white;
             padding: 16px;
@@ -408,38 +408,38 @@
             margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        
+       
         .filter-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             align-items: end;
         }
-        
+       
         .criteria-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
         }
-        
+       
         .criteria-item {
             padding: 12px;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             background: #f9fafb;
         }
-        
+       
         .action-buttons {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
-        
+       
         .action-buttons .btn {
             padding: 6px 12px;
             font-size: 12px;
         }
-        
+       
         .notification {
             position: fixed;
             top: 20px;
@@ -451,24 +451,24 @@
             z-index: 2000;
             animation: slideInRight 0.3s ease-out;
         }
-        
+       
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        
+       
         .notification.success {
             background: linear-gradient(135deg, #10b981, #059669);
         }
-        
+       
         .notification.error {
             background: linear-gradient(135deg, #ef4444, #dc2626);
         }
-        
+       
         .notification.info {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
         }
-        
+       
         .progress-bar {
             width: 100%;
             height: 4px;
@@ -476,19 +476,19 @@
             border-radius: 2px;
             overflow: hidden;
         }
-        
+       
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, #3b82f6, #8b5cf6);
             border-radius: 2px;
             transition: width 0.3s ease;
         }
-        
+       
         .dropdown {
             position: relative;
             display: inline-block;
         }
-        
+       
         .dropdown-content {
             display: none;
             position: absolute;
@@ -500,7 +500,7 @@
             z-index: 100;
             border: 1px solid #e5e7eb;
         }
-        
+       
         .dropdown-content a {
             color: #374151;
             padding: 12px 16px;
@@ -508,19 +508,19 @@
             display: block;
             transition: background-color 0.2s;
         }
-        
+       
         .dropdown-content a:hover {
             background-color: #f3f4f6;
         }
-        
+       
         .dropdown:hover .dropdown-content {
             display: block;
         }
-        
+       
         .searchable-input {
             position: relative;
         }
-        
+       
         .search-suggestions {
             position: absolute;
             top: 100%;
@@ -535,30 +535,30 @@
             z-index: 50;
             display: none;
         }
-        
+       
         .search-suggestion {
             padding: 8px 12px;
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        
+       
         .search-suggestion:hover {
             background-color: #f3f4f6;
         }
-        
+       
         .toggle-switch {
             position: relative;
             display: inline-block;
             width: 60px;
             height: 34px;
         }
-        
+       
         .toggle-switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
-        
+       
         .slider {
             position: absolute;
             cursor: pointer;
@@ -570,7 +570,7 @@
             transition: .4s;
             border-radius: 34px;
         }
-        
+       
         .slider:before {
             position: absolute;
             content: "";
@@ -582,11 +582,11 @@
             transition: .4s;
             border-radius: 50%;
         }
-        
+       
         input:checked + .slider {
             background-color: #3b82f6;
         }
-        
+       
         input:checked + .slider:before {
             transform: translateX(26px);
         }
@@ -1357,7 +1357,7 @@
                 <h3 class="text-xl font-bold text-gray-900">➕ Ajouter un établissement</h3>
                 <button onclick="closeModal('addModal')" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
-            
+           
             <form id="addForm" class="space-y-6">
                 <!-- Basic Information -->
                 <div class="bg-gray-50 p-4 rounded-lg">
@@ -1514,10 +1514,10 @@ https://example.com/image2.jpg"></textarea>
                 <h3 class="text-xl font-bold text-gray-900">✏️ Modifier l'établissement</h3>
                 <button onclick="closeModal('editModal')" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
-            
+           
             <form id="editForm" class="space-y-6">
                 <input type="hidden" id="editId">
-                
+               
                 <!-- Basic Information -->
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h4 class="font-semibold text-gray-900 mb-4">📋 Informations de base</h4>
@@ -1673,7 +1673,7 @@ https://example.com/image2.jpg"></textarea>
                 <h3 class="text-xl font-bold text-gray-900">📰 Nouvelle actualité</h3>
                 <button onclick="closeModal('addNewsModal')" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
-            
+           
             <form id="addNewsForm" class="space-y-6">
                 <!-- Basic Information -->
                 <div class="space-y-4">
@@ -1681,7 +1681,7 @@ https://example.com/image2.jpg"></textarea>
                         <label class="form-label">Titre de l'actualité *</label>
                         <input type="text" id="newsTitle" required class="form-input" placeholder="Titre accrocheur de votre actualité">
                     </div>
-                    
+                   
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="form-label">Catégorie *</label>
@@ -1796,17 +1796,17 @@ https://example.com/image2.jpg"></textarea>
                 <h3 class="text-xl font-bold text-gray-900">✏️ Modifier l'actualité</h3>
                 <button onclick="closeEditNewsModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
-            
+           
             <form id="editNewsForm" class="space-y-6">
                 <input type="hidden" id="editNewsId">
-                
+               
                 <!-- Basic Information -->
                 <div class="space-y-4">
                     <div>
                         <label class="form-label">Titre de l'actualité *</label>
                         <input type="text" id="editNewsTitle" required class="form-input">
                     </div>
-                    
+                   
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="form-label">Catégorie *</label>
@@ -1891,7 +1891,7 @@ https://example.com/image2.jpg"></textarea>
                 <h3 class="text-xl font-bold text-gray-900">👁️ Détail de l'avis</h3>
                 <button onclick="closeModal('reviewDetailModal')" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
-            
+           
             <div id="reviewDetailContent">
                 <!-- Content will be populated dynamically -->
             </div>
@@ -1926,7 +1926,7 @@ https://example.com/image2.jpg"></textarea>
         let filteredEstablishments = [];
         let filteredNews = [];
         let filteredReviews = [];
-        
+       
         // Pagination
         let currentPage = 1;
         let itemsPerPage = 10;
@@ -1947,17 +1947,17 @@ https://example.com/image2.jpg"></textarea>
 
         async function initializeApp() {
             showNotification('🔄 Chargement des données...', 'info');
-            
+           
             try {
                 await Promise.all([
                     loadEstablishments(),
                     loadNews(),
                     loadReviews()
                 ]);
-                
+               
                 setupEventListeners();
                 updateStats();
-                
+               
                 showNotification('✅ Application chargée avec succès!', 'success');
             } catch (error) {
                 console.error('Erreur lors de l\'initialisation:', error);
@@ -2003,16 +2003,16 @@ https://example.com/image2.jpg"></textarea>
         async function geocodeAddress(address, city, country = 'France') {
             try {
                 showNotification('🌍 Géocodage en cours...', 'info');
-                
+               
                 const query = encodeURIComponent(`${address}, ${city}, ${country}`);
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1&addressdetails=1`);
-                
+               
                 if (!response.ok) {
                     throw new Error('Erreur réseau lors du géocodage');
                 }
-                
+               
                 const data = await response.json();
-                
+               
                 if (data && data.length > 0) {
                     const result = {
                         latitude: parseFloat(data[0].lat),
@@ -2021,11 +2021,11 @@ https://example.com/image2.jpg"></textarea>
                         status: 'success',
                         timestamp: new Date()
                     };
-                    
+                   
                     showNotification('✅ Adresse géocodée avec succès!', 'success');
                     return result;
                 } else {
-                    return { 
+                    return {
                         status: 'not_found',
                         error: 'Adresse non trouvée',
                         timestamp: new Date()
@@ -2046,7 +2046,7 @@ https://example.com/image2.jpg"></textarea>
             if (!geocoding) {
                 return '<span class="geocoding-status geocoding-error">⚪ Non géocodé</span>';
             }
-            
+           
             switch (geocoding.status) {
                 case 'success':
                     return `<span class="geocoding-status geocoding-success">✅ Géocodé</span>`;
@@ -2062,11 +2062,11 @@ https://example.com/image2.jpg"></textarea>
         async function handleAddressChange() {
             const address = document.getElementById('address').value;
             const city = document.getElementById('city').value;
-            
+           
             if (address && city) {
                 const resultDiv = document.getElementById('geocodingResult');
                 resultDiv.innerHTML = '<div class="loading"></div> Géocodage en cours...';
-                
+               
                 const geocoding = await geocodeAddress(address, city);
                 displayGeocodingResult(geocoding, 'geocodingResult');
             }
@@ -2075,7 +2075,7 @@ https://example.com/image2.jpg"></textarea>
         function displayGeocodingResult(geocoding, containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
-            
+           
             if (geocoding.status === 'success') {
                 container.innerHTML = `
                     <div class="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -2341,13 +2341,13 @@ https://example.com/image2.jpg"></textarea>
                         </div>
                     </td>
                     <td class="px-4 py-3 text-center">
-                        ${review.photos && review.photos.length > 0 ? 
-                            `<span class="text-blue-600">${review.photos.length} 📸</span>` : 
+                        ${review.photos && review.photos.length > 0 ?
+                            `<span class="text-blue-600">${review.photos.length} 📸</span>` :
                             '<span class="text-gray-400">Aucune</span>'}
                     </td>
                     <td class="px-4 py-3">
                         <div class="text-sm">
-                            ${review.criteria ? Object.keys(review.criteria).map(key => 
+                            ${review.criteria ? Object.keys(review.criteria).map(key =>
                                 `<div class="flex justify-between"><span>${key}:</span><span>${renderStars(review.criteria[key])}</span></div>`
                             ).join('') : 'N/A'}
                         </div>
@@ -2485,11 +2485,11 @@ https://example.com/image2.jpg"></textarea>
             const rating = e.target.closest('.star-rating');
             const ratingName = rating.dataset.rating;
             const value = parseInt(e.target.dataset.value);
-            
+           
             rating.querySelectorAll('.star').forEach((star, index) => {
                 star.classList.toggle('active', index < value);
             });
-            
+           
             const hiddenInput = document.getElementById(ratingName);
             if (hiddenInput) {
                 hiddenInput.value = value;
@@ -2501,11 +2501,11 @@ https://example.com/image2.jpg"></textarea>
             // Remove active class from all tabs and contents
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
+           
             // Add active class to clicked tab and corresponding content
             event.target.closest('.tab').classList.add('active');
             document.getElementById(tabName).classList.add('active');
-            
+           
             // Load tab-specific data if needed
             switch(tabName) {
                 case 'stats':
@@ -2526,10 +2526,10 @@ https://example.com/image2.jpg"></textarea>
                 const matchesType = !typeFilter || establishment.type === typeFilter;
                 const matchesCity = !cityFilter || establishment.city === cityFilter;
                 const matchesRating = !ratingFilter || establishment.generalRating >= parseInt(ratingFilter);
-                const matchesGeocoding = !geocodingFilter || 
+                const matchesGeocoding = !geocodingFilter ||
                     (geocodingFilter === 'none' && !establishment.geocoding) ||
                     (establishment.geocoding && establishment.geocoding.status === geocodingFilter);
-                const matchesSearch = !searchQuery || 
+                const matchesSearch = !searchQuery ||
                     establishment.name.toLowerCase().includes(searchQuery) ||
                     establishment.city.toLowerCase().includes(searchQuery) ||
                     establishment.address.toLowerCase().includes(searchQuery);
@@ -2552,11 +2552,11 @@ https://example.com/image2.jpg"></textarea>
             filteredNews = news.filter(article => {
                 const matchesType = !typeFilter || article.type === typeFilter;
                 const matchesStatus = !statusFilter || article.status === statusFilter;
-                const matchesFeatured = !featuredFilter || 
+                const matchesFeatured = !featuredFilter ||
                     (featuredFilter === 'true' && article.featured) ||
                     (featuredFilter === 'false' && !article.featured);
                 const matchesPeriod = !periodFilter || matchesTimePeriod(article.createdAt, periodFilter);
-                const matchesSearch = !searchQuery || 
+                const matchesSearch = !searchQuery ||
                     article.title.toLowerCase().includes(searchQuery) ||
                     article.content.toLowerCase().includes(searchQuery);
 
@@ -2579,11 +2579,11 @@ https://example.com/image2.jpg"></textarea>
                 const matchesStatus = !statusFilter || review.status === statusFilter;
                 const matchesType = !typeFilter || review.establishmentType === typeFilter;
                 const matchesRating = !ratingFilter || review.rating === parseInt(ratingFilter);
-                const matchesPhotos = !photosFilter || 
+                const matchesPhotos = !photosFilter ||
                     (photosFilter === 'true' && review.photos && review.photos.length > 0) ||
                     (photosFilter === 'false' && (!review.photos || review.photos.length === 0));
                 const matchesPeriod = !periodFilter || matchesTimePeriod(review.createdAt, periodFilter);
-                const matchesSearch = !searchQuery || 
+                const matchesSearch = !searchQuery ||
                     review.userName.toLowerCase().includes(searchQuery) ||
                     review.comment.toLowerCase().includes(searchQuery) ||
                     (review.establishmentName && review.establishmentName.toLowerCase().includes(searchQuery));
@@ -2597,10 +2597,10 @@ https://example.com/image2.jpg"></textarea>
 
         function matchesTimePeriod(timestamp, period) {
             if (!timestamp) return false;
-            
+           
             const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
             const now = new Date();
-            
+           
             switch(period) {
                 case 'today':
                     return date.toDateString() === now.toDateString();
@@ -2630,7 +2630,7 @@ https://example.com/image2.jpg"></textarea>
         function populateCityFilter() {
             const cities = [...new Set(establishments.map(est => est.city))].sort();
             const citySelect = document.getElementById('filterCity');
-            
+           
             citySelect.innerHTML = '<option value="">Toutes les villes</option>';
             cities.forEach(city => {
                 citySelect.innerHTML += `<option value="${city}">${city}</option>`;
@@ -2642,10 +2642,10 @@ https://example.com/image2.jpg"></textarea>
             const totalPages = Math.ceil(filteredEstablishments.length / itemsPerPage);
             document.getElementById('totalPages').textContent = totalPages;
             document.getElementById('currentPage').textContent = currentPage;
-            
+           
             document.getElementById('prevButton').disabled = currentPage === 1;
             document.getElementById('nextButton').disabled = currentPage === totalPages;
-            
+           
             updatePageNumbers();
         }
 
@@ -2653,15 +2653,15 @@ https://example.com/image2.jpg"></textarea>
             const totalPages = Math.ceil(filteredEstablishments.length / itemsPerPage);
             const pageNumbers = document.getElementById('pageNumbers');
             pageNumbers.innerHTML = '';
-            
+           
             const maxVisible = 5;
             let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
             let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-            
+           
             if (endPage - startPage + 1 < maxVisible) {
                 startPage = Math.max(1, endPage - maxVisible + 1);
             }
-            
+           
             for (let i = startPage; i <= endPage; i++) {
                 const button = document.createElement('button');
                 button.textContent = i;
@@ -2771,7 +2771,7 @@ https://example.com/image2.jpg"></textarea>
         function updateCriteriaFields() {
             const type = document.getElementById('type').value;
             const criteriaSection = document.getElementById('criteriaSection');
-            
+           
             if (type && criteriaByType[type]) {
                 criteriaSection.innerHTML = `
                     <h4 class="font-semibold text-gray-900 mb-4">📊 Évaluations détaillées par critères</h4>
@@ -2799,7 +2799,7 @@ https://example.com/image2.jpg"></textarea>
         function updateEditCriteriaFields() {
             const type = document.getElementById('editType').value;
             const criteriaSection = document.getElementById('editCriteriaSection');
-            
+           
             if (type && criteriaByType[type]) {
                 criteriaSection.innerHTML = `
                     <h4 class="font-semibold text-gray-900 mb-4">📊 Évaluations détaillées par critères</h4>
@@ -2847,7 +2847,7 @@ https://example.com/image2.jpg"></textarea>
         function handleEditImagePreview(e) {
             const files = e.target.files;
             const preview = document.getElementById('editImagePreview');
-            
+           
             Array.from(files).forEach(file => {
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
@@ -2865,7 +2865,7 @@ https://example.com/image2.jpg"></textarea>
         function handleNewsImagePreview(e) {
             const file = e.target.files[0];
             const preview = document.getElementById('newsImagePreview');
-            
+           
             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -2883,9 +2883,9 @@ https://example.com/image2.jpg"></textarea>
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             notification.textContent = message;
-            
+           
             container.appendChild(notification);
-            
+           
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
@@ -2896,10 +2896,10 @@ https://example.com/image2.jpg"></textarea>
         // Form submission handlers
         async function handleAddSubmit(e) {
             e.preventDefault();
-            
+           
             try {
                 showNotification('💾 Ajout en cours...', 'info');
-                
+               
                 const formData = {
                     name: document.getElementById('name').value,
                     type: document.getElementById('type').value,
@@ -2942,18 +2942,18 @@ https://example.com/image2.jpg"></textarea>
                     .split('\n')
                     .map(url => url.trim())
                     .filter(url => url);
-                    
+                   
                 if (imageUrls.length > 0) {
                     formData.images = imageUrls;
                 }
 
                 // Save to Firestore
                 await db.collection('establishments').add(formData);
-                
+               
                 closeModal('addModal');
                 await loadEstablishments();
                 showNotification('✅ Établissement ajouté avec succès!', 'success');
-                
+               
             } catch (error) {
                 console.error('Erreur lors de l\'ajout:', error);
                 showNotification('❌ Erreur lors de l\'ajout de l\'établissement', 'error');
@@ -2962,10 +2962,10 @@ https://example.com/image2.jpg"></textarea>
 
         async function handleEditSubmit(e) {
             e.preventDefault();
-            
+           
             try {
                 showNotification('💾 Modification en cours...', 'info');
-                
+               
                 const id = document.getElementById('editId').value;
                 const formData = {
                     name: document.getElementById('editName').value,
@@ -3001,18 +3001,18 @@ https://example.com/image2.jpg"></textarea>
                     .split('\n')
                     .map(url => url.trim())
                     .filter(url => url);
-                    
+                   
                 if (imageUrls.length > 0) {
                     formData.images = imageUrls;
                 }
 
                 // Update in Firestore
                 await db.collection('establishments').doc(id).update(formData);
-                
+               
                 closeModal('editModal');
                 await loadEstablishments();
                 showNotification('✅ Établissement modifié avec succès!', 'success');
-                
+               
             } catch (error) {
                 console.error('Erreur lors de la modification:', error);
                 showNotification('❌ Erreur lors de la modification', 'error');
@@ -3021,33 +3021,25 @@ https://example.com/image2.jpg"></textarea>
 
         async function handleAddNewsSubmit(e) {
             e.preventDefault();
-            
+           
             try {
                 showNotification('📰 Publication en cours...', 'info');
-                
-                // ✅ AJOUTEZ CE MAPPING ICI (nouvelle ligne)
-        const establishmentTypeMapping = {
-            'hotel': 'hotels',
-            'restaurant': 'restaurants', 
-            'spa': 'spas',
-            'general': 'general'
-        };
-        
-        const formData = {
-            title: document.getElementById('newsTitle').value,
-            establishmentType: establishmentTypeMapping[document.getElementById('newsType').value] || document.getElementById('newsType').value, // ← MODIFIEZ CETTE LIGNE
-            content: document.getElementById('newsContent').value,
-            summary: document.getElementById('newsSummary').value || 'Résumé à venir',
-            articleLink: document.getElementById('newsArticleLink').value,
-            city: document.getElementById('newsCity').value || '',
-            status: document.getElementById('newsStatus').value,
-            featured: document.getElementById('newsFeatured').checked,
-            notifyUsers: document.getElementById('newsNotifyUsers').checked,
-            author: 'Administrateur',
-            tags: document.getElementById('newsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
-            views: 0,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
+               
+                const formData = {
+                    title: document.getElementById('newsTitle').value,
+                    type: document.getElementById('newsType').value,
+                    content: document.getElementById('newsContent').value,
+                    summary: document.getElementById('newsSummary').value || 'Résumé à venir',
+                    articleLink: document.getElementById('newsArticleLink').value,
+                    city: document.getElementById('newsCity').value || '',
+                    status: document.getElementById('newsStatus').value,
+                    featured: document.getElementById('newsFeatured').checked,
+                    notifyUsers: document.getElementById('newsNotifyUsers').checked,
+                    author: 'Administrateur',
+                    tags: document.getElementById('newsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+                    views: 0,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
 
                 // Handle scheduled publication
                 const scheduledDate = document.getElementById('newsScheduledDate').value;
@@ -3068,12 +3060,12 @@ https://example.com/image2.jpg"></textarea>
 
                 // Save to Firestore
                 await db.collection('news').add(formData);
-                
+               
                 closeModal('addNewsModal');
                 await loadNews();
                 updateFeaturedNews();
                 showNotification('✅ Actualité ajoutée avec succès!', 'success');
-                
+               
             } catch (error) {
                 console.error('Erreur lors de l\'ajout de l\'actualité:', error);
                 showNotification('❌ Erreur lors de l\'ajout de l\'actualité', 'error');
@@ -3154,14 +3146,14 @@ https://example.com/image2.jpg"></textarea>
         async function deleteEstablishment(id) {
             const establishment = establishments.find(est => est.id === id);
             if (!establishment) return;
-            
+           
             if (confirm(`Êtes-vous sûr de vouloir supprimer "${establishment.name}" ?\n\nCette action est irréversible.`)) {
                 try {
                     showNotification('🗑️ Suppression en cours...', 'info');
-                    
+                   
                     await db.collection('establishments').doc(id).delete();
                     await loadEstablishments();
-                    
+                   
                     showNotification('✅ Établissement supprimé avec succès!', 'success');
                 } catch (error) {
                     console.error('Erreur lors de la suppression:', error);
@@ -3173,15 +3165,15 @@ https://example.com/image2.jpg"></textarea>
         async function deleteNews(id) {
             const article = news.find(n => n.id === id);
             if (!article) return;
-            
+           
             if (confirm(`Êtes-vous sûr de vouloir supprimer l'actualité "${article.title}" ?\n\nCette action est irréversible.`)) {
                 try {
                     showNotification('🗑️ Suppression en cours...', 'info');
-                    
+                   
                     await db.collection('news').doc(id).delete();
                     await loadNews();
                     updateFeaturedNews();
-                    
+                   
                     showNotification('✅ Actualité supprimée avec succès!', 'success');
                 } catch (error) {
                     console.error('Erreur lors de la suppression:', error);
@@ -3194,14 +3186,14 @@ https://example.com/image2.jpg"></textarea>
             try {
                 const article = news.find(n => n.id === id);
                 if (!article) return;
-                
+               
                 // If setting as featured, check if there's already a featured article of this type
                 if (featured) {
                     const existingFeatured = news.find(n => n.type === article.type && n.featured && n.id !== id);
                     if (existingFeatured) {
                         const confirmReplace = confirm(`Il y a déjà une actualité "${article.type}" à la une.\n\nVoulez-vous la remplacer ?`);
                         if (!confirmReplace) return;
-                        
+                       
                         // Remove featured status from existing article
                         await db.collection('news').doc(existingFeatured.id).update({
                             featured: false,
@@ -3209,20 +3201,20 @@ https://example.com/image2.jpg"></textarea>
                         });
                     }
                 }
-                
+               
                 await db.collection('news').doc(id).update({
                     featured: featured,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                
+               
                 await loadNews();
                 updateFeaturedNews();
-                
+               
                 showNotification(
                     featured ? '⭐ Actualité mise à la une!' : '📰 Actualité retirée de la une',
                     'success'
                 );
-                
+               
             } catch (error) {
                 console.error('Erreur lors de la modification:', error);
                 showNotification('❌ Erreur lors de la modification', 'error');
@@ -3232,16 +3224,16 @@ https://example.com/image2.jpg"></textarea>
         async function approveReview(id) {
             try {
                 showNotification('✅ Approbation en cours...', 'info');
-                
+               
                 await db.collection('reviews').doc(id).update({
                     status: 'approved',
                     moderatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     moderatedBy: 'Administrateur'
                 });
-                
+               
                 await loadReviews();
                 updateReviewsStats();
-                
+               
                 showNotification('✅ Avis approuvé avec succès!', 'success');
             } catch (error) {
                 console.error('Erreur lors de l\'approbation:', error);
@@ -3251,25 +3243,25 @@ https://example.com/image2.jpg"></textarea>
 
         async function rejectReview(id) {
             const reason = prompt('Raison du rejet (optionnel):');
-            
+           
             try {
                 showNotification('❌ Rejet en cours...', 'info');
-                
+               
                 const updateData = {
                     status: 'rejected',
                     moderatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     moderatedBy: 'Administrateur'
                 };
-                
+               
                 if (reason) {
                     updateData.rejectionReason = reason;
                 }
-                
+               
                 await db.collection('reviews').doc(id).update(updateData);
-                
+               
                 await loadReviews();
                 updateReviewsStats();
-                
+               
                 showNotification('❌ Avis rejeté avec succès!', 'success');
             } catch (error) {
                 console.error('Erreur lors du rejet:', error);
@@ -3289,13 +3281,13 @@ https://example.com/image2.jpg"></textarea>
                         <p><strong>Email:</strong> ${review.userEmail || 'N/A'}</p>
                         <p><strong>Date:</strong> ${formatDate(review.createdAt)}</p>
                     </div>
-                    
+                   
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <h4 class="font-semibold mb-2">🏢 Établissement</h4>
                         <p><strong>Nom:</strong> ${review.establishmentName}</p>
                         <p><strong>Type:</strong> ${review.establishmentType}</p>
                     </div>
-                    
+                   
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <h4 class="font-semibold mb-2">⭐ Évaluation</h4>
                         <div class="mb-2">
@@ -3305,7 +3297,7 @@ https://example.com/image2.jpg"></textarea>
                             <div>
                                 <strong>Critères détaillés:</strong>
                                 <div class="mt-2 space-y-1">
-                                    ${Object.entries(review.criteria).map(([key, value]) => 
+                                    ${Object.entries(review.criteria).map(([key, value]) =>
                                         `<div class="flex justify-between">
                                             <span>${key}:</span>
                                             <span>${renderStars(value)} (${value}/5)</span>
@@ -3315,23 +3307,23 @@ https://example.com/image2.jpg"></textarea>
                             </div>
                         ` : ''}
                     </div>
-                    
+                   
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <h4 class="font-semibold mb-2">💬 Commentaire</h4>
                         <p class="text-gray-700">${review.comment}</p>
                     </div>
-                    
+                   
                     ${review.photos && review.photos.length > 0 ? `
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <h4 class="font-semibold mb-2">📸 Photos (${review.photos.length})</h4>
                             <div class="flex flex-wrap gap-2">
-                                ${review.photos.map(photo => 
+                                ${review.photos.map(photo =>
                                     `<img src="${photo}" class="w-24 h-24 object-cover rounded-lg border">`
                                 ).join('')}
                             </div>
                         </div>
                     ` : ''}
-                    
+                   
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <h4 class="font-semibold mb-2">🔍 Statut de modération</h4>
                         <p><strong>Statut:</strong> <span class="badge ${getReviewStatusBadgeClass(review.status)}">${getReviewStatusText(review.status)}</span></p>
@@ -3339,7 +3331,7 @@ https://example.com/image2.jpg"></textarea>
                         ${review.moderatedBy ? `<p><strong>Modéré par:</strong> ${review.moderatedBy}</p>` : ''}
                         ${review.rejectionReason ? `<p><strong>Raison du rejet:</strong> ${review.rejectionReason}</p>` : ''}
                     </div>
-                    
+                   
                     ${review.status === 'pending' ? `
                         <div class="flex justify-center gap-4 pt-4">
                             <button onclick="approveReview('${review.id}'); closeModal('reviewDetailModal')" class="btn btn-success">
@@ -3363,8 +3355,8 @@ https://example.com/image2.jpg"></textarea>
             document.getElementById('totalEstablishments').textContent = establishments.length;
             document.getElementById('totalPublishedNews').textContent = news.filter(n => n.status === 'published').length;
             document.getElementById('totalModeratedReviews').textContent = reviews.filter(r => r.status !== 'pending').length;
-            
-            const avgRating = establishments.length > 0 ? 
+           
+            const avgRating = establishments.length > 0 ?
                 (establishments.reduce((sum, est) => sum + (est.generalRating || 0), 0) / establishments.length).toFixed(1) : '0.0';
             document.getElementById('globalAverageRating').textContent = avgRating;
 
@@ -3384,12 +3376,12 @@ https://example.com/image2.jpg"></textarea>
             const approvedCount = reviews.filter(r => r.status === 'approved').length;
             const rejectedCount = reviews.filter(r => r.status === 'rejected').length;
             const totalReviews = reviews.length;
-            
+           
             document.getElementById('pendingReviewsCount').textContent = pendingCount;
             document.getElementById('approvedReviewsCount').textContent = approvedCount;
             document.getElementById('rejectedReviewsCount').textContent = rejectedCount;
-            
-            const avgRating = reviews.length > 0 ? 
+           
+            const avgRating = reviews.length > 0 ?
                 (reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length).toFixed(1) : '0.0';
             document.getElementById('averageRating').textContent = avgRating;
         }
@@ -3399,11 +3391,11 @@ https://example.com/image2.jpg"></textarea>
             const featuredRestaurant = news.find(n => n.type === 'restaurant' && n.featured);
             const featuredSpa = news.find(n => n.type === 'spa' && n.featured);
 
-            document.getElementById('featuredHotelNews').textContent = 
+            document.getElementById('featuredHotelNews').textContent =
                 featuredHotel ? featuredHotel.title : 'Aucune actualité en une';
-            document.getElementById('featuredRestaurantNews').textContent = 
+            document.getElementById('featuredRestaurantNews').textContent =
                 featuredRestaurant ? featuredRestaurant.title : 'Aucune actualité en une';
-            document.getElementById('featuredSpaNews').textContent = 
+            document.getElementById('featuredSpaNews').textContent =
                 featuredSpa ? featuredSpa.title : 'Aucune actualité en une';
         }
 
@@ -3499,10 +3491,10 @@ https://example.com/image2.jpg"></textarea>
 
                 try {
                     showNotification('📥 Import en cours...', 'info');
-                    
+                   
                     const text = await file.text();
                     const data = JSON.parse(text);
-                    
+                   
                     if (!Array.isArray(data)) {
                         throw new Error('Le fichier doit contenir un tableau d\'objets');
                     }
@@ -3529,15 +3521,15 @@ https://example.com/image2.jpg"></textarea>
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        
+                       
                         importCount++;
                     }
 
                     await batch.commit();
                     await loadEstablishments();
-                    
+                   
                     showNotification(`✅ ${importCount} établissements importés avec succès!`, 'success');
-                    
+                   
                 } catch (error) {
                     console.error('Erreur lors de l\'import:', error);
                     showNotification('❌ Erreur lors de l\'import: ' + error.message, 'error');
@@ -3567,7 +3559,7 @@ https://example.com/image2.jpg"></textarea>
                 URL.revokeObjectURL(url);
 
                 showNotification('📤 Export terminé avec succès!', 'success');
-                
+               
             } catch (error) {
                 console.error('Erreur lors de l\'export:', error);
                 showNotification('❌ Erreur lors de l\'export', 'error');
@@ -3578,7 +3570,7 @@ https://example.com/image2.jpg"></textarea>
         function toggleSelectAll() {
             const selectAll = document.getElementById('selectAll');
             const checkboxes = document.querySelectorAll('.establishment-checkbox');
-            
+           
             checkboxes.forEach(checkbox => {
                 checkbox.checked = selectAll.checked;
             });
@@ -3587,7 +3579,7 @@ https://example.com/image2.jpg"></textarea>
         function toggleSelectAllNews() {
             const selectAll = document.getElementById('selectAllNews');
             const checkboxes = document.querySelectorAll('.news-checkbox');
-            
+           
             checkboxes.forEach(checkbox => {
                 checkbox.checked = selectAll.checked;
             });
@@ -3596,7 +3588,7 @@ https://example.com/image2.jpg"></textarea>
         function toggleSelectAllReviews() {
             const selectAll = document.getElementById('selectAllReviews');
             const checkboxes = document.querySelectorAll('.review-checkbox');
-            
+           
             checkboxes.forEach(checkbox => {
                 checkbox.checked = selectAll.checked;
             });
@@ -3605,7 +3597,7 @@ https://example.com/image2.jpg"></textarea>
         async function bulkApproveReviews() {
             const selectedReviews = Array.from(document.querySelectorAll('.review-checkbox:checked'))
                 .map(cb => cb.value);
-            
+           
             if (selectedReviews.length === 0) {
                 showNotification('❌ Aucun avis sélectionné', 'error');
                 return;
@@ -3617,7 +3609,7 @@ https://example.com/image2.jpg"></textarea>
 
             try {
                 showNotification('✅ Approbation en masse...', 'info');
-                
+               
                 const batch = db.batch();
                 selectedReviews.forEach(id => {
                     const docRef = db.collection('reviews').doc(id);
@@ -3627,13 +3619,13 @@ https://example.com/image2.jpg"></textarea>
                         moderatedBy: 'Administrateur'
                     });
                 });
-                
+               
                 await batch.commit();
                 await loadReviews();
                 updateReviewsStats();
-                
+               
                 showNotification(`✅ ${selectedReviews.length} avis approuvés!`, 'success');
-                
+               
             } catch (error) {
                 console.error('Erreur lors de l\'approbation en masse:', error);
                 showNotification('❌ Erreur lors de l\'approbation en masse', 'error');
@@ -3643,21 +3635,21 @@ https://example.com/image2.jpg"></textarea>
         async function bulkRejectReviews() {
             const selectedReviews = Array.from(document.querySelectorAll('.review-checkbox:checked'))
                 .map(cb => cb.value);
-            
+           
             if (selectedReviews.length === 0) {
                 showNotification('❌ Aucun avis sélectionné', 'error');
                 return;
             }
 
             const reason = prompt('Raison du rejet (optionnel):');
-            
+           
             if (!confirm(`Rejeter ${selectedReviews.length} avis sélectionnés ?`)) {
                 return;
             }
 
             try {
                 showNotification('❌ Rejet en masse...', 'info');
-                
+               
                 const batch = db.batch();
                 selectedReviews.forEach(id => {
                     const updateData = {
@@ -3665,21 +3657,21 @@ https://example.com/image2.jpg"></textarea>
                         moderatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                         moderatedBy: 'Administrateur'
                     };
-                    
+                   
                     if (reason) {
                         updateData.rejectionReason = reason;
                     }
-                    
+                   
                     const docRef = db.collection('reviews').doc(id);
                     batch.update(docRef, updateData);
                 });
-                
+               
                 await batch.commit();
                 await loadReviews();
                 updateReviewsStats();
-                
+               
                 showNotification(`❌ ${selectedReviews.length} avis rejetés!`, 'success');
-                
+               
             } catch (error) {
                 console.error('Erreur lors du rejet en masse:', error);
                 showNotification('❌ Erreur lors du rejet en masse', 'error');
@@ -3707,7 +3699,7 @@ https://example.com/image2.jpg"></textarea>
 
         function loadSettings() {
             const settings = JSON.parse(localStorage.getItem('larevue_settings') || '{}');
-            
+           
             if (settings.autoGeocoding !== undefined) {
                 document.getElementById('autoGeocoding').checked = settings.autoGeocoding;
             }
@@ -3720,7 +3712,7 @@ https://example.com/image2.jpg"></textarea>
             if (settings.autoBackupFrequency) {
                 document.getElementById('autoBackupFrequency').value = settings.autoBackupFrequency;
             }
-            
+           
             // Load Firebase settings
             if (settings.firebase) {
                 Object.entries(settings.firebase).forEach(([key, value]) => {
@@ -3749,7 +3741,7 @@ https://example.com/image2.jpg"></textarea>
             const address = document.getElementById('editAddress').value;
             const city = document.getElementById('editCity').value;
             const country = document.getElementById('editCountry').value || 'France';
-            
+           
             if (!address || !city) {
                 showNotification('❌ Adresse et ville requises pour le géocodage', 'error');
                 return;
@@ -3757,7 +3749,7 @@ https://example.com/image2.jpg"></textarea>
 
             const resultDiv = document.getElementById('editGeocodingResult');
             resultDiv.innerHTML = '<div class="loading"></div> Regéocodage en cours...';
-            
+           
             const geocoding = await geocodeAddress(address, city, country);
             displayGeocodingResult(geocoding, 'editGeocodingResult');
         }
@@ -3765,7 +3757,7 @@ https://example.com/image2.jpg"></textarea>
         function viewEstablishmentDetails(id) {
             const establishment = establishments.find(est => est.id === id);
             if (!establishment) return;
-            
+           
             alert(`Détails de ${establishment.name}\n\nType: ${establishment.type}\nVille: ${establishment.city}\nAdresse: ${establishment.address}\nTéléphone: ${establishment.phone || 'N/A'}\nEmail: ${establishment.email || 'N/A'}\nSite web: ${establishment.website || 'N/A'}\n\nNotes:\n- La Revue: ${establishment.laRevueRating}/5\n- Utilisateurs: ${establishment.userRating}/5\n- Générale: ${establishment.generalRating}/5`);
         }
 
@@ -3776,7 +3768,7 @@ https://example.com/image2.jpg"></textarea>
                 const doc = await db.collection('news').doc(newsId).get();
                 if (doc.exists) {
                     const newsData = doc.data();
-                    
+                   
                     // Remplir le formulaire avec les données existantes
                     document.getElementById('editNewsId').value = newsId;
                     document.getElementById('editNewsTitle').value = newsData.title || '';
@@ -3789,8 +3781,8 @@ https://example.com/image2.jpg"></textarea>
                     document.getElementById('editNewsImageUrl').value = newsData.imageUrl || '';
                     document.getElementById('editNewsArticleLink').value = newsData.articleLink || '';
                     document.getElementById('editNewsTags').value = newsData.tags ? newsData.tags.join(', ') : '';
-            
-                    
+           
+                   
                     // Afficher le modal
                     document.getElementById('editNewsModal').classList.add('show');
                 }
@@ -3807,22 +3799,14 @@ https://example.com/image2.jpg"></textarea>
 
         async function handleEditNewsSubmit(e) {
             e.preventDefault();
-            
+           
             try {
                 showNotification('💾 Modification en cours...', 'info');
-                
+               
                 const newsId = document.getElementById('editNewsId').value;
-                // ✅ AJOUTEZ CE MAPPING ICI (nouvelle ligne)
-        const establishmentTypeMapping = {
-            'hotel': 'hotels',
-            'restaurant': 'restaurants', 
-            'spa': 'spas',
-            'general': 'general'
-        };
-        
                 const formData = {
     title: document.getElementById('editNewsTitle').value,
-    establishmentType: document.getElementById('editNewsType').value,
+    type: document.getElementById('editNewsType').value,
     content: document.getElementById('editNewsContent').value,
     summary: document.getElementById('editNewsSummary').value || 'Résumé à venir',    // ← NOUVELLE LIGNE
     articleLink: document.getElementById('editNewsArticleLink').value,
@@ -3846,12 +3830,12 @@ https://example.com/image2.jpg"></textarea>
 
                 // Update in Firestore
                 await db.collection('news').doc(newsId).update(formData);
-                
+               
                 closeEditNewsModal();
                 await loadNews();
                 updateFeaturedNews();
                 showNotification('✅ Actualité modifiée avec succès!', 'success');
-                
+               
             } catch (error) {
                 console.error('Erreur lors de la modification de l\'actualité:', error);
                 showNotification('❌ Erreur lors de la modification de l\'actualité', 'error');
@@ -3872,7 +3856,7 @@ https://example.com/image2.jpg"></textarea>
         // Initialize settings on load
         document.addEventListener('DOMContentLoaded', function() {
             loadSettings();
-            
+           
             // Set last update time
             document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('fr-FR');
         });

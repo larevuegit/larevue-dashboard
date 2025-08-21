@@ -3026,20 +3026,32 @@ https://example.com/image2.jpg"></textarea>
                 showNotification('📰 Publication en cours...', 'info');
                
                 const formData = {
-                    title: document.getElementById('newsTitle').value,
-                    type: document.getElementById('newsType').value,
-                    content: document.getElementById('newsContent').value,
-                    summary: document.getElementById('newsSummary').value || 'Résumé à venir',
-                    articleLink: document.getElementById('newsArticleLink').value,
-                    city: document.getElementById('newsCity').value || '',
-                    status: document.getElementById('newsStatus').value,
-                    featured: document.getElementById('newsFeatured').checked,
-                    notifyUsers: document.getElementById('newsNotifyUsers').checked,
-                    author: 'Administrateur',
-                    tags: document.getElementById('newsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
-                    views: 0,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
+    title: document.getElementById('newsTitle').value,
+    type: document.getElementById('newsType').value,
+    content: document.getElementById('newsContent').value,
+    summary: document.getElementById('newsSummary').value || 'Résumé à venir',
+    articleLink: document.getElementById('newsArticleLink').value,
+    city: document.getElementById('newsCity').value || '',
+    status: document.getElementById('newsStatus').value,
+    featured: document.getElementById('newsFeatured').checked,
+    notifyUsers: document.getElementById('newsNotifyUsers').checked,
+    author: 'Administrateur',
+    tags: document.getElementById('newsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+    views: 0,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    timestamp: firebase.firestore.FieldValue.serverTimestamp() // ✅ AJOUT IMPORTANT
+};
+
+// ✅ AJOUT DE LA LOGIQUE establishmentType
+if (formData.type === 'hotel') {
+    formData.establishmentType = 'hotels';
+} else if (formData.type === 'restaurant') {
+    formData.establishmentType = 'restaurants';
+} else if (formData.type === 'spa') {
+    formData.establishmentType = 'spas';
+} else {
+    formData.establishmentType = 'general';
+}
 
                 // Handle scheduled publication
                 const scheduledDate = document.getElementById('newsScheduledDate').value;

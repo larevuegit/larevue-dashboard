@@ -3779,6 +3779,54 @@ if (formData.type === 'hotel') {
             alert(`Détails de ${establishment.name}\n\nType: ${establishment.type}\nVille: ${establishment.city}\nAdresse: ${establishment.address}\nTéléphone: ${establishment.phone || 'N/A'}\nEmail: ${establishment.email || 'N/A'}\nSite web: ${establishment.website || 'N/A'}\n\nNotes:\n- La Revue: ${establishment.laRevueRating}/5\n- Utilisateurs: ${establishment.userRating}/5\n- Générale: ${establishment.generalRating}/5`);
         }
 
+        // 🧪 FONCTION DE DIAGNOSTIC COMPLÈTE
+        function diagnosticComplet() {
+            console.log('=== 🔍 DIAGNOSTIC COMPLET ===');
+            
+            // 1. Vérifier Firebase
+            console.log('🔥 Firebase initialisé:', typeof firebase !== 'undefined');
+            console.log('📊 Database connectée:', typeof db !== 'undefined');
+            
+            // 2. Vérifier les données en mémoire
+            console.log('📰 Actualités en mémoire:', news.length);
+            if (news.length > 0) {
+                console.log('📝 Première actualité:', {
+                    id: news[0].id,
+                    title: news[0].title,
+                    status: news[0].status
+                });
+            }
+            
+            // 3. Vérifier le DOM
+            const modal = document.getElementById('editNewsModal');
+            console.log('🚪 Modal d\'édition:', modal ? 'TROUVÉ' : '❌ INTROUVABLE');
+            
+            const titleField = document.getElementById('editNewsTitle');
+            console.log('🏷️ Champ titre:', titleField ? 'TROUVÉ' : '❌ INTROUVABLE');
+            
+            // 4. Test Firebase direct
+            console.log('🔍 Test Firebase en cours...');
+            db.collection('news').limit(1).get()
+                .then(snapshot => {
+                    console.log('✅ Firebase fonctionne, docs trouvés:', snapshot.size);
+                    if (snapshot.size > 0) {
+                        const doc = snapshot.docs[0];
+                        console.log('📄 Premier document Firebase:', {
+                            id: doc.id,
+                            data: doc.data()
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erreur Firebase:', error);
+                });
+            
+            console.log('=== FIN DIAGNOSTIC ===');
+        }
+
+        // Rendre accessible globalement
+        window.diagnosticComplet = diagnosticComplet;
+
 
         // News editing functions
         async function editNews(newsId) {

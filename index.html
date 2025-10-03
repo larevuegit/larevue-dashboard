@@ -4123,8 +4123,10 @@ class RSSyncService {
             .get();
 
         if (!existing.empty) {
-            return false;
-        }
+    // ✅ TEMPORAIRE : Forcer le retraitement pour test
+    console.log('⚠️ Article existant mais retraité pour test:', article.title);
+    // return false; // ← Commenté temporairement
+}
 
         const cleanContent = this.cleanContent(article.content || article.description);
         const summary = this.extractSummary(article.description || cleanContent);

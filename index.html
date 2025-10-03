@@ -4116,58 +4116,70 @@ class RSSyncService {
     }
 
     async processArticle(article, source) {
-        try {
-            const existing = await db.collection('news')
-                .where('sourceUrl', '==', article.link)
-                .limit(1)
-                .get();
+    try {
+        const existing = await db.collection('news')
+            .where('sourceUrl', '==', article.link)
+            .limit(1)
+            .get();
 
-            if (!existing.empty) {
-                return false;
-            }
-
-            const cleanContent = this.cleanContent(article.content || article.description);
-            const summary = this.extractSummary(article.description || cleanContent);
-
-            const newsData = {
-                title: article.title.trim(),
-                content: cleanContent,
-                summary: summary,
-                sourceUrl: article.link,
-                type: source.type,
-                establishmentType: source.establishmentType,
-                status: 'published',
-                featured: false,
-                author: 'La Revue',
-                publishDate: new Date(article.pubDate),
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                views: 0,
-                tags: ['actualité', source.type, 'wordpress'],
-                syncedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            if (article.thumbnail) {
-                newsData.imageUrl = article.thumbnail;
-            } else if (article.enclosure && article.enclosure.link) {
-                newsData.imageUrl = article.enclosure.link;
-            }
-
-            const city = this.extractCity(cleanContent);
-            if (city) {
-                newsData.city = city;
-            }
-
-            await db.collection('news').add(newsData);
-            
-            this.log(`✅ Article ajouté: "${article.title.substring(0, 50)}..."`, 'success');
-            return true;
-
-        } catch (error) {
-            this.log(`❌ Erreur traitement article: ${error.message}`, 'error');
-            throw error;
+        if (!existing.empty) {
+            return false;
         }
+
+        const cleanContent = this.cleanContent(article.content || article.description);
+        const summary = this.extractSummary(article.description || cleanContent);
+
+        const newsData = {
+            title: article.title.trim(),
+            content: cleanContent,
+            summary: summary,
+            sourceUrl: article.link,
+            type: source.type,
+            establishmentType: source.establishmentType,
+            status: 'published',
+            featured: false,
+            author: 'La Revue',
+            publishDate: new Date(article.pubDate),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            views: 0,
+            tags: ['actualité', source.type, 'wordpress'],
+            syncedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // 🔥 NOUVELLE LOGIQUE D'EXTRACTION D'IMAGES i.ibb.co
+        const extractedImage = this.extractIbbImage(article.content || article.description || '');
+        
+        if (extractedImage) {
+            newsData.imageUrl = extractedImage;
+            this.log(`🖼️ Image i.ibb.co trouvée: ${extractedImage.substring(0, 50)}...`);
+        } else if (article.thumbnail) {
+            newsData.imageUrl = article.thumbnail;
+            this.log(`🖼️ Image thumbnail utilisée: ${article.thumbnail.substring(0, 50)}...`);
+        } else if (article.enclosure && article.enclosure.link) {
+            newsData.imageUrl = article.enclosure.link;
+            this.log(`🖼️ Image enclosure utilisée: ${article.enclosure.link.substring(0, 50)}...`);
+        } else {
+            // Image par défaut si aucune trouvée
+            newsData.imageUrl = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400';
+            this.log(`🖼️ Image par défaut utilisée pour: ${article.title.substring(0, 30)}...`);
+        }
+
+        const city = this.extractCity(cleanContent);
+        if (city) {
+            newsData.city = city;
+        }
+
+        await db.collection('news').add(newsData);
+        
+        this.log(`✅ Article ajouté: "${article.title.substring(0, 50)}..."`, 'success');
+        return true;
+
+    } catch (error) {
+        this.log(`❌ Erreur traitement article: ${error.message}`, 'error');
+        throw error;
     }
+}
 
     cleanContent(content) {
         if (!content) return 'Contenu à venir';
@@ -4211,6 +4223,33 @@ class RSSyncService {
         
         return null;
     }
+
+
+    // 🔥 NOUVELLE MÉTHODE POUR EXTRAIRE LES IMAGES i.ibb.co
+extractIbbImage(content) {
+    if (!content) return null;
+    
+    // Regex pour chercher les URLs d'images i.ibb.co dans le contenu HTML
+    const ibbImageRegex = /https:\/\/i\.ibb\.co\/[a-zA-Z0-9\/\-\.]+\.(jpg|jpeg|png|gif|webp)/gi;
+    
+    // Chercher toutes les images i.ibb.co
+    const matches = content.match(ibbImageRegex);
+    
+    if (matches && matches.length > 0) {
+        // Retourner la première image trouvée
+        return matches[0];
+    }
+    
+    // Si pas d'images directes, chercher dans les balises img
+    const imgTagRegex = /<img[^>]+src="(https:\/\/i\.ibb\.co\/[^"]+)"/gi;
+    const imgMatches = imgTagRegex.exec(content);
+    
+    if (imgMatches && imgMatches[1]) {
+        return imgMatches[1];
+    }
+    
+    return null;
+}
 
     async testFeeds() {
         this.log('🧪 Test des flux RSS en cours...');

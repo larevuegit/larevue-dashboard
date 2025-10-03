@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://raw.githubusercontent.com/larevuegit/larevue-dashboard/main/rss-sync-service.js"></script>
+    <!-- RSS Service intégré directement -->
     <style>
         .modal {
             display: none;
@@ -3980,21 +3980,297 @@ if (formData.type === 'hotel') {
             }
         });
 
-        // ✅ AJOUT : RSS SYNC FUNCTIONS
-        let rssSyncInterval;
-        let rssService;
+        // ✅ RSS SERVICE INTÉGRÉ + FONCTIONS
+class RSSyncService {
+    constructor() {
+        this.sources = [
+            {
+                url: 'https://larevuedeshotels.com/feed',
+                type: 'hotel',
+                establishmentType: 'hotels'
+            },
+            {
+                url: 'https://larevuedesrestaurants.com/feed',
+                type: 'restaurant', 
+                establishmentType: 'restaurants'
+            }
+        ];
+        
+        this.logs = [];
+        this.isRunning = false;
+    }
 
-        // Initialiser le service RSS
-        function initRSSService() {
-            if (typeof window.rssService !== 'undefined') {
-                rssService = window.rssService;
-                console.log('✅ Service RSS initialisé');
-                startAutoRSSSync();
-            } else {
-                console.log('⏳ En attente du service RSS...');
-                setTimeout(initRSSService, 1000);
+    log(message, type = 'info') {
+        const logEntry = {
+            timestamp: new Date().toLocaleString('fr-FR'),
+            message: message,
+            type: type
+        };
+        
+        this.logs.unshift(logEntry);
+        if (this.logs.length > 100) this.logs.pop();
+        
+        console.log(`[${type.toUpperCase()}] ${message}`);
+        this.updateUI();
+    }
+
+    updateUI() {
+        try {
+            const statusDiv = document.getElementById('rssSyncStatus');
+            if (statusDiv) {
+                const isActive = this.isRunning;
+                statusDiv.innerHTML = `
+                    <div class="bg-${isActive ? 'blue' : 'green'}-50 border border-${isActive ? 'blue' : 'green'}-200 rounded-lg p-3">
+                        <div class="text-sm text-${isActive ? 'blue' : 'green'}-800">
+                            ${isActive ? '🔄 Synchronisation en cours...' : '✅ Synchronisation active'} - 
+                            Dernière sync: <span id="lastSyncTime">${new Date().toLocaleString('fr-FR')}</span>
+                        </div>
+                        <div class="text-xs text-gray-600 mt-1">
+                            ${this.logs.length} logs disponibles
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            // Ignore les erreurs d'UI
+        }
+    }
+
+    async syncAll() {
+        if (this.isRunning) {
+            this.log('❌ Synchronisation déjà en cours', 'warning');
+            return { totalAdded: 0, totalProcessed: 0 };
+        }
+
+        this.isRunning = true;
+        this.log('🚀 Début de la synchronisation RSS globale');
+        
+        let totalAdded = 0;
+        let totalProcessed = 0;
+
+        try {
+            for (const source of this.sources) {
+                this.log(`📡 Traitement de: ${source.url}`);
+                const result = await this.syncSource(source);
+                totalAdded += result.added;
+                totalProcessed += result.processed;
+            }
+
+            this.log(`✅ Synchronisation terminée: ${totalAdded} nouveaux articles sur ${totalProcessed} traités`, 'success');
+            
+            if (typeof loadNews === 'function') {
+                await loadNews();
+            }
+            
+        } catch (error) {
+            this.log(`❌ Erreur globale: ${error.message}`, 'error');
+            throw error;
+        } finally {
+            this.isRunning = false;
+            this.updateUI();
+        }
+
+        return { totalAdded, totalProcessed };
+    }
+
+    async syncSource(source) {
+        let added = 0;
+        let processed = 0;
+
+        try {
+            const rssApiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&count=20`;
+            
+            this.log(`📥 Récupération du flux: ${source.type}`);
+            const response = await fetch(rssApiUrl);
+            
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            const rssData = await response.json();
+            
+            if (rssData.status !== 'ok') {
+                throw new Error(`Erreur RSS: ${rssData.message}`);
+            }
+
+            this.log(`📊 ${rssData.items.length} articles trouvés pour ${source.type}`);
+
+            for (const article of rssData.items) {
+                try {
+                    const wasAdded = await this.processArticle(article, source);
+                    if (wasAdded) added++;
+                    processed++;
+                } catch (error) {
+                    this.log(`❌ Erreur article "${article.title}": ${error.message}`, 'error');
+                }
+            }
+
+            this.log(`✅ ${source.type}: ${added} nouveaux / ${processed} traités`);
+
+        } catch (error) {
+            this.log(`❌ Erreur source ${source.type}: ${error.message}`, 'error');
+            throw error;
+        }
+
+        return { added, processed };
+    }
+
+    async processArticle(article, source) {
+        try {
+            const existing = await db.collection('news')
+                .where('sourceUrl', '==', article.link)
+                .limit(1)
+                .get();
+
+            if (!existing.empty) {
+                return false;
+            }
+
+            const cleanContent = this.cleanContent(article.content || article.description);
+            const summary = this.extractSummary(article.description || cleanContent);
+
+            const newsData = {
+                title: article.title.trim(),
+                content: cleanContent,
+                summary: summary,
+                sourceUrl: article.link,
+                type: source.type,
+                establishmentType: source.establishmentType,
+                status: 'published',
+                featured: false,
+                author: 'La Revue',
+                publishDate: new Date(article.pubDate),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                views: 0,
+                tags: ['actualité', source.type, 'wordpress'],
+                syncedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (article.thumbnail) {
+                newsData.imageUrl = article.thumbnail;
+            } else if (article.enclosure && article.enclosure.link) {
+                newsData.imageUrl = article.enclosure.link;
+            }
+
+            const city = this.extractCity(cleanContent);
+            if (city) {
+                newsData.city = city;
+            }
+
+            await db.collection('news').add(newsData);
+            
+            this.log(`✅ Article ajouté: "${article.title.substring(0, 50)}..."`, 'success');
+            return true;
+
+        } catch (error) {
+            this.log(`❌ Erreur traitement article: ${error.message}`, 'error');
+            throw error;
+        }
+    }
+
+    cleanContent(content) {
+        if (!content) return 'Contenu à venir';
+        
+        return content
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+            .replace(/<!--[\s\S]*?-->/g, '')
+            .trim();
+    }
+
+    extractSummary(content) {
+        if (!content) return 'Résumé à venir';
+        
+        const textContent = content.replace(/<[^>]*>/g, '').trim();
+        
+        if (textContent.length <= 200) return textContent;
+        
+        const truncated = textContent.substring(0, 200);
+        const lastSpace = truncated.lastIndexOf(' ');
+        
+        return lastSpace > 150 ? truncated.substring(0, lastSpace) + '...' : truncated + '...';
+    }
+
+    extractCity(content) {
+        if (!content) return null;
+        
+        const cities = [
+            'Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg', 
+            'Montpellier', 'Bordeaux', 'Lille', 'Rennes', 'Reims', 'Le Havre', 
+            'Saint-Étienne', 'Toulon', 'Angers', 'Grenoble', 'Dijon', 'Nîmes', 'Aix-en-Provence'
+        ];
+        
+        const textContent = content.replace(/<[^>]*>/g, '');
+        
+        for (const city of cities) {
+            if (textContent.includes(city)) {
+                return city;
             }
         }
+        
+        return null;
+    }
+
+    async testFeeds() {
+        this.log('🧪 Test des flux RSS en cours...');
+        
+        const results = [];
+        
+        for (const source of this.sources) {
+            try {
+                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&count=5`);
+                const data = await response.json();
+                
+                const result = {
+                    url: source.url,
+                    type: source.type,
+                    status: data.status,
+                    itemCount: data.items ? data.items.length : 0,
+                    error: data.message || null
+                };
+                
+                results.push(result);
+                
+                if (data.status === 'ok') {
+                    this.log(`✅ ${source.type}: ${data.items.length} articles disponibles`);
+                } else {
+                    this.log(`❌ ${source.type}: ${data.message}`, 'error');
+                }
+                
+            } catch (error) {
+                this.log(`❌ Erreur test ${source.type}: ${error.message}`, 'error');
+                results.push({
+                    url: source.url,
+                    type: source.type,
+                    status: 'error',
+                    itemCount: 0,
+                    error: error.message
+                });
+            }
+        }
+        
+        this.log('🏁 Test des flux terminé');
+        return results;
+    }
+
+    getLogs(limit = 50) {
+        return this.logs.slice(0, limit);
+    }
+}
+
+// Instance globale
+window.rssService = new RSSyncService();
+
+// ✅ FONCTIONS RSS MISES À JOUR
+let rssSyncInterval;
+let rssService = window.rssService;
+
+function initRSSService() {
+    rssService = window.rssService;
+    console.log('✅ Service RSS initialisé');
+    startAutoRSSSync();
+}
 
         function startAutoRSSSync() {
             if (rssSyncInterval) clearInterval(rssSyncInterval);
@@ -4012,75 +4288,59 @@ if (formData.type === 'hotel') {
         }
 
         async function manualRSSSync() {
-            if (!rssService) {
-                showNotification('❌ Service RSS non disponible', 'error');
-                return;
-            }
+    try {
+        showNotification('🔄 Synchronisation RSS en cours...', 'info');
+        
+        const result = await rssService.syncAll();
+        
+        document.getElementById('lastSyncTime').textContent = new Date().toLocaleString('fr-FR');
+        await loadNews();
+        
+        const message = `✅ Synchronisation terminée ! ${result.totalAdded} nouveaux articles ajoutés`;
+        showNotification(message, 'success');
+        
+    } catch (error) {
+        console.error('❌ Erreur synchronisation RSS:', error);
+        showNotification('❌ Erreur lors de la synchronisation RSS', 'error');
+    }
+}
 
-            try {
-                showNotification('🔄 Synchronisation RSS en cours...', 'info');
-                
-                const result = await rssService.syncAll();
-                
-                // Mettre à jour l'affichage
-                document.getElementById('lastSyncTime').textContent = new Date().toLocaleString('fr-FR');
-                await loadNews(); // Recharger les actualités
-                
-                const message = `✅ Synchronisation terminée ! ${result.totalAdded} nouveaux articles ajoutés`;
-                showNotification(message, 'success');
-                
-            } catch (error) {
-                console.error('❌ Erreur synchronisation RSS:', error);
-                showNotification('❌ Erreur lors de la synchronisation RSS', 'error');
-            }
-        }
+async function testRSSFeeds() {
+    try {
+        showNotification('🧪 Test des flux RSS...', 'info');
+        
+        const results = await rssService.testFeeds();
+        
+        let message = 'Test terminé:\n';
+        results.forEach(result => {
+            const status = result.status === 'ok' ? '✅' : '❌';
+            message += `${status} ${result.type}: ${result.itemCount} articles\n`;
+        });
+        
+        alert(message);
+        showNotification('✅ Test des flux RSS terminé !', 'success');
+        
+    } catch (error) {
+        console.error('❌ Erreur test RSS:', error);
+        showNotification('❌ Erreur lors du test RSS', 'error');
+    }
+}
 
-        async function testRSSFeeds() {
-            if (!rssService) {
-                showNotification('❌ Service RSS non disponible', 'error');
-                return;
-            }
+function viewSyncLogs() {
+    const logs = rssService.getLogs(20);
+    if (logs.length === 0) {
+        alert('Aucun log disponible');
+        return;
+    }
 
-            try {
-                showNotification('🧪 Test des flux RSS...', 'info');
-                
-                const results = await rssService.testFeeds();
-                
-                let message = 'Test terminé:\n';
-                results.forEach(result => {
-                    const status = result.status === 'ok' ? '✅' : '❌';
-                    message += `${status} ${result.type}: ${result.itemCount} articles\n`;
-                });
-                
-                alert(message);
-                showNotification('✅ Test des flux RSS terminé !', 'success');
-                
-            } catch (error) {
-                console.error('❌ Erreur test RSS:', error);
-                showNotification('❌ Erreur lors du test RSS', 'error');
-            }
-        }
+    let logMessage = '📊 Logs de synchronisation (20 derniers):\n\n';
+    logs.forEach(log => {
+        const icon = log.type === 'error' ? '❌' : log.type === 'success' ? '✅' : 'ℹ️';
+        logMessage += `${icon} [${log.timestamp}] ${log.message}\n`;
+    });
 
-        function viewSyncLogs() {
-            if (!rssService) {
-                showNotification('❌ Service RSS non disponible', 'error');
-                return;
-            }
-
-            const logs = rssService.getLogs(20);
-            if (logs.length === 0) {
-                alert('Aucun log disponible');
-                return;
-            }
-
-            let logMessage = '📊 Logs de synchronisation (20 derniers):\n\n';
-            logs.forEach(log => {
-                const icon = log.type === 'error' ? '❌' : log.type === 'success' ? '✅' : 'ℹ️';
-                logMessage += `${icon} [${log.timestamp}] ${log.message}\n`;
-            });
-
-            alert(logMessage);
-        }
+    alert(logMessage);
+}
 
         // Initialize settings on load
         document.addEventListener('DOMContentLoaded', function() {

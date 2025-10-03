@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://raw.githubusercontent.com/larevuegit/larevue-dashboard/main/rss-sync-service.js"></script>
     <style>
         .modal {
             display: none;
@@ -1231,6 +1232,66 @@
                         💾 Sauvegarder
                     </button>
                 </div>
+
+
+
+
+                <!-- ✅ AJOUT : RSS Sync Section -->
+                <div class="card p-4 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">🔄 Synchronisation RSS Automatique</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="form-label">Synchronisation automatique</label>
+                                <p class="text-sm text-gray-500">Synchronise les articles WordPress toutes les heures</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoRSSSync" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button onclick="manualRSSSync()" class="btn btn-primary">
+                                🔄 Synchroniser maintenant
+                            </button>
+                            <button onclick="testRSSFeeds()" class="btn btn-secondary">
+                                🧪 Tester les flux RSS
+                            </button>
+                            <button onclick="viewSyncLogs()" class="btn btn-info">
+                                📊 Voir les logs
+                            </button>
+                        </div>
+                        
+                        <div id="rssSyncStatus" class="mt-4">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <div class="text-sm text-blue-800">
+                                    ✅ Synchronisation active - Dernière sync: <span id="lastSyncTime">Jamais</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sources RSS -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-medium text-gray-900 mb-3">📡 Sources RSS configurées</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between items-center">
+                                    <span>🏨 Hôtels:</span>
+                                    <code class="bg-white px-2 py-1 rounded text-xs">larevuedeshotels.com/feed</code>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>🍽️ Restaurants:</span>
+                                    <code class="bg-white px-2 py-1 rounded text-xs">larevuedesrestaurants.com/feed</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                
 
                 <!-- Firebase Configuration -->
                 <div class="card p-4 mb-6">
@@ -3919,12 +3980,117 @@ if (formData.type === 'hotel') {
             }
         });
 
+        // ✅ AJOUT : RSS SYNC FUNCTIONS
+        let rssSyncInterval;
+        let rssService;
+
+        // Initialiser le service RSS
+        function initRSSService() {
+            if (typeof window.rssService !== 'undefined') {
+                rssService = window.rssService;
+                console.log('✅ Service RSS initialisé');
+                startAutoRSSSync();
+            } else {
+                console.log('⏳ En attente du service RSS...');
+                setTimeout(initRSSService, 1000);
+            }
+        }
+
+        function startAutoRSSSync() {
+            if (rssSyncInterval) clearInterval(rssSyncInterval);
+            
+            // Synchroniser toutes les heures (3600000 ms)
+            rssSyncInterval = setInterval(async () => {
+                const autoSyncEnabled = document.getElementById('autoRSSSync')?.checked;
+                if (autoSyncEnabled && rssService) {
+                    console.log('🔄 Synchronisation automatique déclenchée');
+                    await manualRSSSync();
+                }
+            }, 3600000); // 1 heure
+            
+            console.log('🔄 Synchronisation RSS automatique démarrée');
+        }
+
+        async function manualRSSSync() {
+            if (!rssService) {
+                showNotification('❌ Service RSS non disponible', 'error');
+                return;
+            }
+
+            try {
+                showNotification('🔄 Synchronisation RSS en cours...', 'info');
+                
+                const result = await rssService.syncAll();
+                
+                // Mettre à jour l'affichage
+                document.getElementById('lastSyncTime').textContent = new Date().toLocaleString('fr-FR');
+                await loadNews(); // Recharger les actualités
+                
+                const message = `✅ Synchronisation terminée ! ${result.totalAdded} nouveaux articles ajoutés`;
+                showNotification(message, 'success');
+                
+            } catch (error) {
+                console.error('❌ Erreur synchronisation RSS:', error);
+                showNotification('❌ Erreur lors de la synchronisation RSS', 'error');
+            }
+        }
+
+        async function testRSSFeeds() {
+            if (!rssService) {
+                showNotification('❌ Service RSS non disponible', 'error');
+                return;
+            }
+
+            try {
+                showNotification('🧪 Test des flux RSS...', 'info');
+                
+                const results = await rssService.testFeeds();
+                
+                let message = 'Test terminé:\n';
+                results.forEach(result => {
+                    const status = result.status === 'ok' ? '✅' : '❌';
+                    message += `${status} ${result.type}: ${result.itemCount} articles\n`;
+                });
+                
+                alert(message);
+                showNotification('✅ Test des flux RSS terminé !', 'success');
+                
+            } catch (error) {
+                console.error('❌ Erreur test RSS:', error);
+                showNotification('❌ Erreur lors du test RSS', 'error');
+            }
+        }
+
+        function viewSyncLogs() {
+            if (!rssService) {
+                showNotification('❌ Service RSS non disponible', 'error');
+                return;
+            }
+
+            const logs = rssService.getLogs(20);
+            if (logs.length === 0) {
+                alert('Aucun log disponible');
+                return;
+            }
+
+            let logMessage = '📊 Logs de synchronisation (20 derniers):\n\n';
+            logs.forEach(log => {
+                const icon = log.type === 'error' ? '❌' : log.type === 'success' ? '✅' : 'ℹ️';
+                logMessage += `${icon} [${log.timestamp}] ${log.message}\n`;
+            });
+
+            alert(logMessage);
+        }
+
         // Initialize settings on load
         document.addEventListener('DOMContentLoaded', function() {
             loadSettings();
            
             // Set last update time
             document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('fr-FR');
+            
+            // ✅ AJOUT : Initialiser le service RSS après un délai
+            setTimeout(initRSSService, 2000);
         });
 
         // Auto-save functionality

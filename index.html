@@ -4078,7 +4078,7 @@ class RSSyncService {
         let processed = 0;
 
         try {
-            const rssApiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&count=20`;
+            const rssApiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&api_key=y9ray3yqcix4girnxpyu5uaeltcvwdexy21zvbfm&count=20`;
             
             this.log(`📥 Récupération du flux: ${source.type}`);
             const response = await fetch(rssApiUrl);
@@ -4219,7 +4219,7 @@ class RSSyncService {
         
         for (const source of this.sources) {
             try {
-                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&count=5`);
+                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&api_key=y9ray3yqcix4girnxpyu5uaeltcvwdexy21zvbfm&count=5`);
                 const data = await response.json();
                 
                 const result = {

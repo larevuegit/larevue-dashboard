@@ -1238,7 +1238,17 @@
 
                 <!-- ✅ AJOUT : RSS Sync Section -->
                 <div class="card p-4 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">🔄 Synchronisation RSS Automatique</h3>
+                    <h3 class="text-lg font-semibold mb-4">🤖 Synchronisation RSS + IA Automatique</h3>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                        <h4 class="font-medium text-green-800 mb-2">✨ IA Activée - Google AI Studio</h4>
+                        <ul class="text-sm text-green-700 space-y-1">
+                            <li>✅ Amélioration automatique des articles RSS</li>
+                            <li>✅ Respect de la logique éditoriale originale</li>
+                            <li>✅ Traitement unique par article (économique)</li>
+                            <li>✅ Remise en forme HTML propre</li>
+                        </ul>
+                    </div>
                     
                     <div class="space-y-4">
                         <div class="flex items-center justify-between">
@@ -1980,6 +1990,12 @@ https://example.com/image2.jpg"></textarea>
             appId: "1:248256257582:web:a7b9281d0143e7ed35c9bf",
             measurementId: "G-KFKH0TQPHS"
         };
+
+        const GOOGLE_AI_CONFIG = {
+    apiKey: "AIzaSyBPilEww1CXLBo1bEdrZm5td-qVjuCJx2A", // Votre clé
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/',
+    model: 'gemini-2.5-flash'
+};
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
@@ -4126,13 +4142,38 @@ class RSSyncService {
     return false;
 }
 
-        const cleanContent = this.cleanContent(article.content || article.description);
+         const cleanContent = this.cleanContent(article.content || article.description);
         const summary = this.extractSummary(article.description || cleanContent);
 
+        // 🤖 AMÉLIORATION IA
+        let finalTitle = article.title.trim();
+        let finalContent = cleanContent;
+        let finalSummary = summary;
+        let aiImproved = false;
+
+        try {
+            const improved = await improveArticleWithAI({
+                title: finalTitle,
+                content: finalContent
+            });
+            
+            if (improved) {
+                finalTitle = improved.title;
+                finalContent = improved.content;
+                finalSummary = improved.summary;
+                aiImproved = true;
+                this.log(`🤖 Article amélioré par IA: ${finalTitle.substring(0, 30)}...`);
+            }
+        } catch (error) {
+            this.log(`❌ Erreur IA, garde original: ${error.message}`, 'warning');
+        }
+
         const newsData = {
-            title: article.title.trim(),
-            content: cleanContent,
-            summary: summary,
+            title: finalTitle,
+            content: finalContent,
+            summary: finalSummary,
+            aiImproved: aiImproved,
+            aiProvider: aiImproved ? 'Google AI Studio' : null,
             sourceUrl: article.link,
             type: source.type,
             establishmentType: source.establishmentType,
@@ -4301,6 +4342,61 @@ extractIbbImage(content) {
 // Instance globale
 window.rssService = new RSSyncService();
 
+
+        // 🤖 AJOUT : Fonction d'amélioration IA
+async function improveArticleWithAI(article) {
+    const url = `${GOOGLE_AI_CONFIG.endpoint}${GOOGLE_AI_CONFIG.model}:generateContent?key=${GOOGLE_AI_CONFIG.apiKey}`;
+    
+    const prompt = `Tu es le rédacteur en chef de "La Revue". Améliore cet article en respectant SA LOGIQUE ORIGINALE et le remettant en forme :
+
+**ARTICLE ORIGINAL :**
+Titre: ${article.title}
+Contenu: ${article.content}
+
+**RÈGLES :**
+1. Respecte l'angle et la logique de l'article original
+2. Structure HTML propre avec <p>, <h3>, <strong>
+3. Garde TOUS les faits, dates, noms exactement
+4. Style journalistique français professionnel
+5. Pas d'invention d'informations
+
+Réponds UNIQUEMENT avec ce JSON :
+{
+  "title": "titre amélioré gardant l'essence",
+  "content": "contenu refait en HTML propre",
+  "summary": "résumé fidèle (max 150 caractères)"
+}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.6,
+                    topK: 30,
+                    topP: 0.9,
+                    maxOutputTokens: 2048,
+                }
+            })
+        });
+
+        if (!response.ok) throw new Error(`Erreur API: ${response.status}`);
+
+        const data = await response.json();
+        const generatedText = data.candidates[0].content.parts[0].text;
+        
+        const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('Format IA invalide');
+
+        return JSON.parse(jsonMatch[0]);
+    } catch (error) {
+        console.error('Erreur IA:', error);
+        return null;
+    }
+}
+
 // ✅ FONCTIONS RSS MISES À JOUR
 let rssSyncInterval;
 let rssService = window.rssService;
@@ -4390,6 +4486,25 @@ function viewSyncLogs() {
             
             // ✅ AJOUT : Initialiser le service RSS après un délai
             setTimeout(initRSSService, 2000);
+
+            // 🤖 AJOUT : Test IA au démarrage
+            setTimeout(async () => {
+                try {
+                    const testResult = await improveArticleWithAI({
+                        title: "Test de connexion",
+                        content: "Article de test pour vérifier l'IA"
+                    });
+                    
+                    if (testResult) {
+                        console.log('✅ IA Google connectée et fonctionnelle');
+                        showNotification('🤖 IA Google AI activée et prête !', 'success');
+                    }
+                } catch (error) {
+                    console.log('❌ Erreur connexion IA:', error);
+                    showNotification('⚠️ IA non disponible, articles non traités', 'warning');
+                }
+            }, 4000);
+        });
         });
 
         // Auto-save functionality

@@ -1239,6 +1239,45 @@
                 <!-- ✅ AJOUT : RSS Sync Section -->
                 <div class="card p-4 mb-6">
                     <h3 class="text-lg font-semibold mb-4">🤖 Synchronisation RSS + IA Automatique</h3>
+
+
+                    <!-- ✅ NOUVEAU : Import Manuel WordPress -->
+                <div class="card p-4 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">📝 Import Manuel WordPress</h3>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-medium text-blue-800 mb-3">🎯 Import Direct depuis WordPress</h4>
+                        <p class="text-sm text-blue-700 mb-4">Copiez l'URL de votre article WordPress pour l'importer instantanément avec le même format que sur le site.</p>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="form-label">URL de l'article WordPress *</label>
+                                <input type="url" id="wordpressArticleUrl" class="form-input" placeholder="https://larevuedeshotels.com/mon-article">
+                                <p class="text-xs text-gray-500 mt-1">Exemple: https://larevuedeshotels.com/le-classement-des-meilleurs-hotels...</p>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <button onclick="importWordPressArticle()" class="btn btn-primary">
+                                    📥 Importer cet article
+                                </button>
+                                <button onclick="importWordPressArticleWithIA()" class="btn btn-purple">
+                                    🤖 Importer + Améliorer IA
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
+                        <h4 class="font-medium text-green-800 mb-2">✨ Avantages de l'import manuel :</h4>
+                        <ul class="text-sm text-green-700 space-y-1">
+                            <li>✅ Format identique au site web</li>
+                            <li>✅ Import instantané (pas d'attente)</li>
+                            <li>✅ Images dans le bon ordre</li>
+                            <li>✅ IA optionnelle pour amélioration</li>
+                            <li>✅ Contrôle total du contenu</li>
+                        </ul>
+                    </div>
+                </div>
                     
                     <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                         <h4 class="font-medium text-green-800 mb-2">✨ IA Activée - Google AI Studio</h4>
@@ -4673,6 +4712,268 @@ function viewSyncLogs() {
 
     alert(logMessage);
 }
+        // ✅ NOUVELLES FONCTIONS IMPORT WORDPRESS
+        
+        // Fonction de conversion WordPress vers format site web
+        function convertWordPressToSiteFormat(content) {
+            if (!content) return 'Contenu à venir';
+            
+            return content
+                // ✅ PRÉSERVER les titres EXACTEMENT comme sur le site
+                .replace(/<h4 class="wp-block-heading"[^>]*><strong>(.*?)<\/strong>\s*<strong>\(([^)]+)\)<\/strong><\/h4>/g, '#### **$1** **($2)**')
+                .replace(/<h4 class="wp-block-heading"[^>]*><br><strong>(.*?)<\/strong><\/h4>/g, '#### **$1**')
+                .replace(/<h4 class="wp-block-heading"[^>]*><strong>(.*?)<\/strong><\/h4>/g, '#### **$1**')
+                .replace(/<h4 class="wp-block-heading"[^>]*>(.*?)<\/h4>/g, '#### $1')
+                .replace(/<h3 class="wp-block-heading"[^>]*>(.*?)<\/h3>/g, '### $1')
+                .replace(/<h2 class="wp-block-heading"[^>]*>(.*?)<\/h2>/g, '## $1')
+                
+                // ✅ PRÉSERVER les images EXACTEMENT comme sur le site
+                .replace(/<figure class="wp-block-image[^>]*>.*?<img src="([^"]*)"[^>]*>.*?<\/figure>/g, '\n\n![]($1)\n\n')
+                
+                // ✅ PRÉSERVER les paragraphes
+                .replace(/<p><\/p>/g, '\n')
+                .replace(/<p>/g, '').replace(/<\/p>/g, '\n\n')
+                
+                // ✅ PRÉSERVER le formatage
+                .replace(/<strong>/g, '**').replace(/<\/strong>/g, '**')
+                .replace(/<br>/g, '  \n').replace(/<br\/>/g, '  \n')
+                
+                // ✅ PRÉSERVER les liens
+                .replace(/<a href="([^"]*)"[^>]*>(.*?)<\/a>/g, '[$2]($1)')
+                
+                // ✅ PRÉSERVER les caractères spéciaux
+                .replace(/‎/g, '\n\n')
+                
+                // ✅ SUPPRIMER les balises WordPress
+                .replace(/<!--\s*wp:[^>]*-->/g, '')
+                .replace(/<!--\s*\/wp:[^>]*-->/g, '')
+                .replace(/<figure[^>]*>/g, '').replace(/<\/figure>/g, '')
+                .replace(/class="[^"]*"/g, '')
+                .replace(/{"[^"]*"}/g, '')
+                
+                // ✅ NETTOYER sans altérer
+                .replace(/\n{4,}/g, '\n\n\n')
+                .replace(/^\s+/gm, '')
+                .trim();
+        }
+        
+        // Import manuel d'un article WordPress
+        async function importWordPressArticle(withIA = false) {
+            const url = document.getElementById('wordpressArticleUrl').value;
+            if (!url) {
+                showNotification('❌ Veuillez saisir une URL d\'article', 'error');
+                return;
+            }
+            
+            if (!url.includes('larevuedeshotels.com') && !url.includes('larevuedesrestaurants.com')) {
+                showNotification('❌ URL non supportée. Utilisez larevuedeshotels.com ou larevuedesrestaurants.com', 'error');
+                return;
+            }
+            
+            try {
+                showNotification('📥 Import en cours...', 'info');
+                
+                // Vérifier si l'article existe déjà
+                const existing = await db.collection('news')
+                    .where('sourceUrl', '==', url)
+                    .limit(1)
+                    .get();
+                    
+                if (!existing.empty) {
+                    showNotification('ℹ️ Article déjà importé', 'warning');
+                    return;
+                }
+                
+                // Récupérer le contenu de l'article
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                const html = data.contents;
+                
+                // Extraire les informations
+                const title = extractTitleFromHtml(html);
+                const content = extractContentFromHtml(html);
+                const imageUrl = extractFeaturedImageFromHtml(html);
+                
+                // Convertir au format site web
+                let finalContent = convertWordPressToSiteFormat(content);
+                let finalTitle = title;
+                let aiImproved = false;
+                
+                // Améliorer avec IA si demandé
+                if (withIA) {
+                    try {
+                        showNotification('🤖 Amélioration IA en cours...', 'info');
+                        const improved = await improveArticleWithAI({
+                            title: finalTitle,
+                            content: finalContent
+                        });
+                        
+                        if (improved && improved.title && improved.content) {
+                            finalTitle = improved.title;
+                            finalContent = improved.content;
+                            aiImproved = true;
+                            showNotification('✅ Article amélioré par IA !', 'success');
+                        }
+                    } catch (error) {
+                        console.log('⚠️ IA non disponible, contenu original conservé');
+                        showNotification('⚠️ IA non disponible, contenu original importé', 'warning');
+                    }
+                }
+                
+                // Créer l'article dans Firebase
+                const newsData = {
+                    title: finalTitle,
+                    content: finalContent,
+                    summary: extractSummaryFromContent(finalContent),
+                    sourceUrl: url,
+                    imageUrl: imageUrl,
+                    type: detectTypeFromUrl(url),
+                    establishmentType: detectEstablishmentTypeFromUrl(url),
+                    status: 'published',
+                    featured: false,
+                    author: 'La Revue',
+                    aiImproved: aiImproved,
+                    aiProvider: aiImproved ? 'Google AI Studio' : null,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    views: 0,
+                    tags: ['actualité', detectTypeFromUrl(url), 'wordpress', 'import'],
+                    city: extractCityFromContent(finalContent)
+                };
+                
+                await db.collection('news').add(newsData);
+                await loadNews();
+                
+                showNotification('✅ Article importé avec succès !', 'success');
+                document.getElementById('wordpressArticleUrl').value = '';
+                
+            } catch (error) {
+                console.error('❌ Erreur import WordPress:', error);
+                showNotification('❌ Erreur lors de l\'import: ' + error.message, 'error');
+            }
+        }
+        
+        // Import avec IA
+        async function importWordPressArticleWithIA() {
+            await importWordPressArticle(true);
+        }
+        
+        // Fonctions utilitaires d'extraction
+        function extractTitleFromHtml(html) {
+            let title = '';
+            
+            // Essayer plusieurs sélecteurs
+            const titlePatterns = [
+                /<h1[^>]*class="[^"]*entry-title[^"]*"[^>]*>([^<]+)<\/h1>/i,
+                /<h1[^>]*>([^<]+)<\/h1>/i,
+                /<title[^>]*>([^<]+)<\/title>/i
+            ];
+            
+            for (const pattern of titlePatterns) {
+                const match = html.match(pattern);
+                if (match) {
+                    title = match[1].replace(' - La Revue des Hôtels', '').replace(' - La Revue des Restaurants', '').trim();
+                    if (title) break;
+                }
+            }
+            
+            return title || 'Article importé';
+        }
+        
+        function extractContentFromHtml(html) {
+            let content = '';
+            
+            // Chercher le contenu principal
+            const contentPatterns = [
+                /<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+                /<article[^>]*>([\s\S]*?)<\/article>/i,
+                /<main[^>]*>([\s\S]*?)<\/main>/i
+            ];
+            
+            for (const pattern of contentPatterns) {
+                const match = html.match(pattern);
+                if (match) {
+                    content = match[1];
+                    break;
+                }
+            }
+            
+            if (!content) content = html;
+            
+            // Nettoyer les éléments indésirables
+            content = content
+                .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+                .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+                .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+                .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
+                .replace(/<div[^>]*class="[^"]*sidebar[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
+                .replace(/<div[^>]*class="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+            
+            return content;
+        }
+        
+        function extractFeaturedImageFromHtml(html) {
+            const imagePatterns = [
+                /<meta property="og:image" content="([^"]+)"/i,
+                /<img[^>]+src="(https:\/\/i\.ibb\.co\/[^"]+)"/i,
+                /<img[^>]+src="([^"]+)"[^>]*class="[^"]*wp-post-image[^"]*"/i
+            ];
+            
+            for (const pattern of imagePatterns) {
+                const match = html.match(pattern);
+                if (match) return match[1];
+            }
+            
+            return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400';
+        }
+        
+        function detectTypeFromUrl(url) {
+            if (url.includes('larevuedeshotels')) return 'hotel';
+            if (url.includes('larevuedesrestaurants')) return 'restaurant';
+            return 'general';
+        }
+        
+        function detectEstablishmentTypeFromUrl(url) {
+            if (url.includes('larevuedeshotels')) return 'hotels';
+            if (url.includes('larevuedesrestaurants')) return 'restaurants';
+            return 'general';
+        }
+        
+        function extractSummaryFromContent(content) {
+            if (!content) return 'Résumé à venir';
+            
+            const textContent = content.replace(/[#*!\[\]()]/g, '').replace(/\n+/g, ' ').trim();
+            
+            if (textContent.length <= 200) return textContent;
+            
+            const truncated = textContent.substring(0, 200);
+            const lastSpace = truncated.lastIndexOf(' ');
+            
+            return lastSpace > 150 ? truncated.substring(0, lastSpace) + '...' : truncated + '...';
+        }
+        
+        function extractCityFromContent(content) {
+            if (!content) return null;
+            
+            const cities = [
+                'Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg',
+                'Montpellier', 'Bordeaux', 'Lille', 'Rennes', 'Reims', 'Le Havre',
+                'Saint-Étienne', 'Toulon', 'Angers', 'Grenoble', 'Dijon', 'Nîmes',
+                'Aix-en-Provence', 'Chamonix', 'Cassis', 'Gordes', 'Cernay', 'Bagnols'
+            ];
+            
+            const textContent = content.replace(/[#*!\[\]()]/g, '');
+            
+            for (const city of cities) {
+                if (textContent.includes(city)) {
+                    return city;
+                }
+            }
+            
+            return null;
+        }
 
         // Initialize settings on load
         document.addEventListener('DOMContentLoaded', function() {

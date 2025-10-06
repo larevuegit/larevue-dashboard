@@ -5226,9 +5226,23 @@ async function importWordPressArticle(withIA = false) {
                 };
                 
                 console.log('💾 Sauvegarde article manuel...', newsData);
-                
-                await db.collection('news').add(newsData);
-                await loadNews();
+
+// ✅ AJOUT : Test de connexion Firebase avant sauvegarde
+try {
+    console.log('🔥 Test connexion Firebase...');
+    const testDoc = await db.collection('news').limit(1).get();
+    console.log('✅ Firebase connecté, size:', testDoc.size);
+    
+    console.log('💾 Création document...');
+    const docRef = await db.collection('news').add(newsData);
+    console.log('✅ Document créé avec ID:', docRef.id);
+    
+    await loadNews();
+    
+} catch (firebaseError) {
+    console.error('❌ ERREUR FIREBASE:', firebaseError);
+    throw new Error(`Firebase error: ${firebaseError.message}`);
+}
                 
                 showNotification('✅ Article importé avec succès !', 'success');
                 clearManualForm();

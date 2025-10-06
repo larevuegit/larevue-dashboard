@@ -5218,9 +5218,10 @@ async function importWordPressArticle(withIA = false) {
                     aiImproved: aiImproved,
                     aiProvider: aiImproved ? 'Google AI Studio' : null,
                     importMethod: 'manual_paste',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdAt: new Date(),
+                    timestamp: new Date(),
+                    publishedAt: new Date(),
+                    publishDate: new Date(),
                     views: 0,
                     tags: ['actualité', type, 'wordpress', 'import-manuel']
                 };
@@ -5229,10 +5230,11 @@ if (!newsData.title || !newsData.content) {
     throw new Error('Titre ou contenu manquant');
 }
 
-if (!newsData.timestamp) {
-    console.warn('⚠️ Timestamp manquant, ajout manuel');
-    newsData.timestamp = new Date();
-}
+console.log('🔍 Validation timestamps:', {
+    createdAt: newsData.createdAt,
+    timestamp: newsData.timestamp,
+    publishDate: newsData.publishDate
+});
 
 console.log('📊 Données à sauvegarder:', {
     title: newsData.title.substring(0, 50) + '...',
@@ -5246,19 +5248,26 @@ console.log('📊 Données à sauvegarder:', {
 
 // ✅ AJOUT : Test de connexion Firebase avant sauvegarde
 try {
-    console.log('🔥 Test connexion Firebase...');
-    const testDoc = await db.collection('news').limit(1).get();
-    console.log('✅ Firebase connecté, size:', testDoc.size);
+    console.log('💾 Sauvegarde vers Firebase collection "news"...');
     
-    console.log('💾 Création document...');
     const docRef = await db.collection('news').add(newsData);
     console.log('✅ Document créé avec ID:', docRef.id);
     
+    // Vérification immédiate
+    const savedDoc = await db.collection('news').doc(docRef.id).get();
+    if (savedDoc.exists) {
+        console.log('✅ Document vérifié dans Firebase:', savedDoc.data().title);
+    } else {
+        throw new Error('Document non trouvé après création');
+    }
+    
+    console.log('🔄 Rechargement des actualités...');
     await loadNews();
+    console.log('✅ Actualités rechargées');
     
 } catch (firebaseError) {
-    console.error('❌ ERREUR FIREBASE:', firebaseError);
-    throw new Error(`Firebase error: ${firebaseError.message}`);
+    console.error('❌ ERREUR FIREBASE DÉTAILLÉE:', firebaseError);
+    throw new Error(`Erreur Firebase lors de la sauvegarde: ${firebaseError.message}`);
 }
                 
                 showNotification('✅ Article importé avec succès !', 'success');

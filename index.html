@@ -1274,6 +1274,69 @@
                             </ul>
                         </div>
                     </div>
+
+                    <!-- ✅ NOUVELLE SECTION COPIER-COLLER À AJOUTER ICI -->
+                <div class="card p-4 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">📋 Import Manuel par Copier-Coller</h3>
+                    
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <h4 class="font-medium text-amber-800 mb-3">🎯 Copier-Coller HTML WordPress</h4>
+                        <p class="text-sm text-amber-700 mb-4">Copiez le contenu HTML brut depuis WordPress et collez-le ci-dessous avec le titre.</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="form-label">Titre de l'article *</label>
+                                <input type="text" id="manualArticleTitle" class="form-input" placeholder="Le classement des meilleurs hôtels pour profiter des vacances de la Toussaint">
+                                <p class="text-xs text-gray-500 mt-1">Saisissez le titre exact de l'article</p>
+                            </div>
+                            
+                            <div>
+                                <label class="form-label">Contenu HTML WordPress *</label>
+                                <textarea id="manualArticleContent" rows="12" class="form-input" placeholder="Collez ici le contenu HTML brut de WordPress avec les balises wp:paragraph, wp:heading, wp:image..."></textarea>
+                                <p class="text-xs text-gray-500 mt-1">Collez directement le HTML avec les balises WordPress (wp:paragraph, wp:heading, etc.)</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="form-label">Type d'établissement</label>
+                                    <select id="manualArticleType" class="form-input">
+                                        <option value="hotel">🏨 Hôtel</option>
+                                        <option value="restaurant">🍽️ Restaurant</option>
+                                        <option value="spa">🧘 Spa</option>
+                                        <option value="general">🌟 Général</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Ville (optionnel)</label>
+                                    <input type="text" id="manualArticleCity" class="form-input" placeholder="Paris, Lyon...">
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-3">
+                                <button onclick="importManualContent()" class="btn btn-primary">
+                                    📥 Importer ce contenu
+                                </button>
+                                <button onclick="importManualContentWithIA()" class="btn btn-purple">
+                                    🤖 Importer + Améliorer IA
+                                </button>
+                                <button onclick="clearManualForm()" class="btn btn-secondary">
+                                    🗑️ Vider
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
+                        <h4 class="font-medium text-green-800 mb-2">✨ Avantages du copier-coller :</h4>
+                        <ul class="text-sm text-green-700 space-y-1">
+                            <li>✅ Format identique au site web</li>
+                            <li>✅ Import instantané (pas d'attente proxy)</li>
+                            <li>✅ Images i.ibb.co préservées</li>
+                            <li>✅ Structure WordPress conservée</li>
+                            <li>✅ IA optionnelle pour amélioration</li>
+                        </ul>
+                    </div>
+                </div>
                         
                     <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                         <h4 class="font-medium text-green-800 mb-2">✨ IA Activée - Google AI Studio</h4>
@@ -5076,6 +5139,154 @@ async function importWordPressArticle(withIA = false) {
                 e.target.classList.remove('show');
             }
         });
+
+         // ✅ NOUVELLES FONCTIONS COPIER-COLLER À AJOUTER ICI
+
+        // Import manuel par copier-coller
+        async function importManualContent(withIA = false) {
+            const title = document.getElementById('manualArticleTitle').value.trim();
+            const content = document.getElementById('manualArticleContent').value.trim();
+            const type = document.getElementById('manualArticleType').value;
+            const city = document.getElementById('manualArticleCity').value.trim();
+            
+            if (!title) {
+                showNotification('❌ Veuillez saisir un titre', 'error');
+                return;
+            }
+            
+            if (!content) {
+                showNotification('❌ Veuillez coller le contenu HTML', 'error');
+                return;
+            }
+            
+            try {
+                showNotification('📋 Import manuel en cours...', 'info');
+                
+                // Vérifier si article existe déjà (par titre)
+                const existing = await db.collection('news')
+                    .where('title', '==', title)
+                    .limit(1)
+                    .get();
+                    
+                if (!existing.empty) {
+                    if (!confirm('Un article avec ce titre existe déjà. Continuer quand même ?')) {
+                        return;
+                    }
+                }
+                
+                // Convertir le contenu WordPress vers format propre
+                let finalContent = convertWordPressToSiteFormat(content);
+                let finalTitle = title;
+                let aiImproved = false;
+                
+                // Améliorer avec IA si demandé
+                if (withIA) {
+                    try {
+                        showNotification('🤖 Amélioration IA en cours...', 'info');
+                        const improved = await improveArticleWithAI({
+                            title: finalTitle,
+                            content: finalContent
+                        });
+                        
+                        if (improved && improved.title && improved.content) {
+                            finalTitle = improved.title;
+                            finalContent = improved.content;
+                            aiImproved = true;
+                            showNotification('✅ Article amélioré par IA !', 'success');
+                        }
+                    } catch (error) {
+                        console.log('⚠️ IA non disponible, contenu original conservé');
+                        showNotification('⚠️ IA non disponible, contenu original importé', 'warning');
+                    }
+                }
+                
+                // Extraire la première image i.ibb.co
+                const imageUrl = extractIbbImageFromContent(content) || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400';
+                
+                // Créer l'article dans Firebase
+                const newsData = {
+                    title: finalTitle,
+                    content: finalContent,
+                    summary: extractSummaryFromContent(finalContent),
+                    imageUrl: imageUrl,
+                    type: type,
+                    establishmentType: type === 'hotel' ? 'hotels' : type === 'restaurant' ? 'restaurants' : type === 'spa' ? 'spas' : 'general',
+                    city: city || extractCityFromContent(finalContent) || '',
+                    status: 'published',
+                    featured: false,
+                    author: 'La Revue',
+                    aiImproved: aiImproved,
+                    aiProvider: aiImproved ? 'Google AI Studio' : null,
+                    importMethod: 'manual_paste',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    views: 0,
+                    tags: ['actualité', type, 'wordpress', 'import-manuel']
+                };
+                
+                console.log('💾 Sauvegarde article manuel...', newsData);
+                
+                await db.collection('news').add(newsData);
+                await loadNews();
+                
+                showNotification('✅ Article importé avec succès !', 'success');
+                clearManualForm();
+                
+                // Proposition d'édition
+                setTimeout(() => {
+                    if (confirm('Article importé ! Voulez-vous l\'éditer maintenant pour vérifier le résultat ?')) {
+                        // Trouver l'article nouvellement créé
+                        const newArticle = news.find(n => n.title === finalTitle);
+                        if (newArticle) {
+                            editNews(newArticle.id);
+                        }
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error('❌ Erreur import manuel:', error);
+                showNotification(`❌ Erreur lors de l'import: ${error.message}`, 'error');
+            }
+        }
+
+        // Import avec IA
+        async function importManualContentWithIA() {
+            await importManualContent(true);
+        }
+
+        // Fonction pour vider le formulaire
+        function clearManualForm() {
+            document.getElementById('manualArticleTitle').value = '';
+            document.getElementById('manualArticleContent').value = '';
+            document.getElementById('manualArticleCity').value = '';
+            document.getElementById('manualArticleType').value = 'hotel';
+        }
+
+        // Fonction pour extraire les images i.ibb.co du contenu
+        function extractIbbImageFromContent(content) {
+            if (!content) return null;
+            
+            // Chercher les URLs d'images i.ibb.co
+            const ibbImageRegex = /https:\/\/i\.ibb\.co\/[a-zA-Z0-9\/\-\.]+\.(jpg|jpeg|png|gif|webp)/gi;
+            const matches = content.match(ibbImageRegex);
+            
+            if (matches && matches.length > 0) {
+                console.log('🖼️ Image i.ibb.co trouvée:', matches[0]);
+                return matches[0];
+            }
+            
+            // Chercher dans les balises img
+            const imgTagRegex = /<img[^>]+src="(https:\/\/i\.ibb\.co\/[^"]+)"/gi;
+            const imgMatches = imgTagRegex.exec(content);
+            
+            if (imgMatches && imgMatches[1]) {
+                console.log('🖼️ Image trouvée dans balise img:', imgMatches[1]);
+                return imgMatches[1];
+            }
+            
+            return null;
+        }
 
         // Auto-save functionality
         setInterval(() => {

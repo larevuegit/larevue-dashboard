@@ -4975,6 +4975,9 @@ function viewSyncLogs() {
             return null;
         }
 
+        // Variables globales
+        let rssService;
+
         // Initialize settings on load
         document.addEventListener('DOMContentLoaded', function() {
             loadSettings();
@@ -4983,15 +4986,10 @@ function viewSyncLogs() {
             document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('fr-FR');
             
             // ✅ AJOUT : Initialiser le service RSS après un délai
-            // Initialiser le service RSS après chargement complet
-setTimeout(() => {
-    if (window.rssService) {
-        initRSSService();
-    } else {
-        console.error('❌ Service RSS non disponible');
-        showNotification('⚠️ Service RSS non initialisé', 'warning');
-    }
-}, 3000); // Augmenter le délai à 3 secondes
+            setTimeout(() => {
+                initRSSService();
+                initializeFirebase();
+            }, 1000);
 
             // 🤖 AJOUT : Test IA au démarrage
             setTimeout(async () => {
@@ -5011,7 +5009,12 @@ setTimeout(() => {
                 }
             }, 4000);
         });
-   
+
+        function initRSSService() {
+            rssService = window.rssService;
+            console.log('✅ Service RSS initialisé');
+            startAutoRSSSync();
+        }
 
         // Auto-save functionality
         setInterval(() => {

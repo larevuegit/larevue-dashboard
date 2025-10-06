@@ -4697,103 +4697,178 @@ Réponds UNIQUEMENT avec ce JSON :
                 .trim();
         }
         
-        // Import manuel d'un article WordPress
-        async function importWordPressArticle(withIA = false) {
-            const url = document.getElementById('wordpressArticleUrl').value;
-            if (!url) {
-                showNotification('❌ Veuillez saisir une URL d\'article', 'error');
-                return;
-            }
+        // Import manuel d'un article WordPress - VERSION CORRIGÉE
+async function importWordPressArticle(withIA = false) {
+    const url = document.getElementById('wordpressArticleUrl').value;
+    if (!url) {
+        showNotification('❌ Veuillez saisir une URL d\'article', 'error');
+        return;
+    }
+    
+    if (!url.includes('larevuedeshotels.com') && !url.includes('larevuedesrestaurants.com')) {
+        showNotification('❌ URL non supportée. Utilisez larevuedeshotels.com ou larevuedesrestaurants.com', 'error');
+        return;
+    }
+    
+    try {
+        showNotification('📥 Import en cours...', 'info');
+        
+        // Vérifier si l'article existe déjà
+        const existing = await db.collection('news')
+            .where('sourceUrl', '==', url)
+            .limit(1)
+            .get();
             
-            if (!url.includes('larevuedeshotels.com') && !url.includes('larevuedesrestaurants.com')) {
-                showNotification('❌ URL non supportée. Utilisez larevuedeshotels.com ou larevuedesrestaurants.com', 'error');
-                return;
-            }
-            
+        if (!existing.empty) {
+            showNotification('ℹ️ Article déjà importé', 'warning');
+            return;
+        }
+        
+        // ✅ NOUVELLE APPROCHE AVEC PLUSIEURS PROXIES DE FALLBACK
+        let html = null;
+        const proxies = [
+            `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+            `https://corsproxy.io/?${encodeURIComponent(url)}`,
+            `https://cors-anywhere.herokuapp.com/${url}`
+        ];
+        
+        for (const proxyUrl of proxies) {
             try {
-                showNotification('📥 Import en cours...', 'info');
+                console.log(`🔄 Tentative avec proxy: ${proxyUrl}`);
+                const response = await fetch(proxyUrl, {
+                    headers: {
+                        'Accept': 'application/json, text/html, */*',
+                        'User-Agent': 'Mozilla/5.0 (compatible; LaRevue-Import/1.0)'
+                    }
+                });
                 
-                // Vérifier si l'article existe déjà
-                const existing = await db.collection('news')
-                    .where('sourceUrl', '==', url)
-                    .limit(1)
-                    .get();
-                    
-                if (!existing.empty) {
-                    showNotification('ℹ️ Article déjà importé', 'warning');
-                    return;
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
                 }
                 
-                // Récupérer le contenu de l'article
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
-                const html = data.contents;
+                // ✅ VÉRIFIER LE TYPE DE CONTENU
+                const contentType = response.headers.get('content-type');
+                console.log('📄 Content-Type:', contentType);
                 
-                // Extraire les informations
-                const title = extractTitleFromHtml(html);
-                const content = extractContentFromHtml(html);
-                const imageUrl = extractFeaturedImageFromHtml(html);
-                
-                // Convertir au format site web
-                let finalContent = convertWordPressToSiteFormat(content);
-                let finalTitle = title;
-                let aiImproved = false;
-                
-                // Améliorer avec IA si demandé
-                if (withIA) {
-                    try {
-                        showNotification('🤖 Amélioration IA en cours...', 'info');
-                        const improved = await improveArticleWithAI({
-                            title: finalTitle,
-                            content: finalContent
-                        });
-                        
-                        if (improved && improved.title && improved.content) {
-                            finalTitle = improved.title;
-                            finalContent = improved.content;
-                            aiImproved = true;
-                            showNotification('✅ Article amélioré par IA !', 'success');
-                        }
-                    } catch (error) {
-                        console.log('⚠️ IA non disponible, contenu original conservé');
-                        showNotification('⚠️ IA non disponible, contenu original importé', 'warning');
+                if (contentType && contentType.includes('application/json')) {
+                    // Si c'est du JSON (allorigins)
+                    const data = await response.json();
+                    if (data.contents) {
+                        html = data.contents;
+                        console.log('✅ HTML récupéré via allorigins');
+                        break;
+                    }
+                } else {
+                    // Si c'est du HTML direct
+                    html = await response.text();
+                    if (html && html.includes('<html')) {
+                        console.log('✅ HTML récupéré directement');
+                        break;
                     }
                 }
                 
-                // Créer l'article dans Firebase
-                const newsData = {
-                    title: finalTitle,
-                    content: finalContent,
-                    summary: extractSummaryFromContent(finalContent),
-                    sourceUrl: url,
-                    imageUrl: imageUrl,
-                    type: detectTypeFromUrl(url),
-                    establishmentType: detectEstablishmentTypeFromUrl(url),
-                    status: 'published',
-                    featured: false,
-                    author: 'La Revue',
-                    aiImproved: aiImproved,
-                    aiProvider: aiImproved ? 'Google AI Studio' : null,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    views: 0,
-                    tags: ['actualité', detectTypeFromUrl(url), 'wordpress', 'import'],
-                    city: extractCityFromContent(finalContent)
-                };
-                
-                await db.collection('news').add(newsData);
-                await loadNews();
-                
-                showNotification('✅ Article importé avec succès !', 'success');
-                document.getElementById('wordpressArticleUrl').value = '';
-                
             } catch (error) {
-                console.error('❌ Erreur import WordPress:', error);
-                showNotification('❌ Erreur lors de l\'import: ' + error.message, 'error');
+                console.log(`❌ Proxy échoué: ${error.message}`);
+                continue;
             }
         }
+        
+        if (!html) {
+            throw new Error('Impossible de récupérer le contenu de l\'article. Tous les proxies ont échoué.');
+        }
+        
+        // ✅ VÉRIFIER QUE C'EST BIEN DU HTML
+        if (!html.includes('<html') && !html.includes('<div')) {
+            throw new Error('Le contenu récupéré ne semble pas être du HTML valide');
+        }
+        
+        console.log('📄 HTML récupéré, taille:', html.length, 'caractères');
+        
+        // Extraire les informations
+        const title = extractTitleFromHtml(html);
+        const content = extractContentFromHtml(html);
+        const imageUrl = extractFeaturedImageFromHtml(html);
+        
+        console.log('📝 Titre extrait:', title);
+        console.log('📄 Contenu extrait:', content.substring(0, 100) + '...');
+        console.log('🖼️ Image extraite:', imageUrl);
+        
+        if (!title || title === 'Article importé') {
+            throw new Error('Impossible d\'extraire le titre de l\'article');
+        }
+        
+        if (!content || content.length < 100) {
+            throw new Error('Impossible d\'extraire le contenu de l\'article');
+        }
+        
+        // Convertir au format site web
+        let finalContent = convertWordPressToSiteFormat(content);
+        let finalTitle = title;
+        let aiImproved = false;
+        
+        // Améliorer avec IA si demandé
+        if (withIA) {
+            try {
+                showNotification('🤖 Amélioration IA en cours...', 'info');
+                const improved = await improveArticleWithAI({
+                    title: finalTitle,
+                    content: finalContent
+                });
+                
+                if (improved && improved.title && improved.content) {
+                    finalTitle = improved.title;
+                    finalContent = improved.content;
+                    aiImproved = true;
+                    showNotification('✅ Article amélioré par IA !', 'success');
+                }
+            } catch (error) {
+                console.log('⚠️ IA non disponible, contenu original conservé');
+                showNotification('⚠️ IA non disponible, contenu original importé', 'warning');
+            }
+        }
+        
+        // Créer l'article dans Firebase
+        const newsData = {
+            title: finalTitle,
+            content: finalContent,
+            summary: extractSummaryFromContent(finalContent),
+            sourceUrl: url,
+            imageUrl: imageUrl,
+            type: detectTypeFromUrl(url),
+            establishmentType: detectEstablishmentTypeFromUrl(url),
+            status: 'published',
+            featured: false,
+            author: 'La Revue',
+            aiImproved: aiImproved,
+            aiProvider: aiImproved ? 'Google AI Studio' : null,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            views: 0,
+            tags: ['actualité', detectTypeFromUrl(url), 'wordpress', 'import'],
+            city: extractCityFromContent(finalContent)
+        };
+        
+        console.log('💾 Sauvegarde dans Firebase...', newsData);
+        
+        await db.collection('news').add(newsData);
+        await loadNews();
+        
+        showNotification('✅ Article importé avec succès !', 'success');
+        document.getElementById('wordpressArticleUrl').value = '';
+        
+    } catch (error) {
+        console.error('❌ Erreur import WordPress:', error);
+        showNotification(`❌ Erreur lors de l'import: ${error.message}`, 'error');
+        
+        // ✅ AFFICHER LES DÉTAILS DE L'ERREUR POUR LE DEBUG
+        console.error('🔍 Détails de l\'erreur:', {
+            message: error.message,
+            stack: error.stack,
+            url: url
+        });
+    }
+}
         
         // Import avec IA
         async function importWordPressArticleWithIA() {

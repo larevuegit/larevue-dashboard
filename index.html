@@ -1269,9 +1269,9 @@
                             <button onclick="testRSSFeeds()" class="btn btn-secondary">
                                 🧪 Tester les flux RSS
                             </button>
-                            <button onclick="viewSyncLogs()" class="btn btn-info">
-                                📊 Voir les logs
-                            </button>
+                            <button onclick="viewSyncLogs()" class="btn btn-secondary">
+    📊 Voir les logs
+</button>
                         </div>
                         
                         <div id="rssSyncStatus" class="mt-4">
@@ -1997,11 +1997,23 @@ https://example.com/image2.jpg"></textarea>
     model: 'gemini-2.5-flash'
 };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const storage = firebase.storage();
-        setupGoogleAIKey();
+        // Fonction pour configurer la clé de manière sécurisée
+function setupGoogleAIKey() {
+    const stored = localStorage.getItem('google_ai_key');
+    if (!stored) {
+        // Utilise la clé par défaut pour l'instant
+        console.log('🔑 Utilisation de la clé API par défaut');
+    } else {
+        GOOGLE_AI_CONFIG.apiKey = stored;
+        console.log('🔑 Clé API chargée depuis le stockage local');
+    }
+}
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+setupGoogleAIKey();
 
         // Global Variables
         let establishments = [];
@@ -4538,7 +4550,15 @@ function viewSyncLogs() {
             document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('fr-FR');
             
             // ✅ AJOUT : Initialiser le service RSS après un délai
-            setTimeout(initRSSService, 2000);
+            // Initialiser le service RSS après chargement complet
+setTimeout(() => {
+    if (window.rssService) {
+        initRSSService();
+    } else {
+        console.error('❌ Service RSS non disponible');
+        showNotification('⚠️ Service RSS non initialisé', 'warning');
+    }
+}, 3000); // Augmenter le délai à 3 secondes
 
             // 🤖 AJOUT : Test IA au démarrage
             setTimeout(async () => {

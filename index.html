@@ -5224,7 +5224,24 @@ async function importWordPressArticle(withIA = false) {
                     views: 0,
                     tags: ['actualité', type, 'wordpress', 'import-manuel']
                 };
-                
+                // ✅ VALIDATION DES DONNÉES OBLIGATOIRES
+if (!newsData.title || !newsData.content) {
+    throw new Error('Titre ou contenu manquant');
+}
+
+if (!newsData.timestamp) {
+    console.warn('⚠️ Timestamp manquant, ajout manuel');
+    newsData.timestamp = new Date();
+}
+
+console.log('📊 Données à sauvegarder:', {
+    title: newsData.title.substring(0, 50) + '...',
+    contentLength: newsData.content.length,
+    type: newsData.type,
+    hasTimestamp: !!newsData.timestamp,
+    hasCreatedAt: !!newsData.createdAt
+});
+
                 console.log('💾 Sauvegarde article manuel...', newsData);
 
 // ✅ AJOUT : Test de connexion Firebase avant sauvegarde

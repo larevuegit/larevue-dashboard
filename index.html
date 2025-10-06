@@ -4318,7 +4318,8 @@ class RSSyncService {
     return false;
 }
 
-         const cleanContent = this.cleanContent(article.content || article.description);
+        const rawContent = article.content || article.description;
+        const cleanContent = this.convertWordPressToClean(rawContent);
         const summary = this.extractSummary(article.description || cleanContent);
 
         // 🤖 AMÉLIORATION IA
@@ -4406,14 +4407,27 @@ class RSSyncService {
 }
 
     cleanContent(content) {
-        if (!content) return 'Contenu à venir';
-        
-        return content
-            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-            .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-            .replace(/<!--[\s\S]*?-->/g, '')
-            .trim();
-    }
+    if (!content) return 'Contenu à venir';
+    
+    return content
+        // ✅ AJOUT : Supprimer les commentaires WordPress
+        .replace(/<!--\s*wp:[^>]*-->/g, '')
+        .replace(/<!--\s*\/wp:[^>]*-->/g, '')
+        // ✅ AJOUT : Nettoyer les classes WordPress
+        .replace(/class="wp-block-[^"]*"/g, '')
+        .replace(/class="wp-[^"]*"/g, '')
+        // ✅ AJOUT : Simplifier les balises figure
+        .replace(/<figure[^>]*>/g, '')
+        .replace(/<\/figure>/g, '')
+        // Nettoyage existant
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+        .replace(/<!--[\s\S]*?-->/g, '')
+        // ✅ AJOUT : Nettoyer les espaces multiples
+        .replace(/\n\s*\n/g, '\n')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
 
     extractSummary(content) {
         if (!content) return 'Résumé à venir';

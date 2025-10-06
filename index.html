@@ -4731,7 +4731,7 @@ Réponds UNIQUEMENT avec ce JSON :
                 .replace(/<h2 class="wp-block-heading"[^>]*>(.*?)<\/h2>/g, '## $1')
                 
                 // ✅ PRÉSERVER les images EXACTEMENT comme sur le site
-                .replace(/<figure class="wp-block-image[^>]*>.*?<img src="([^"]*)"[^>]*>.*?<\/figure>/g, '\n\n![]($1)\n\n')
+                .replace(/<figure[^>]*class="wp-block-image[^>]*>[\s\S]*?<img[^>]+src="([^"]*)"[^>]*>[\s\S]*?<\/figure>/gi, '\n\n![]($1)\n\n')
                 
                 // ✅ PRÉSERVER les paragraphes
                 .replace(/<p><\/p>/g, '\n')

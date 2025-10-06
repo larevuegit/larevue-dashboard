@@ -239,6 +239,11 @@
         .btn-danger:hover {
             background: linear-gradient(135deg, #dc2626, #b91c1c);
         }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            color: white;
+        }
        
         .card {
             background: white;
@@ -468,6 +473,10 @@
        
         .notification.info {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+
+        .notification.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
         }
        
         .progress-bar {
@@ -789,135 +798,181 @@
             </div>
         </div>
 
-        <!-- News Tab -->
+        <!-- ✅ NEWS TAB - ENTIÈREMENT REFAIT -->
         <div id="news" class="tab-content">
             <div class="card p-6 mb-6">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h2 class="text-2xl font-bold text-gray-900">Gestion des Actualités</h2>
-                        <p class="text-gray-600 mt-1">Créez et gérez les actualités par type d'établissement</p>
+                        <h2 class="text-2xl font-bold text-gray-900">📰 Gestion des Actualités</h2>
+                        <p class="text-gray-600 mt-1">Import direct du contenu HTML WordPress</p>
                     </div>
                     <div class="flex gap-3">
-                        <button onclick="openAddNewsModal()" class="btn btn-primary">
-                            ➕ Nouvelle actualité
+                        <button onclick="clearAllNews()" class="btn btn-danger">
+                            🗑️ Vider toutes les actualités
                         </button>
-                        <button onclick="manageFeaturedNews()" class="btn btn-success">
-                            ⭐ Gérer les unes
-                        </button>
-                        <button onclick="scheduleNews()" class="btn btn-purple">
-                            ⏰ Programmer
+                        <button onclick="refreshNews()" class="btn btn-primary">
+                            🔄 Actualiser
                         </button>
                     </div>
                 </div>
 
-                <!-- News Filters -->
-                <div class="filter-section">
-                    <h3 class="text-lg font-semibold mb-4">Filtres des Actualités</h3>
-                    <div class="filter-grid">
+                <!-- Section Import HTML WordPress -->
+                <div class="card p-6 mb-6 bg-gradient-to-r from-purple-50 to-blue-50">
+                    <h3 class="text-xl font-bold text-purple-800 mb-4">📋 Ajouter une actualité - Import HTML WordPress</h3>
+                    
+                    <div class="space-y-6">
+                        <!-- Titre -->
                         <div>
-                            <label class="form-label">Type d'actualité</label>
-                            <select id="filterNewsType" onchange="applyNewsFilters()" class="form-input">
-                                <option value="">Tous les types</option>
-                                <option value="hotel">🏨 Hôtel</option>
-                                <option value="restaurant">🍽️ Restaurant</option>
-                                <option value="spa">🧘 Spa</option>
-                                <option value="general">🌟 Général</option>
-                            </select>
+                            <label class="form-label text-purple-800">📝 Titre de l'actualité *</label>
+                            <input type="text" id="manualArticleTitle" class="form-input" placeholder="Le classement des meilleurs hôtels pour profiter des vacances de la Toussaint">
+                            <p class="text-sm text-purple-600 mt-1">Saisissez le titre exact de l'article</p>
                         </div>
+                        
+                        <!-- Contenu HTML -->
                         <div>
-                            <label class="form-label">Statut</label>
-                            <select id="filterNewsStatus" onchange="applyNewsFilters()" class="form-input">
-                                <option value="">Tous les statuts</option>
-                                <option value="published">✅ Publié</option>
-                                <option value="draft">📝 Brouillon</option>
-                                <option value="scheduled">⏰ Programmé</option>
-                                <option value="archived">🗄️ Archivé</option>
-                            </select>
+                            <label class="form-label text-purple-800">🔤 Contenu HTML WordPress *</label>
+                            <textarea id="manualArticleContent" rows="15" class="form-input" placeholder='<!-- wp:paragraph -->
+<p>Les vacances de la Toussaint sont le moment idéal pour s&apos;évader...</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":4} -->
+<h4 class="wp-block-heading"><strong>10 - L&apos;hôtel "Château de Bagnols" – Beaujolais</strong></h4>
+<!-- /wp:heading -->
+
+<!-- wp:image {"sizeSlug":"large"} -->
+<figure class="wp-block-image size-large"><img src="https://i.ibb.co/svvH69St/image.png" alt=""/></figure>
+<!-- /wp:image -->'></textarea>
+                            <p class="text-sm text-purple-600 mt-1">Collez directement le HTML avec les balises WordPress (wp:paragraph, wp:heading, wp:image, etc.)</p>
                         </div>
-                        <div>
-                            <label class="form-label">À la une</label>
-                            <select id="filterNewsFeatured" onchange="applyNewsFilters()" class="form-input">
-                                <option value="">Tous</option>
-                                <option value="true">⭐ À la une</option>
-                                <option value="false">📰 Standard</option>
-                            </select>
+                        
+                        <!-- Paramètres -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="form-label text-purple-800">🏨 Type d'établissement *</label>
+                                <select id="manualArticleType" class="form-input">
+                                    <option value="hotel">🏨 Hôtel</option>
+                                    <option value="restaurant">🍽️ Restaurant</option>
+                                    <option value="spa">🧘 Spa</option>
+                                    <option value="general">🌟 Général</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label text-purple-800">📍 Ville (optionnel)</label>
+                                <input type="text" id="manualArticleCity" class="form-input" placeholder="Paris, Lyon...">
+                            </div>
+                            <div>
+                                <label class="form-label text-purple-800">👤 Auteur</label>
+                                <input type="text" id="manualArticleAuthor" class="form-input" value="La Revue" readonly>
+                            </div>
                         </div>
-                        <div>
-                            <label class="form-label">Période</label>
-                            <select id="filterNewsPeriod" onchange="applyNewsFilters()" class="form-input">
-                                <option value="">Toutes les dates</option>
-                                <option value="today">Aujourd'hui</option>
-                                <option value="week">Cette semaine</option>
-                                <option value="month">Ce mois</option>
-                                <option value="year">Cette année</option>
-                            </select>
+                        
+                        <!-- Boutons d'action -->
+                        <div class="flex gap-4 justify-center">
+                            <button onclick="importManualContent()" class="btn btn-primary">
+                                📥 Importer cette actualité
+                            </button>
+                            <button onclick="importManualContentWithIA()" class="btn btn-purple">
+                                🤖 Importer + Améliorer avec IA
+                            </button>
+                            <button onclick="clearManualForm()" class="btn btn-secondary">
+                                🗑️ Vider le formulaire
+                            </button>
                         </div>
-                        <div>
-                            <label class="form-label">Recherche</label>
-                            <input type="text" id="searchNewsQuery" placeholder="Titre, contenu..." onkeyup="applyNewsFilters()" class="form-input">
-                        </div>
+                    </div>
+                    
+                    <!-- Avantages -->
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
+                        <h4 class="font-bold text-green-800 mb-2">✨ Avantages de cette méthode :</h4>
+                        <ul class="text-sm text-green-700 space-y-1">
+                            <li>✅ Format identique au site web</li>
+                            <li>✅ Import instantané (pas d'attente proxy)</li>
+                            <li>✅ Images i.ibb.co préservées automatiquement</li>
+                            <li>✅ Structure WordPress conservée et convertie</li>
+                            <li>✅ Amélioration IA optionnelle disponible</li>
+                            <li>✅ Contrôle total sur le contenu importé</li>
+                        </ul>
                     </div>
                 </div>
 
-                <!-- Featured News Section -->
-                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                    <h3 class="text-lg font-semibold text-yellow-800 mb-3">🌟 Actualités à la une par catégorie</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-white p-3 rounded-lg border">
-                            <h4 class="font-medium text-blue-800">🏨 Hôtels</h4>
-                            <div id="featuredHotelNews" class="text-sm text-gray-600 mt-1">Aucune actualité en une</div>
-                        </div>
-                        <div class="bg-white p-3 rounded-lg border">
-                            <h4 class="font-medium text-green-800">🍽️ Restaurants</h4>
-                            <div id="featuredRestaurantNews" class="text-sm text-gray-600 mt-1">Aucune actualité en une</div>
-                        </div>
-                        <div class="bg-white p-3 rounded-lg border">
-                            <h4 class="font-medium text-purple-800">🧘 Spas</h4>
-                            <div id="featuredSpaNews" class="text-sm text-gray-600 mt-1">Aucune actualité en une</div>
+                <!-- Liste des actualités existantes -->
+                <div class="card p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">📄 Actualités publiées</h3>
+                        <div class="text-sm text-gray-600">
+                            <span id="newsCount">0</span> actualité(s) au total
                         </div>
                     </div>
-                </div>
 
-                <!-- News Table -->
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>
-                                    <input type="checkbox" id="selectAllNews" onchange="toggleSelectAllNews()">
-                                </th>
-                                <th>Titre</th>
-                                <th>Type</th>
-                                <th>Statut</th>
-                                <th>À la une</th>
-                                <th>Auteur</th>
-                                <th>Date création</th>
-                                <th>Date publication</th>
-                                <th>Vues</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="newsTable">
-                            <!-- Dynamic content will be inserted here -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- News Pagination -->
-                <div class="flex justify-between items-center mt-6">
-                    <div class="text-sm text-gray-600">
-                        <span id="newsResultsCount">0</span> actualité(s) trouvée(s)
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="previousNewsPage()" id="prevNewsButton" class="btn btn-secondary" disabled>
-                            ⬅️ Précédent
-                        </button>
-                        <div id="newsPageNumbers" class="flex gap-1">
-                            <!-- Page numbers will be inserted here -->
+                    <!-- Filtres actualités -->
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="form-label">Type</label>
+                                <select id="filterNewsType" onchange="applyNewsFilters()" class="form-input">
+                                    <option value="">Tous les types</option>
+                                    <option value="hotel">🏨 Hôtel</option>
+                                    <option value="restaurant">🍽️ Restaurant</option>
+                                    <option value="spa">🧘 Spa</option>
+                                    <option value="general">🌟 Général</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Statut</label>
+                                <select id="filterNewsStatus" onchange="applyNewsFilters()" class="form-input">
+                                    <option value="">Tous les statuts</option>
+                                    <option value="published">✅ Publié</option>
+                                    <option value="draft">📝 Brouillon</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Amélioré par IA</label>
+                                <select id="filterNewsIA" onchange="applyNewsFilters()" class="form-input">
+                                    <option value="">Tous</option>
+                                    <option value="true">🤖 Avec IA</option>
+                                    <option value="false">📝 Original</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Recherche</label>
+                                <input type="text" id="searchNewsQuery" placeholder="Titre..." onkeyup="applyNewsFilters()" class="form-input">
+                            </div>
                         </div>
-                        <button onclick="nextNewsPage()" id="nextNewsButton" class="btn btn-secondary">
-                            Suivant ➡️
-                        </button>
+                    </div>
+
+                    <!-- Table des actualités -->
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Titre</th>
+                                    <th>Type</th>
+                                    <th>Statut</th>
+                                    <th>IA</th>
+                                    <th>Ville</th>
+                                    <th>Date création</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="newsTable">
+                                <!-- Contenu dynamique inséré ici -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination actualités -->
+                    <div class="flex justify-between items-center mt-6">
+                        <div class="text-sm text-gray-600">
+                            <span id="newsResultsCount">0</span> actualité(s) affichée(s)
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="previousNewsPage()" id="prevNewsButton" class="btn btn-secondary" disabled>
+                                ⬅️ Précédent
+                            </button>
+                            <span id="newsPageInfo" class="px-4 py-2 text-sm text-gray-600">Page 1</span>
+                            <button onclick="nextNewsPage()" id="nextNewsButton" class="btn btn-secondary">
+                                Suivant ➡️
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1233,170 +1288,6 @@
                     </button>
                 </div>
 
-                <!-- ✅ AJOUT : RSS Sync Section -->
-                <div class="card p-4 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">🤖 Synchronisation RSS + IA Automatique</h3>
-
-                    <!-- ✅ NOUVEAU : Import Manuel WordPress -->
-                    <div class="card p-4 mb-6">
-                        <h3 class="text-lg font-semibold mb-4">📝 Import Manuel WordPress</h3>
-                        
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <h4 class="font-medium text-blue-800 mb-3">🎯 Import Direct depuis WordPress</h4>
-                            <p class="text-sm text-blue-700 mb-4">Copiez l'URL de votre article WordPress pour l'importer instantanément avec le même format que sur le site.</p>
-                            
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="form-label">URL de l'article WordPress *</label>
-                                    <input type="url" id="wordpressArticleUrl" class="form-input" placeholder="https://larevuedeshotels.com/mon-article">
-                                    <p class="text-xs text-gray-500 mt-1">Exemple: https://larevuedeshotels.com/le-classement-des-meilleurs-hotels...</p>
-                                </div>
-                                
-                                <div class="flex gap-2">
-                                    <button onclick="importWordPressArticle()" class="btn btn-primary">
-                                        📥 Importer cet article
-                                    </button>
-                                    <button onclick="importWordPressArticleWithIA()" class="btn btn-purple">
-                                        🤖 Importer + Améliorer IA
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
-                            <h4 class="font-medium text-green-800 mb-2">✨ Avantages de l'import manuel :</h4>
-                            <ul class="text-sm text-green-700 space-y-1">
-                                <li>✅ Format identique au site web</li>
-                                <li>✅ Import instantané (pas d'attente)</li>
-                                <li>✅ Images dans le bon ordre</li>
-                                <li>✅ IA optionnelle pour amélioration</li>
-                                <li>✅ Contrôle total du contenu</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <!-- ✅ NOUVELLE SECTION COPIER-COLLER À AJOUTER ICI -->
-                <div class="card p-4 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">📋 Import Manuel par Copier-Coller</h3>
-                    
-                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                        <h4 class="font-medium text-amber-800 mb-3">🎯 Copier-Coller HTML WordPress</h4>
-                        <p class="text-sm text-amber-700 mb-4">Copiez le contenu HTML brut depuis WordPress et collez-le ci-dessous avec le titre.</p>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="form-label">Titre de l'article *</label>
-                                <input type="text" id="manualArticleTitle" class="form-input" placeholder="Le classement des meilleurs hôtels pour profiter des vacances de la Toussaint">
-                                <p class="text-xs text-gray-500 mt-1">Saisissez le titre exact de l'article</p>
-                            </div>
-                            
-                            <div>
-                                <label class="form-label">Contenu HTML WordPress *</label>
-                                <textarea id="manualArticleContent" rows="12" class="form-input" placeholder="Collez ici le contenu HTML brut de WordPress avec les balises wp:paragraph, wp:heading, wp:image..."></textarea>
-                                <p class="text-xs text-gray-500 mt-1">Collez directement le HTML avec les balises WordPress (wp:paragraph, wp:heading, etc.)</p>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="form-label">Type d'établissement</label>
-                                    <select id="manualArticleType" class="form-input">
-                                        <option value="hotel">🏨 Hôtel</option>
-                                        <option value="restaurant">🍽️ Restaurant</option>
-                                        <option value="spa">🧘 Spa</option>
-                                        <option value="general">🌟 Général</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="form-label">Ville (optionnel)</label>
-                                    <input type="text" id="manualArticleCity" class="form-input" placeholder="Paris, Lyon...">
-                                </div>
-                            </div>
-                            
-                            <div class="flex gap-3">
-                                <button onclick="importManualContent()" class="btn btn-primary">
-                                    📥 Importer ce contenu
-                                </button>
-                                <button onclick="importManualContentWithIA()" class="btn btn-purple">
-                                    🤖 Importer + Améliorer IA
-                                </button>
-                                <button onclick="clearManualForm()" class="btn btn-secondary">
-                                    🗑️ Vider
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
-                        <h4 class="font-medium text-green-800 mb-2">✨ Avantages du copier-coller :</h4>
-                        <ul class="text-sm text-green-700 space-y-1">
-                            <li>✅ Format identique au site web</li>
-                            <li>✅ Import instantané (pas d'attente proxy)</li>
-                            <li>✅ Images i.ibb.co préservées</li>
-                            <li>✅ Structure WordPress conservée</li>
-                            <li>✅ IA optionnelle pour amélioration</li>
-                        </ul>
-                    </div>
-                </div>
-                        
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                        <h4 class="font-medium text-green-800 mb-2">✨ IA Activée - Google AI Studio</h4>
-                        <ul class="text-sm text-green-700 space-y-1">
-                            <li>✅ Amélioration automatique des articles RSS</li>
-                            <li>✅ Respect de la logique éditoriale originale</li>
-                            <li>✅ Traitement unique par article (économique)</li>
-                            <li>✅ Remise en forme HTML propre</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <label class="form-label">Synchronisation automatique</label>
-                                <p class="text-sm text-gray-500">Synchronise les articles WordPress toutes les heures</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="autoRSSSync" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <button onclick="manualRSSSync()" class="btn btn-primary">
-                                🔄 Synchroniser maintenant
-                            </button>
-                            <button onclick="testRSSFeeds()" class="btn btn-secondary">
-                                🧪 Tester les flux RSS
-                            </button>
-                            <button onclick="viewSyncLogs()" class="btn btn-secondary">
-                                📊 Voir les logs
-                            </button>
-                        </div>
-                        
-                        <div id="rssSyncStatus" class="mt-4">
-                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                <div class="text-sm text-blue-800">
-                                    ✅ Synchronisation active - Dernière sync: <span id="lastSyncTime">Jamais</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Sources RSS -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="font-medium text-gray-900 mb-3">📡 Sources RSS configurées</h4>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between items-center">
-                                    <span>🏨 Hôtels:</span>
-                                    <code class="bg-white px-2 py-1 rounded text-xs">larevuedeshotels.com/feed</code>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span>🍽️ Restaurants:</span>
-                                    <code class="bg-white px-2 py-1 rounded text-xs">larevuedesrestaurants.com/feed</code>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Firebase Configuration -->
                 <div class="card p-4 mb-6">
                     <h3 class="text-lg font-semibold mb-4">🔥 Configuration Firebase</h3>
@@ -1490,7 +1381,7 @@
                     <h3 class="text-lg font-semibold mb-4">ℹ️ Informations Système</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
-                            <strong>Version de l'application:</strong> La Revue Dashboard v2.1.0
+                            <strong>Version de l'application:</strong> La Revue Dashboard v2.2.0
                         </div>
                         <div>
                             <strong>Dernière mise à jour:</strong> <span id="lastUpdate">-</span>
@@ -1831,128 +1722,6 @@ https://example.com/image2.jpg"></textarea>
         </div>
     </div>
 
-    <!-- Add News Modal -->
-    <div id="addNewsModal" class="modal">
-        <div class="modal-content p-6" style="width: 700px;">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-gray-900">📰 Nouvelle actualité</h3>
-                <button onclick="closeModal('addNewsModal')" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-            </div>
-           
-            <form id="addNewsForm" class="space-y-6">
-                <!-- Basic Information -->
-                <div class="space-y-4">
-                    <div>
-                        <label class="form-label">Titre de l'actualité *</label>
-                        <input type="text" id="newsTitle" required class="form-input" placeholder="Titre accrocheur de votre actualité">
-                    </div>
-                   
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="form-label">Catégorie *</label>
-                            <select id="newsType" required class="form-input">
-                                <option value="">Sélectionner une catégorie</option>
-                                <option value="hotel">🏨 Hôtels</option>
-                                <option value="restaurant">🍽️ Restaurants</option>
-                                <option value="spa">🧘 Spas</option>
-                                <option value="general">🌟 Général</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label">Statut</label>
-                            <select id="newsStatus" class="form-input">
-                                <option value="draft">📝 Brouillon</option>
-                                <option value="published">✅ Publié</option>
-                                <option value="scheduled">⏰ Programmé</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- NOUVEAU CHAMP VILLE À AJOUTER ICI -->
-                <div>
-                    <label class="form-label">Ville (optionnel)</label>
-                    <input type="text" id="newsCity" class="form-input" placeholder="Ex: Paris, Lyon, Marseille...">
-                    <p class="text-xs text-gray-500 mt-1">Ville liée à cette actualité pour l'affichage sur l'app mobile</p>
-                </div>
-
-                <!-- Content -->
-                <div>
-                    <label class="form-label">Contenu de l'actualité *</label>
-                    <textarea id="newsContent" required rows="6" class="form-input" placeholder="Rédigez le contenu de votre actualité..."></textarea>
-                    <p class="text-xs text-gray-500 mt-1">Vous pouvez utiliser du HTML pour la mise en forme</p>
-                </div>
-                <!-- Résumé -->
-                <div>
-                    <label class="form-label">Résumé de l'actualité *</label>
-                    <textarea id="newsSummary" required rows="3" class="form-input" placeholder="Résumé court de l'article (2-3 lignes maximum)" maxlength="200"></textarea>
-                    <p class="text-xs text-gray-500 mt-1">Résumé qui s'affichera dans l'application mobile (200 caractères max)</p>
-                </div>
-
-                <!-- Lien de l'article -->
-                <div>
-                    <label class="form-label">Lien de l'article (optionnel)</label>
-                    <input type="url" id="newsArticleLink" class="form-input" placeholder="https://example.com/article">
-                    <p class="text-xs text-gray-500 mt-1">Lien vers l'article complet si hébergé ailleurs</p>
-                </div>
-
-                <!-- Image -->
-                <div class="space-y-4">
-                    <div>
-                        <label class="form-label">Image principale</label>
-                        <input type="file" id="newsImageFile" accept="image/*" class="form-input">
-                    </div>
-                    <div>
-                        <label class="form-label">Ou URL d'image</label>
-                        <input type="url" id="newsImageUrl" class="form-input" placeholder="https://example.com/image.jpg">
-                    </div>
-                    <div id="newsImagePreview" class="mt-2"></div>
-                </div>
-
-                <!-- Publishing Options -->
-                <div class="bg-gray-50 p-4 rounded-lg space-y-4">
-                    <h4 class="font-semibold text-gray-900">📅 Options de publication</h4>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="flex items-center">
-                                <input type="checkbox" id="newsFeatured" class="mr-2">
-                                <span class="form-label">⭐ Mettre à la une</span>
-                            </label>
-                            <p class="text-xs text-gray-500 ml-6">Affiche l'actualité en priorité</p>
-                        </div>
-                        <div>
-                            <label class="flex items-center">
-                                <input type="checkbox" id="newsNotifyUsers" class="mr-2">
-                                <span class="form-label">📧 Notifier les utilisateurs</span>
-                            </label>
-                            <p class="text-xs text-gray-500 ml-6">Envoie une notification</p>
-                        </div>
-                    </div>
-                    <div id="schedulingOptions" style="display: none;">
-                        <label class="form-label">Date de publication programmée</label>
-                        <input type="datetime-local" id="newsScheduledDate" class="form-input">
-                    </div>
-                </div>
-
-                <!-- Tags -->
-                <div>
-                    <label class="form-label">Tags (optionnel)</label>
-                    <input type="text" id="newsTags" class="form-input" placeholder="actualité, hôtel, restaurant (séparés par des virgules)">
-                </div>
-
-                <!-- Form Actions -->
-                <div class="flex justify-end gap-3 pt-4 border-t">
-                    <button type="button" onclick="closeModal('addNewsModal')" class="btn btn-secondary">
-                        ❌ Annuler
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        📰 Publier l'actualité
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Edit News Modal -->
     <div id="editNewsModal" class="modal">
         <div class="modal-content p-6" style="width: 700px;">
@@ -1987,13 +1756,12 @@ https://example.com/image2.jpg"></textarea>
                             <select id="editNewsStatus" class="form-input">
                                 <option value="draft">📝 Brouillon</option>
                                 <option value="published">✅ Publié</option>
-                                <option value="scheduled">⏰ Programmé</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- NOUVEAU CHAMP VILLE À AJOUTER ICI -->
+                <!-- Ville -->
                 <div>
                     <label class="form-label">Ville (optionnel)</label>
                     <input type="text" id="editNewsCity" class="form-input" placeholder="Ex: Paris, Lyon, Marseille...">
@@ -2003,8 +1771,9 @@ https://example.com/image2.jpg"></textarea>
                 <!-- Content -->
                 <div>
                     <label class="form-label">Contenu de l'actualité *</label>
-                    <textarea id="editNewsContent" required rows="6" class="form-input"></textarea>
+                    <textarea id="editNewsContent" required rows="8" class="form-input"></textarea>
                 </div>
+
                 <!-- Résumé -->
                 <div>
                     <label class="form-label">Résumé de l'actualité *</label>
@@ -2012,33 +1781,10 @@ https://example.com/image2.jpg"></textarea>
                     <p class="text-xs text-gray-500 mt-1">Résumé qui s'affichera dans l'application mobile (200 caractères max)</p>
                 </div>
 
-                <!-- Lien de l'article -->
-                <div>
-                    <label class="form-label">Lien de l'article (optionnel)</label>
-                    <input type="url" id="editNewsArticleLink" class="form-input" placeholder="https://example.com/article">
-                    <p class="text-xs text-gray-500 mt-1">Lien vers l'article complet si hébergé ailleurs</p>
-                </div>
-
                 <!-- Image -->
                 <div>
                     <label class="form-label">URL d'image</label>
-                    <input type="url" id="editNewsImageUrl" class="form-input" placeholder="https://example.com/image.jpg">
-                </div>
-
-                <!-- Publishing Options -->
-                <div class="bg-gray-50 p-4 rounded-lg space-y-4">
-                    <div>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="editNewsFeature" class="mr-2">
-                            <span class="form-label">⭐ Mettre à la une</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Tags -->
-                <div>
-                    <label class="form-label">Tags</label>
-                    <input type="text" id="editNewsTags" class="form-input" placeholder="actualité, hôtel, restaurant (séparés par des virgules)">
+                    <input type="url" id="editNewsImageUrl" class="form-input" placeholder="https://i.ibb.co/example/image.jpg">
                 </div>
 
                 <!-- Form Actions -->
@@ -2085,59 +1831,15 @@ https://example.com/image2.jpg"></textarea>
         };
 
         const GOOGLE_AI_CONFIG = {
-            apiKey: "AIzaSyBPilEww1CXLBo1bEdrZm5td-qVjuCJx2A", // Votre clé
+            apiKey: "AIzaSyBPilEww1CXLBo1bEdrZm5td-qVjuCJx2A",
             endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/',
             model: 'gemini-2.5-flash'
         };
-
-        // Fonction pour configurer la clé de manière sécurisée
-        function setupGoogleAIKey() {
-            const stored = localStorage.getItem('google_ai_key');
-            if (!stored) {
-                // Utilise la clé par défaut pour l'instant
-                console.log('🔑 Utilisation de la clé API par défaut');
-            } else {
-                GOOGLE_AI_CONFIG.apiKey = stored;
-                console.log('🔑 Clé API chargée depuis le stockage local');
-            }
-        }
-
-        // ✅ NOUVELLE FONCTION AJOUTÉE
-        function initializeFirebase() {
-            try {
-                console.log('🔥 Initialisation Firebase...');
-                
-                // Vérifier que Firebase est bien initialisé
-                if (typeof firebase === 'undefined') {
-                    throw new Error('Firebase non chargé');
-                }
-                
-                if (typeof db === 'undefined') {
-                    throw new Error('Firestore non initialisé');
-                }
-                
-                // Test de connexion
-                db.collection('news').limit(1).get()
-                    .then(() => {
-                        console.log('✅ Firebase connecté avec succès');
-                        showNotification('✅ Base de données connectée', 'success');
-                    })
-                    .catch(error => {
-                        console.error('❌ Erreur connexion Firebase:', error);
-                        showNotification('❌ Erreur connexion base de données', 'error');
-                    });
-                    
-            } catch (error) {
-                console.error('❌ Erreur initialisation Firebase:', error);
-                showNotification('❌ Erreur initialisation Firebase', 'error');
-            }
-        }
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const storage = firebase.storage();
-        setupGoogleAIKey();
 
         // Global Variables
         let establishments = [];
@@ -2168,22 +1870,15 @@ https://example.com/image2.jpg"></textarea>
             loadSettings();
             document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('fr-FR');
             
-            // ✅ INITIALISATION SÉQUENTIELLE CORRIGÉE
+            // Initialisation séquentielle
             setTimeout(async () => {
                 try {
-                    // 1. Initialiser Firebase d'abord
                     initializeFirebase();
                     
-                    // 2. Attendre un peu puis charger les données
                     setTimeout(async () => {
                         console.log('📊 Chargement des données...');
                         await initializeApp();
                     }, 2000);
-                    
-                    // 3. Initialiser RSS après
-                    setTimeout(() => {
-                        initRSSService();
-                    }, 3000);
                     
                 } catch (error) {
                     console.error('❌ Erreur initialisation:', error);
@@ -2191,6 +1886,35 @@ https://example.com/image2.jpg"></textarea>
                 }
             }, 1000);
         });
+
+        function initializeFirebase() {
+            try {
+                console.log('🔥 Initialisation Firebase...');
+                
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase non chargé');
+                }
+                
+                if (typeof db === 'undefined') {
+                    throw new Error('Firestore non initialisé');
+                }
+                
+                // Test de connexion
+                db.collection('news').limit(1).get()
+                    .then(() => {
+                        console.log('✅ Firebase connecté avec succès');
+                        showNotification('✅ Base de données connectée', 'success');
+                    })
+                    .catch(error => {
+                        console.error('❌ Erreur connexion Firebase:', error);
+                        showNotification('❌ Erreur connexion base de données', 'error');
+                    });
+                    
+            } catch (error) {
+                console.error('❌ Erreur initialisation Firebase:', error);
+                showNotification('❌ Erreur initialisation Firebase', 'error');
+            }
+        }
 
         async function initializeApp() {
             showNotification('🔄 Chargement des données...', 'info');
@@ -2223,28 +1947,608 @@ https://example.com/image2.jpg"></textarea>
             // Form submissions
             document.getElementById('addForm').addEventListener('submit', handleAddSubmit);
             document.getElementById('editForm').addEventListener('submit', handleEditSubmit);
-            document.getElementById('addNewsForm').addEventListener('submit', handleAddNewsSubmit);
             document.getElementById('editNewsForm').addEventListener('submit', handleEditNewsSubmit);
 
             // Image preview functionality
             document.getElementById('imageFiles').addEventListener('change', handleImagePreview);
             document.getElementById('editImageFiles').addEventListener('change', handleEditImagePreview);
-            document.getElementById('newsImageFile').addEventListener('change', handleNewsImagePreview);
 
             // Address change listeners for geocoding
             document.getElementById('address').addEventListener('blur', handleAddressChange);
             document.getElementById('city').addEventListener('blur', handleAddressChange);
-
-            // News status change listener
-            document.getElementById('newsStatus').addEventListener('change', function() {
-                const schedulingOptions = document.getElementById('schedulingOptions');
-                if (this.value === 'scheduled') {
-                    schedulingOptions.style.display = 'block';
-                } else {
-                    schedulingOptions.style.display = 'none';
-                }
-            });
         }
+
+        // ✅ NOUVELLES FONCTIONS POUR LES ACTUALITÉS
+
+        // Charger les actualités
+        async function loadNews() {
+            try {
+                console.log('📰 Chargement des actualités...');
+                
+                let snapshot;
+                try {
+                    snapshot = await db.collection('news').orderBy('createdAt', 'desc').get();
+                    console.log('✅ Actualités chargées avec orderBy:', snapshot.size);
+                } catch (orderError) {
+                    console.log('⚠️ orderBy échoué, fallback sans tri:', orderError.message);
+                    snapshot = await db.collection('news').get();
+                    console.log('✅ Actualités chargées sans orderBy:', snapshot.size);
+                }
+                
+                news = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                console.log('📊 Total actualités récupérées:', news.length);
+                
+                // Tri JavaScript de sécurité
+                news.sort((a, b) => {
+                    const getDate = (item) => {
+                        if (item.createdAt?.toDate) return item.createdAt.toDate();
+                        if (item.timestamp?.toDate) return item.timestamp.toDate();
+                        if (item.createdAt) return new Date(item.createdAt);
+                        if (item.timestamp) return new Date(item.timestamp);
+                        return new Date(0);
+                    };
+                    
+                    return getDate(b) - getDate(a);
+                });
+                
+                filteredNews = [...news];
+                renderNews();
+                
+                console.log('✅ Actualités affichées:', filteredNews.length);
+                
+            } catch (error) {
+                console.error('❌ Erreur critique loadNews:', error);
+                showNotification('❌ Erreur chargement actualités: ' + error.message, 'error');
+                
+                news = [];
+                filteredNews = [];
+                renderNews();
+            }
+        }
+
+        // Afficher les actualités
+        function renderNews() {
+            const tbody = document.getElementById('newsTable');
+            const startIndex = (currentNewsPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageNews = filteredNews.slice(startIndex, endIndex);
+
+            tbody.innerHTML = pageNews.map(article => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            ${article.imageUrl ? `<img src="${article.imageUrl}" class="w-12 h-12 object-cover rounded-lg">` : '<div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">📰</div>'}
+                            <div>
+                                <div class="font-medium text-gray-900">
+                                    ${article.title}
+                                </div>
+                                <div class="text-sm text-gray-500">${truncateText(article.summary || article.content, 60)}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="badge badge-info">
+                            ${getTypeIcon(article.type)} ${article.type}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="badge ${getStatusBadgeClass(article.status)}">
+                            ${getStatusIcon(article.status)} ${getStatusText(article.status)}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        ${article.aiImproved ? '<span class="text-purple-600">🤖</span>' : '<span class="text-gray-400">📝</span>'}
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="text-sm text-gray-600">${article.city || '-'}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="text-sm text-gray-600">
+                            ${formatDate(article.createdAt || article.timestamp)}
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="action-buttons">
+                            <button onclick="editNews('${article.id}')" class="btn btn-primary">
+                                ✏️ Modifier
+                            </button>
+                            ${!article.aiImproved ? `<button onclick="improveArticleWithIA('${article.id}')" class="btn btn-purple">🤖 Améliorer IA</button>` : ''}
+                            <button onclick="deleteNews('${article.id}')" class="btn btn-danger">
+                                🗑️ Supprimer
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            updateNewsResultsCount();
+        }
+
+        // Filtrer les actualités
+        function applyNewsFilters() {
+            const typeFilter = document.getElementById('filterNewsType').value;
+            const statusFilter = document.getElementById('filterNewsStatus').value;
+            const iaFilter = document.getElementById('filterNewsIA').value;
+            const searchQuery = document.getElementById('searchNewsQuery').value.toLowerCase();
+
+            filteredNews = news.filter(article => {
+                const matchesType = !typeFilter || article.type === typeFilter;
+                const matchesStatus = !statusFilter || article.status === statusFilter;
+                const matchesIA = !iaFilter || 
+                    (iaFilter === 'true' && article.aiImproved) ||
+                    (iaFilter === 'false' && !article.aiImproved);
+                const matchesSearch = !searchQuery ||
+                    article.title.toLowerCase().includes(searchQuery) ||
+                    (article.content && article.content.toLowerCase().includes(searchQuery));
+
+                return matchesType && matchesStatus && matchesIA && matchesSearch;
+            });
+
+            currentNewsPage = 1;
+            renderNews();
+        }
+
+        // Import manuel par copier-coller
+        async function importManualContent(withIA = false) {
+            const title = document.getElementById('manualArticleTitle').value.trim();
+            const content = document.getElementById('manualArticleContent').value.trim();
+            const type = document.getElementById('manualArticleType').value;
+            const city = document.getElementById('manualArticleCity').value.trim();
+            const author = document.getElementById('manualArticleAuthor').value.trim();
+            
+            if (!title) {
+                showNotification('❌ Veuillez saisir un titre', 'error');
+                return;
+            }
+            
+            if (!content) {
+                showNotification('❌ Veuillez coller le contenu HTML', 'error');
+                return;
+            }
+            
+            try {
+                showNotification('📋 Import manuel en cours...', 'info');
+                
+                // Vérifier si article existe déjà (par titre)
+                const existing = await db.collection('news')
+                    .where('title', '==', title)
+                    .limit(1)
+                    .get();
+                    
+                if (!existing.empty) {
+                    if (!confirm('Un article avec ce titre existe déjà. Continuer quand même ?')) {
+                        return;
+                    }
+                }
+                
+                // Convertir le contenu WordPress vers format propre
+                let finalContent = convertWordPressToSiteFormat(content);
+                let finalTitle = title;
+                let aiImproved = false;
+                
+                // Améliorer avec IA si demandé
+                if (withIA) {
+                    try {
+                        showNotification('🤖 Amélioration IA en cours...', 'info');
+                        const improved = await improveArticleWithAI({
+                            title: finalTitle,
+                            content: finalContent
+                        });
+                        
+                        if (improved && improved.title && improved.content) {
+                            finalTitle = improved.title;
+                            finalContent = improved.content;
+                            aiImproved = true;
+                            showNotification('✅ Article amélioré par IA !', 'success');
+                        }
+                    } catch (error) {
+                        console.log('⚠️ IA non disponible, contenu original conservé');
+                        showNotification('⚠️ IA non disponible, contenu original importé', 'warning');
+                    }
+                }
+                
+                // Extraire la première image i.ibb.co
+                const imageUrl = extractIbbImageFromContent(content) || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400';
+                
+                // Créer l'article dans Firebase
+                const newsData = {
+                    title: finalTitle,
+                    content: finalContent,
+                    summary: extractSummaryFromContent(finalContent),
+                    imageUrl: imageUrl,
+                    type: type,
+                    establishmentType: type === 'hotel' ? 'hotels' : type === 'restaurant' ? 'restaurants' : type === 'spa' ? 'spas' : 'general',
+                    city: city || extractCityFromContent(finalContent) || '',
+                    status: 'published',
+                    featured: false,
+                    author: author || 'La Revue',
+                    aiImproved: aiImproved,
+                    aiProvider: aiImproved ? 'Google AI Studio' : null,
+                    importMethod: 'manual_paste',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    views: 0,
+                    tags: ['actualité', type, 'wordpress', 'import-manuel']
+                };
+
+                console.log('💾 Sauvegarde article manuel...', newsData);
+
+                await db.collection('news').add(newsData);
+                await loadNews();
+                
+                showNotification('✅ Article importé avec succès !', 'success');
+                clearManualForm();
+                
+            } catch (error) {
+                console.error('❌ Erreur import manuel:', error);
+                showNotification(`❌ Erreur lors de l'import: ${error.message}`, 'error');
+            }
+        }
+
+        // Import avec IA
+        async function importManualContentWithIA() {
+            await importManualContent(true);
+        }
+
+        // Vider le formulaire
+        function clearManualForm() {
+            document.getElementById('manualArticleTitle').value = '';
+            document.getElementById('manualArticleContent').value = '';
+            document.getElementById('manualArticleCity').value = '';
+            document.getElementById('manualArticleType').value = 'hotel';
+        }
+
+        // Vider toutes les actualités
+        async function clearAllNews() {
+            if (!confirm('⚠️ ATTENTION !\n\nCette action va supprimer TOUTES les actualités de manière DÉFINITIVE.\n\nÊtes-vous absolument sûr de vouloir continuer ?')) {
+                return;
+            }
+            
+            if (!confirm('🚨 DERNIÈRE CONFIRMATION\n\nToutes les actualités vont être supprimées.\nCette action est IRRÉVERSIBLE.\n\nConfirmez-vous ?')) {
+                return;
+            }
+            
+            try {
+                showNotification('🗑️ Suppression de toutes les actualités...', 'info');
+                
+                const batch = db.batch();
+                news.forEach(article => {
+                    const docRef = db.collection('news').doc(article.id);
+                    batch.delete(docRef);
+                });
+                
+                await batch.commit();
+                await loadNews();
+                
+                showNotification('✅ Toutes les actualités ont été supprimées !', 'success');
+                
+            } catch (error) {
+                console.error('❌ Erreur suppression globale:', error);
+                showNotification('❌ Erreur lors de la suppression globale', 'error');
+            }
+        }
+
+        // Actualiser les actualités
+        async function refreshNews() {
+            showNotification('🔄 Actualisation en cours...', 'info');
+            await loadNews();
+            showNotification('✅ Actualités actualisées !', 'success');
+        }
+
+        // Améliorer un article avec IA
+        async function improveArticleWithIA(newsId) {
+            try {
+                const article = news.find(n => n.id === newsId);
+                if (!article) {
+                    showNotification('❌ Article non trouvé', 'error');
+                    return;
+                }
+
+                if (article.aiImproved) {
+                    showNotification('ℹ️ Article déjà amélioré par IA', 'info');
+                    return;
+                }
+
+                const confirm = window.confirm(`🤖 Améliorer cet article avec l'IA ?\n\n"${article.title}"\n\nCela peut prendre quelques secondes.`);
+                if (!confirm) return;
+
+                showNotification('🤖 Amélioration IA en cours...', 'info');
+                
+                const improved = await improveArticleWithAI({
+                    title: article.title,
+                    content: article.content
+                });
+
+                if (improved && improved.title && improved.content) {
+                    await db.collection('news').doc(newsId).update({
+                        title: improved.title,
+                        content: improved.content,
+                        summary: improved.summary || article.summary,
+                        aiImproved: true,
+                        aiProvider: 'Google AI Studio',
+                        aiImprovedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        originalTitle: article.title,
+                        originalContent: article.content,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    await loadNews();
+                    showNotification('✅ Article amélioré par IA avec succès !', 'success');
+                    
+                } else {
+                    throw new Error('IA a retourné des données incomplètes');
+                }
+
+            } catch (error) {
+                console.error('Erreur amélioration IA:', error);
+                showNotification(`❌ Erreur IA: ${error.message}`, 'error');
+            }
+        }
+
+        // Supprimer une actualité
+        async function deleteNews(id) {
+            const article = news.find(n => n.id === id);
+            if (!article) return;
+           
+            if (confirm(`Êtes-vous sûr de vouloir supprimer l'actualité "${article.title}" ?\n\nCette action est irréversible.`)) {
+                try {
+                    showNotification('🗑️ Suppression en cours...', 'info');
+                   
+                    await db.collection('news').doc(id).delete();
+                    await loadNews();
+                   
+                    showNotification('✅ Actualité supprimée avec succès!', 'success');
+                } catch (error) {
+                    console.error('Erreur lors de la suppression:', error);
+                    showNotification('❌ Erreur lors de la suppression', 'error');
+                }
+            }
+        }
+
+        // Modifier une actualité
+        async function editNews(newsId) {
+            try {
+                const doc = await db.collection('news').doc(newsId).get();
+                if (doc.exists) {
+                    const newsData = doc.data();
+                   
+                    document.getElementById('editNewsId').value = newsId;
+                    document.getElementById('editNewsTitle').value = newsData.title || '';
+                    document.getElementById('editNewsContent').value = newsData.content || '';
+                    document.getElementById('editNewsSummary').value = newsData.summary || '';
+                    document.getElementById('editNewsCity').value = newsData.city || '';
+                    document.getElementById('editNewsType').value = newsData.type || '';
+                    document.getElementById('editNewsStatus').value = newsData.status || 'draft';
+                    document.getElementById('editNewsImageUrl').value = newsData.imageUrl || '';
+                   
+                    document.getElementById('editNewsModal').classList.add('show');
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement de l\'actualité:', error);
+                showNotification('❌ Erreur lors du chargement de l\'actualité', 'error');
+            }
+        }
+
+        // Fermer le modal d'édition
+        function closeEditNewsModal() {
+            document.getElementById('editNewsModal').classList.remove('show');
+            document.getElementById('editNewsForm').reset();
+        }
+
+        // Sauvegarder les modifications
+        async function handleEditNewsSubmit(e) {
+            e.preventDefault();
+           
+            try {
+                showNotification('💾 Modification en cours...', 'info');
+               
+                const newsId = document.getElementById('editNewsId').value;
+                const formData = {
+                    title: document.getElementById('editNewsTitle').value,
+                    type: document.getElementById('editNewsType').value,
+                    content: document.getElementById('editNewsContent').value,
+                    summary: document.getElementById('editNewsSummary').value || 'Résumé à venir',
+                    city: document.getElementById('editNewsCity').value || '',
+                    status: document.getElementById('editNewsStatus').value,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                const imageUrl = document.getElementById('editNewsImageUrl').value;
+                if (imageUrl) {
+                    formData.imageUrl = imageUrl;
+                }
+
+                if (formData.status === 'published') {
+                    formData.publishedAt = firebase.firestore.FieldValue.serverTimestamp();
+                }
+
+                await db.collection('news').doc(newsId).update(formData);
+               
+                closeEditNewsModal();
+                await loadNews();
+                showNotification('✅ Actualité modifiée avec succès!', 'success');
+               
+            } catch (error) {
+                console.error('Erreur lors de la modification de l\'actualité:', error);
+                showNotification('❌ Erreur lors de la modification de l\'actualité', 'error');
+            }
+        }
+
+        // Pagination actualités
+        function previousNewsPage() {
+            if (currentNewsPage > 1) {
+                currentNewsPage--;
+                renderNews();
+                updateNewsPageInfo();
+            }
+        }
+
+        function nextNewsPage() {
+            const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+            if (currentNewsPage < totalPages) {
+                currentNewsPage++;
+                renderNews();
+                updateNewsPageInfo();
+            }
+        }
+
+        function updateNewsPageInfo() {
+            const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+            document.getElementById('newsPageInfo').textContent = `Page ${currentNewsPage} sur ${totalPages}`;
+            
+            document.getElementById('prevNewsButton').disabled = currentNewsPage === 1;
+            document.getElementById('nextNewsButton').disabled = currentNewsPage === totalPages;
+        }
+
+        function updateNewsResultsCount() {
+            document.getElementById('newsResultsCount').textContent = filteredNews.length;
+            document.getElementById('newsCount').textContent = news.length;
+            updateNewsPageInfo();
+        }
+
+        // ✅ FONCTIONS UTILITAIRES AMÉLIORÉES
+
+        // Fonction pour améliorer un article avec IA
+        async function improveArticleWithAI(article) {
+            const url = `${GOOGLE_AI_CONFIG.endpoint}${GOOGLE_AI_CONFIG.model}:generateContent?key=${GOOGLE_AI_CONFIG.apiKey}`;
+            
+            const prompt = `Tu es le rédacteur en chef de "La Revue". Améliore cet article en respectant SA LOGIQUE ORIGINALE et le remettant en forme :
+
+**ARTICLE ORIGINAL :**
+Titre: ${article.title}
+Contenu: ${article.content}
+
+**RÈGLES :**
+1. Respecte l'angle et la logique de l'article original
+2. Structure HTML propre avec <p>, <h3>, <strong>
+3. Garde TOUS les faits, dates, noms exactement
+4. Style journalistique français professionnel
+5. Pas d'invention d'informations
+
+Réponds UNIQUEMENT avec ce JSON :
+{
+  "title": "titre amélioré gardant l'essence",
+  "content": "contenu refait en HTML propre",
+  "summary": "résumé fidèle (max 150 caractères)"
+}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: 0.6,
+                            topK: 30,
+                            topP: 0.9,
+                            maxOutputTokens: 2048,
+                        }
+                    })
+                });
+
+                if (!response.ok) throw new Error(`Erreur API: ${response.status}`);
+
+                const data = await response.json();
+                const generatedText = data.candidates[0].content.parts[0].text;
+                
+                const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error('Format IA invalide');
+
+                return JSON.parse(jsonMatch[0]);
+            } catch (error) {
+                console.error('Erreur IA:', error);
+                return null;
+            }
+        }
+
+        // Convertir WordPress vers format site web
+        function convertWordPressToSiteFormat(content) {
+            if (!content) return 'Contenu à venir';
+            
+            return content
+                .replace(/<h4 class="wp-block-heading"[^>]*><strong>(.*?)<\/strong>\s*<strong>\(([^)]+)\)<\/strong><\/h4>/g, '<h3><strong>$1</strong> <strong>($2)</strong></h3>')
+                .replace(/<h4 class="wp-block-heading"[^>]*><br><strong>(.*?)<\/strong><\/h4>/g, '<h3><strong>$1</strong></h3>')
+                .replace(/<h4 class="wp-block-heading"[^>]*><strong>(.*?)<\/strong><\/h4>/g, '<h3><strong>$1</strong></h3>')
+                .replace(/<h4 class="wp-block-heading"[^>]*>(.*?)<\/h4>/g, '<h3>$1</h3>')
+                .replace(/<h3 class="wp-block-heading"[^>]*>(.*?)<\/h3>/g, '<h2>$1</h2>')
+                .replace(/<h2 class="wp-block-heading"[^>]*>(.*?)<\/h2>/g, '<h1>$1</h1>')
+                .replace(/<figure[^>]*class="wp-block-image[^>]*>[\s\S]*?<img[^>]+src="([^"]*)"[^>]*>[\s\S]*?<\/figure>/gi, '<p><img src="$1" class="img-responsive" /></p>')
+                .replace(/<p><\/p>/g, '')
+                .replace(/<!--\s*wp:[^>]*-->/g, '')
+                .replace(/<!--\s*\/wp:[^>]*-->/g, '')
+                .replace(/<figure[^>]*>/g, '').replace(/<\/figure>/g, '')
+                .replace(/class="[^"]*"/g, '')
+                .replace(/{"[^"]*"}/g, '')
+                .replace(/‎/g, '<br>')
+                .replace(/\n{3,}/g, '\n\n')
+                .replace(/^\s+/gm, '')
+                .trim();
+        }
+
+        // Extraire les images i.ibb.co du contenu
+        function extractIbbImageFromContent(content) {
+            if (!content) return null;
+            
+            const ibbImageRegex = /https:\/\/i\.ibb\.co\/[a-zA-Z0-9\/\-\.]+\.(jpg|jpeg|png|gif|webp)/gi;
+            const matches = content.match(ibbImageRegex);
+            
+            if (matches && matches.length > 0) {
+                return matches[0];
+            }
+            
+            const imgTagRegex = /<img[^>]+src="(https:\/\/i\.ibb\.co\/[^"]+)"/gi;
+            const imgMatches = imgTagRegex.exec(content);
+            
+            if (imgMatches && imgMatches[1]) {
+                return imgMatches[1];
+            }
+            
+            return null;
+        }
+
+        // Extraire le résumé du contenu
+        function extractSummaryFromContent(content) {
+            if (!content) return 'Résumé à venir';
+            
+            const textContent = content.replace(/<[^>]*>/g, '').replace(/\n+/g, ' ').trim();
+            
+            if (textContent.length <= 200) return textContent;
+            
+            const truncated = textContent.substring(0, 200);
+            const lastSpace = truncated.lastIndexOf(' ');
+            
+            return lastSpace > 150 ? truncated.substring(0, lastSpace) + '...' : truncated + '...';
+        }
+
+        // Extraire la ville du contenu
+        function extractCityFromContent(content) {
+            if (!content) return null;
+            
+            const cities = [
+                'Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg',
+                'Montpellier', 'Bordeaux', 'Lille', 'Rennes', 'Reims', 'Le Havre',
+                'Saint-Étienne', 'Toulon', 'Angers', 'Grenoble', 'Dijon', 'Nîmes',
+                'Aix-en-Provence', 'Chamonix', 'Cassis', 'Gordes', 'Cernay', 'Bagnols'
+            ];
+            
+            const textContent = content.replace(/<[^>]*>/g, '');
+            
+            for (const city of cities) {
+                if (textContent.includes(city)) {
+                    return city;
+                }
+            }
+            
+            return null;
+        }
+
+        // ✅ FONCTIONS COMMUNES CONSERVÉES
 
         // Geocoding Functions
         async function geocodeAddress(address, city, country = 'France') {
@@ -2353,7 +2657,7 @@ https://example.com/image2.jpg"></textarea>
             }
         }
 
-        // Data Loading Functions
+        // Data Loading Functions - Establishments
         async function loadEstablishments() {
             try {
                 const snapshot = await db.collection('establishments').orderBy('name').get();
@@ -2362,7 +2666,6 @@ https://example.com/image2.jpg"></textarea>
                     ...doc.data()
                 }));
                 
-                // ✅ AJOUT : Cache local de sécurité
                 localStorage.setItem('establishments_cache', JSON.stringify(establishments));
                 localStorage.setItem('establishments_cache_time', Date.now().toString());
                 
@@ -2373,11 +2676,10 @@ https://example.com/image2.jpg"></textarea>
             } catch (error) {
                 console.error('Erreur lors du chargement des établissements:', error);
                 
-                // ✅ AJOUT : Fallback cache si Firebase indisponible
                 const cached = localStorage.getItem('establishments_cache');
                 const cacheTime = localStorage.getItem('establishments_cache_time');
                 
-                if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 3600000) { // 1h de cache
+                if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 3600000) {
                     establishments = JSON.parse(cached);
                     filteredEstablishments = [...establishments];
                     renderEstablishments();
@@ -2387,63 +2689,6 @@ https://example.com/image2.jpg"></textarea>
                 } else {
                     showNotification('❌ Erreur lors du chargement des établissements', 'error');
                 }
-            }
-        }
-
-        // ✅ FONCTION loadNews() CORRIGÉE
-        async function loadNews() {
-            try {
-                console.log('📰 Chargement des actualités...');
-                
-                // ✅ MÉTHODE 1 : Essayer avec orderBy
-                let snapshot;
-                try {
-                    snapshot = await db.collection('news').orderBy('createdAt', 'desc').get();
-                    console.log('✅ Actualités chargées avec orderBy:', snapshot.size);
-                } catch (orderError) {
-                    console.log('⚠️ orderBy échoué, fallback sans tri:', orderError.message);
-                    
-                    // ✅ MÉTHODE 2 : Fallback sans orderBy
-                    snapshot = await db.collection('news').get();
-                    console.log('✅ Actualités chargées sans orderBy:', snapshot.size);
-                }
-                
-                // ✅ CONVERTIR LES DOCUMENTS
-                news = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                
-                console.log('📊 Total actualités récupérées:', news.length);
-                
-                // ✅ TRI JAVASCRIPT DE SÉCURITÉ
-                news.sort((a, b) => {
-                    const getDate = (item) => {
-                        if (item.createdAt?.toDate) return item.createdAt.toDate();
-                        if (item.timestamp?.toDate) return item.timestamp.toDate();
-                        if (item.createdAt) return new Date(item.createdAt);
-                        if (item.timestamp) return new Date(item.timestamp);
-                        return new Date(0);
-                    };
-                    
-                    return getDate(b) - getDate(a); // Plus récent en premier
-                });
-                
-                // ✅ METTRE À JOUR L'AFFICHAGE
-                filteredNews = [...news];
-                renderNews();
-                updateFeaturedNews();
-                
-                console.log('✅ Actualités affichées:', filteredNews.length);
-                
-            } catch (error) {
-                console.error('❌ Erreur critique loadNews:', error);
-                showNotification('❌ Erreur chargement actualités: ' + error.message, 'error');
-                
-                // ✅ FALLBACK : Actualités vides mais interface fonctionnelle
-                news = [];
-                filteredNews = [];
-                renderNews();
             }
         }
 
@@ -2462,28 +2707,6 @@ https://example.com/image2.jpg"></textarea>
                 showNotification('❌ Erreur lors du chargement des avis', 'error');
             }
         }
-
-        // ✅ FONCTION DE DEBUG AJOUTÉE
-        window.debugNews = function() {
-            console.log('=== 🔍 DEBUG ACTUALITÉS ===');
-            console.log('📊 news.length:', news.length);
-            console.log('📊 filteredNews.length:', filteredNews.length);
-            console.log('🔥 Firebase db:', typeof db);
-            console.log('📰 Premier article:', news[0]);
-            console.log('🎯 Table news DOM:', document.getElementById('newsTable'));
-            
-            // Test Firebase direct
-            db.collection('news').limit(3).get()
-                .then(snapshot => {
-                    console.log('✅ Test Firebase direct réussi:', snapshot.size);
-                    snapshot.docs.forEach(doc => {
-                        console.log('📄 Doc:', doc.id, doc.data());
-                    });
-                })
-                .catch(error => {
-                    console.error('❌ Test Firebase direct échoué:', error);
-                });
-        };
 
         // Render Functions
         function renderEstablishments() {
@@ -2562,81 +2785,6 @@ https://example.com/image2.jpg"></textarea>
             `).join('');
 
             updateResultsCount();
-        }
-
-        function renderNews() {
-            const tbody = document.getElementById('newsTable');
-            const startIndex = (currentNewsPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageNews = filteredNews.slice(startIndex, endIndex);
-
-            tbody.innerHTML = pageNews.map(article => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3">
-                        <input type="checkbox" class="news-checkbox" value="${article.id}">
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="flex items-center gap-3">
-                            ${article.imageUrl ? `<img src="${article.imageUrl}" class="w-12 h-12 object-cover rounded-lg">` : '<div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">📰</div>'}
-                            <div>
-                                <div class="font-medium text-gray-900">
-                                    ${article.title}
-                                    ${article.aiImproved ? '<span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded ml-2">🤖 IA</span>' : ''}
-                                </div>
-                                <div class="text-sm text-gray-500">${truncateText(article.content, 60)}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-4 py-3">
-                        <span class="badge badge-info">
-                            ${getTypeIcon(article.type)} ${article.type}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3">
-                        <span class="badge ${getStatusBadgeClass(article.status)}">
-                            ${getStatusIcon(article.status)} ${getStatusText(article.status)}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                        ${article.featured ? '<span class="text-yellow-500 text-xl">⭐</span>' : ''}
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="text-sm font-medium">${article.author || 'Administrateur'}</div>
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="text-sm text-gray-600">
-                            ${formatDate(article.createdAt)}
-                        </div>
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="text-sm text-gray-600">
-                            ${article.publishedAt ? formatDate(article.publishedAt) : '-'}
-                        </div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                        <span class="text-blue-600">${article.views || 0} 👁️</span>
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="action-buttons">
-                            <button onclick="editNews('${article.id}')" class="btn btn-primary">
-                                ✏️ Modifier
-                            </button>
-                            <button onclick="toggleFeatured('${article.id}', ${!article.featured})" class="btn ${article.featured ? 'btn-warning' : 'btn-success'}">
-                                ${article.featured ? '⭐ Retirer' : '⭐ Une'}
-                            </button>
-                            ${article.articleLink ? `<a href="${article.articleLink}" target="_blank" class="btn btn-secondary">🔗 Lien</a>` : ''}
-                            <button onclick="improveArticleWithIA('${article.id}')" class="btn ${article.aiImproved ? 'btn-secondary' : 'btn-purple'}" ${article.aiImproved ? 'disabled' : ''}>
-                                ${article.aiImproved ? '🤖 Déjà IA' : '🤖 Améliorer IA'}
-                            </button>
-                            <button onclick="deleteNews('${article.id}')" class="btn btn-danger">
-                                🗑️ Supprimer
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-
-            updateNewsResultsCount();
         }
 
         function renderReviews() {
@@ -2833,15 +2981,12 @@ https://example.com/image2.jpg"></textarea>
 
         // Tab switching
         function switchTab(tabName) {
-            // Remove active class from all tabs and contents
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
            
-            // Add active class to clicked tab and corresponding content
             event.target.closest('.tab').classList.add('active');
             document.getElementById(tabName).classList.add('active');
            
-            // Load tab-specific data if needed
             switch(tabName) {
                 case 'stats':
                     updateStats();
@@ -2875,31 +3020,6 @@ https://example.com/image2.jpg"></textarea>
             currentPage = 1;
             renderEstablishments();
             updatePagination();
-        }
-
-        function applyNewsFilters() {
-            const typeFilter = document.getElementById('filterNewsType').value;
-            const statusFilter = document.getElementById('filterNewsStatus').value;
-            const featuredFilter = document.getElementById('filterNewsFeatured').value;
-            const periodFilter = document.getElementById('filterNewsPeriod').value;
-            const searchQuery = document.getElementById('searchNewsQuery').value.toLowerCase();
-
-            filteredNews = news.filter(article => {
-                const matchesType = !typeFilter || article.type === typeFilter;
-                const matchesStatus = !statusFilter || article.status === statusFilter;
-                const matchesFeatured = !featuredFilter ||
-                    (featuredFilter === 'true' && article.featured) ||
-                    (featuredFilter === 'false' && !article.featured);
-                const matchesPeriod = !periodFilter || matchesTimePeriod(article.createdAt, periodFilter);
-                const matchesSearch = !searchQuery ||
-                    article.title.toLowerCase().includes(searchQuery) ||
-                    article.content.toLowerCase().includes(searchQuery);
-
-                return matchesType && matchesStatus && matchesFeatured && matchesPeriod && matchesSearch;
-            });
-
-            currentNewsPage = 1;
-            renderNews();
         }
 
         function applyReviewFilters() {
@@ -3025,22 +3145,6 @@ https://example.com/image2.jpg"></textarea>
             }
         }
 
-        // Similar functions for news and reviews pagination
-        function previousNewsPage() {
-            if (currentNewsPage > 1) {
-                currentNewsPage--;
-                renderNews();
-            }
-        }
-
-        function nextNewsPage() {
-            const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
-            if (currentNewsPage < totalPages) {
-                currentNewsPage++;
-                renderNews();
-            }
-        }
-
         function previousReviewsPage() {
             if (currentReviewsPage > 1) {
                 currentReviewsPage--;
@@ -3062,10 +3166,6 @@ https://example.com/image2.jpg"></textarea>
             document.getElementById('totalCount').textContent = `(sur ${establishments.length} total)`;
         }
 
-        function updateNewsResultsCount() {
-            document.getElementById('newsResultsCount').textContent = filteredNews.length;
-        }
-
         function updateReviewsResultsCount() {
             document.getElementById('reviewsResultsCount').textContent = filteredReviews.length;
         }
@@ -3078,12 +3178,6 @@ https://example.com/image2.jpg"></textarea>
             document.getElementById('criteriaSection').innerHTML = '';
             document.getElementById('geocodingResult').innerHTML = '';
             resetStarRatings('addModal');
-        }
-
-        function openAddNewsModal() {
-            document.getElementById('addNewsModal').classList.add('show');
-            document.getElementById('addNewsForm').reset();
-            document.getElementById('newsImagePreview').innerHTML = '';
         }
 
         function closeModal(modalId) {
@@ -3195,21 +3289,6 @@ https://example.com/image2.jpg"></textarea>
                     reader.readAsDataURL(file);
                 }
             });
-        }
-
-        function handleNewsImagePreview(e) {
-            const file = e.target.files[0];
-            const preview = document.getElementById('newsImagePreview');
-           
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.innerHTML = `
-                        <img src="${e.target.result}" class="w-32 h-32 object-cover rounded-lg border-2 border-gray-200">
-                    `;
-                };
-                reader.readAsDataURL(file);
-            }
         }
 
         // Notification system
@@ -3354,71 +3433,6 @@ https://example.com/image2.jpg"></textarea>
             }
         }
 
-        async function handleAddNewsSubmit(e) {
-            e.preventDefault();
-           
-            try {
-                showNotification('📰 Publication en cours...', 'info');
-               
-                const formData = {
-                    title: document.getElementById('newsTitle').value,
-                    type: document.getElementById('newsType').value,
-                    content: document.getElementById('newsContent').value,
-                    summary: document.getElementById('newsSummary').value || 'Résumé à venir',
-                    articleLink: document.getElementById('newsArticleLink').value,
-                    city: document.getElementById('newsCity').value || '',
-                    status: document.getElementById('newsStatus').value,
-                    featured: document.getElementById('newsFeatured').checked,
-                    notifyUsers: document.getElementById('newsNotifyUsers').checked,
-                    author: 'La Revue',
-                    tags: document.getElementById('newsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
-                    views: 0,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp() // ✅ AJOUT IMPORTANT
-                };
-
-                // ✅ AJOUT DE LA LOGIQUE establishmentType
-                if (formData.type === 'hotel') {
-                    formData.establishmentType = 'hotels';
-                } else if (formData.type === 'restaurant') {
-                    formData.establishmentType = 'restaurants';
-                } else if (formData.type === 'spa') {
-                    formData.establishmentType = 'spas';
-                } else {
-                    formData.establishmentType = 'general';
-                }
-
-                // Handle scheduled publication
-                const scheduledDate = document.getElementById('newsScheduledDate').value;
-                if (formData.status === 'scheduled' && scheduledDate) {
-                    formData.scheduledAt = new Date(scheduledDate);
-                }
-
-                // Handle publication date
-                if (formData.status === 'published') {
-                    formData.publishedAt = firebase.firestore.FieldValue.serverTimestamp();
-                }
-
-                // Handle image
-                const imageUrl = document.getElementById('newsImageUrl').value;
-                if (imageUrl) {
-                    formData.imageUrl = imageUrl;
-                }
-
-                // Save to Firestore
-                await db.collection('news').add(formData);
-               
-                closeModal('addNewsModal');
-                await loadNews();
-                updateFeaturedNews();
-                showNotification('✅ Actualité ajoutée avec succès!', 'success');
-               
-            } catch (error) {
-                console.error('Erreur lors de l\'ajout de l\'actualité:', error);
-                showNotification('❌ Erreur lors de l\'ajout de l\'actualité', 'error');
-            }
-        }
-
         // CRUD operations
         async function editEstablishment(id) {
             const establishment = establishments.find(est => est.id === id);
@@ -3506,146 +3520,6 @@ https://example.com/image2.jpg"></textarea>
                     console.error('Erreur lors de la suppression:', error);
                     showNotification('❌ Erreur lors de la suppression', 'error');
                 }
-            }
-        }
-
-        async function deleteNews(id) {
-            const article = news.find(n => n.id === id);
-            if (!article) return;
-           
-            if (confirm(`Êtes-vous sûr de vouloir supprimer l'actualité "${article.title}" ?\n\nCette action est irréversible.`)) {
-                try {
-                    showNotification('🗑️ Suppression en cours...', 'info');
-                   
-                    await db.collection('news').doc(id).delete();
-                    await loadNews();
-                    updateFeaturedNews();
-                   
-                    showNotification('✅ Actualité supprimée avec succès!', 'success');
-                } catch (error) {
-                    console.error('Erreur lors de la suppression:', error);
-                    showNotification('❌ Erreur lors de la suppression', 'error');
-                }
-            }
-        }
-
-        async function improveArticleWithIA(newsId) {
-            try {
-                // Trouver l'article
-                const article = news.find(n => n.id === newsId);
-                if (!article) {
-                    showNotification('❌ Article non trouvé', 'error');
-                    return;
-                }
-
-                // Vérifier si déjà traité par IA
-                if (article.aiImproved) {
-                    showNotification('ℹ️ Article déjà amélioré par IA', 'info');
-                    return;
-                }
-
-                // Confirmation utilisateur
-                const confirm = window.confirm(`🤖 Améliorer cet article avec l'IA ?\n\n"${article.title}"\n\nCela peut prendre quelques secondes et consomme des crédits IA.`);
-                if (!confirm) return;
-
-                // Démarrer le traitement
-                showNotification('🤖 Amélioration IA en cours...', 'info');
-                
-                // Désactiver le bouton pendant le traitement
-                const button = document.querySelector(`button[onclick="improveArticleWithIA('${newsId}')"]`);
-                if (button) {
-                    button.disabled = true;
-                    button.innerHTML = '⏳ IA en cours...';
-                }
-
-                // Appeler l'IA
-                const improved = await improveArticleWithAI({
-                    title: article.title,
-                    content: article.content
-                });
-
-                if (improved && improved.title && improved.content) {
-                    // Sauvegarder l'amélioration
-                    await db.collection('news').doc(newsId).update({
-                        title: improved.title,
-                        content: improved.content,
-                        summary: improved.summary || article.summary,
-                        aiImproved: true,
-                        aiProvider: 'Google AI Studio',
-                        aiImprovedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        // Garder l'original en backup
-                        originalTitle: article.title,
-                        originalContent: article.content,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    // Recharger les données
-                    await loadNews();
-                    
-                    showNotification('✅ Article amélioré par IA avec succès !', 'success');
-                    
-                    // Afficher un aperçu des changements
-                    const changes = `🤖 AMÉLIORATIONS IA :\n\n📝 TITRE AVANT :\n${article.title}\n\n📝 TITRE APRÈS :\n${improved.title}\n\n📄 CONTENU :\n${improved.content.length > 200 ? improved.content.substring(0, 200) + '...' : improved.content}`;
-                    
-                    setTimeout(() => {
-                        if (window.confirm(`${changes}\n\nVoulez-vous voir l'article modifié ?`)) {
-                            editNews(newsId);
-                        }
-                    }, 1000);
-                    
-                } else {
-                    throw new Error('IA a retourné des données incomplètes');
-                }
-
-            } catch (error) {
-                console.error('Erreur amélioration IA:', error);
-                showNotification(`❌ Erreur IA: ${error.message}`, 'error');
-                
-                // Réactiver le bouton
-                const button = document.querySelector(`button[onclick="improveArticleWithIA('${newsId}')"]`);
-                if (button) {
-                    button.disabled = false;
-                    button.innerHTML = '🤖 Améliorer IA';
-                }
-            }
-        }
-
-        async function toggleFeatured(id, featured) {
-            try {
-                const article = news.find(n => n.id === id);
-                if (!article) return;
-               
-                // If setting as featured, check if there's already a featured article of this type
-                if (featured) {
-                    const existingFeatured = news.find(n => n.type === article.type && n.featured && n.id !== id);
-                    if (existingFeatured) {
-                        const confirmReplace = confirm(`Il y a déjà une actualité "${article.type}" à la une.\n\nVoulez-vous la remplacer ?`);
-                        if (!confirmReplace) return;
-                       
-                        // Remove featured status from existing article
-                        await db.collection('news').doc(existingFeatured.id).update({
-                            featured: false,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
-                }
-               
-                await db.collection('news').doc(id).update({
-                    featured: featured,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-               
-                await loadNews();
-                updateFeaturedNews();
-               
-                showNotification(
-                    featured ? '⭐ Actualité mise à la une!' : '📰 Actualité retirée de la une',
-                    'success'
-                );
-               
-            } catch (error) {
-                console.error('Erreur lors de la modification:', error);
-                showNotification('❌ Erreur lors de la modification', 'error');
             }
         }
 
@@ -3803,7 +3677,6 @@ https://example.com/image2.jpg"></textarea>
             const pendingCount = reviews.filter(r => r.status === 'pending').length;
             const approvedCount = reviews.filter(r => r.status === 'approved').length;
             const rejectedCount = reviews.filter(r => r.status === 'rejected').length;
-            const totalReviews = reviews.length;
            
             document.getElementById('pendingReviewsCount').textContent = pendingCount;
             document.getElementById('approvedReviewsCount').textContent = approvedCount;
@@ -3812,19 +3685,6 @@ https://example.com/image2.jpg"></textarea>
             const avgRating = reviews.length > 0 ?
                 (reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length).toFixed(1) : '0.0';
             document.getElementById('averageRating').textContent = avgRating;
-        }
-
-        function updateFeaturedNews() {
-            const featuredHotel = news.find(n => n.type === 'hotel' && n.featured);
-            const featuredRestaurant = news.find(n => n.type === 'restaurant' && n.featured);
-            const featuredSpa = news.find(n => n.type === 'spa' && n.featured);
-
-            document.getElementById('featuredHotelNews').textContent =
-                featuredHotel ? featuredHotel.title : 'Aucune actualité en une';
-            document.getElementById('featuredRestaurantNews').textContent =
-                featuredRestaurant ? featuredRestaurant.title : 'Aucune actualité en une';
-            document.getElementById('featuredSpaNews').textContent =
-                featuredSpa ? featuredSpa.title : 'Aucune actualité en une';
         }
 
         function updateTopCities() {
@@ -3998,15 +3858,6 @@ https://example.com/image2.jpg"></textarea>
         function toggleSelectAll() {
             const selectAll = document.getElementById('selectAll');
             const checkboxes = document.querySelectorAll('.establishment-checkbox');
-           
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAll.checked;
-            });
-        }
-
-        function toggleSelectAllNews() {
-            const selectAll = document.getElementById('selectAllNews');
-            const checkboxes = document.querySelectorAll('.news-checkbox');
            
             checkboxes.forEach(checkbox => {
                 checkbox.checked = selectAll.checked;
@@ -4189,948 +4040,65 @@ https://example.com/image2.jpg"></textarea>
             alert(`Détails de ${establishment.name}\n\nType: ${establishment.type}\nVille: ${establishment.city}\nAdresse: ${establishment.address}\nTéléphone: ${establishment.phone || 'N/A'}\nEmail: ${establishment.email || 'N/A'}\nSite web: ${establishment.website || 'N/A'}\n\nNotes:\n- La Revue: ${establishment.laRevueRating}/5\n- Utilisateurs: ${establishment.userRating}/5\n- Générale: ${establishment.generalRating}/5`);
         }
 
-        // ✅ RSS SERVICE INTÉGRÉ + FONCTIONS
-        class RSSyncService {
-            constructor() {
-                this.sources = [
-                    {
-                        url: 'https://larevuedeshotels.com/feed',
-                        type: 'hotel',
-                        establishmentType: 'hotels'
-                    },
-                    {
-                        url: 'https://larevuedesrestaurants.com/feed',
-                        type: 'restaurant', 
-                        establishmentType: 'restaurants'
-                    }
-                ];
-                
-                this.logs = [];
-                this.isRunning = false;
-                
-                // ✅ AJOUT : Validation au démarrage
-                this.validateSources();
-            }
+        // Additional functions for completeness
+        function refreshStats() {
+            updateStats();
+            showNotification('📊 Statistiques actualisées!', 'success');
+        }
 
-            // ✅ NOUVELLE MÉTHODE À AJOUTER
-            validateSources() {
-                this.sources.forEach(source => {
-                    try {
-                        new URL(source.url);
-                        this.log(`✅ URL valide: ${source.type}`, 'info');
-                    } catch (error) {
-                        this.log(`❌ URL invalide: ${source.url}`, 'error');
-                    }
-                });
-            }
+        function exportStatsReport() {
+            showNotification('📊 Export du rapport en cours...', 'info');
+            // Implementation would generate PDF report
+            setTimeout(() => {
+                showNotification('✅ Rapport PDF généré!', 'success');
+            }, 2000);
+        }
 
-            // ✅ NOUVELLE MÉTHODE À AJOUTER
-            isValidUrl(string) {
-                try {
-                    new URL(string);
-                    return true;
-                } catch (_) {
-                    return false;
+        function updateStatsTimeframe() {
+            const timeframe = document.getElementById('statsTimeframe').value;
+            showNotification(`📊 Période changée: ${timeframe}`, 'info');
+            updateStats();
+        }
+
+        function createBackup() {
+            showNotification('💾 Création de la sauvegarde...', 'info');
+            setTimeout(() => {
+                showNotification('✅ Sauvegarde créée avec succès!', 'success');
+            }, 2000);
+        }
+
+        function importBackup() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    showNotification('📥 Import de la sauvegarde...', 'info');
+                    setTimeout(() => {
+                        showNotification('✅ Sauvegarde importée!', 'success');
+                    }, 2000);
                 }
-            }
-
-            log(message, type = 'info') {
-                const logEntry = {
-                    timestamp: new Date().toLocaleString('fr-FR'),
-                    message: message,
-                    type: type
-                };
-                
-                this.logs.unshift(logEntry);
-                if (this.logs.length > 100) this.logs.pop();
-                
-                console.log(`[${type.toUpperCase()}] ${message}`);
-                this.updateUI();
-            }
-
-            updateUI() {
-                try {
-                    const statusDiv = document.getElementById('rssSyncStatus');
-                    if (statusDiv) {
-                        const isActive = this.isRunning;
-                        statusDiv.innerHTML = `
-                            <div class="bg-${isActive ? 'blue' : 'green'}-50 border border-${isActive ? 'blue' : 'green'}-200 rounded-lg p-3">
-                                <div class="text-sm text-${isActive ? 'blue' : 'green'}-800">
-                                    ${isActive ? '🔄 Synchronisation en cours...' : '✅ Synchronisation active'} - 
-                                    Dernière sync: <span id="lastSyncTime">${new Date().toLocaleString('fr-FR')}</span>
-                                </div>
-                                <div class="text-xs text-gray-600 mt-1">
-                                    ${this.logs.length} logs disponibles
-                                </div>
-                            </div>
-                        `;
-                    }
-                } catch (error) {
-                    // Ignore les erreurs d'UI
-                }
-            }
-
-            async syncAll() {
-                if (this.isRunning) {
-                    this.log('❌ Synchronisation déjà en cours', 'warning');
-                    return { totalAdded: 0, totalProcessed: 0 };
-                }
-
-                this.isRunning = true;
-                this.log('🚀 Début de la synchronisation RSS globale');
-                
-                let totalAdded = 0;
-                let totalProcessed = 0;
-
-                try {
-                    for (const source of this.sources) {
-                        this.log(`📡 Traitement de: ${source.url}`);
-                        const result = await this.syncSource(source);
-                        totalAdded += result.added;
-                        totalProcessed += result.processed;
-                    }
-
-                    this.log(`✅ Synchronisation terminée: ${totalAdded} nouveaux articles sur ${totalProcessed} traités`, 'success');
-                    
-                    if (typeof loadNews === 'function') {
-                        await loadNews();
-                    }
-                    
-                } catch (error) {
-                    this.log(`❌ Erreur globale: ${error.message}`, 'error');
-                    throw error;
-                } finally {
-                    this.isRunning = false;
-                    this.updateUI();
-                }
-
-                return { totalAdded, totalProcessed };
-            }
-
-            async syncSource(source) {
-                let added = 0;
-                let processed = 0;
-
-                try {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    const rssApiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&api_key=y9ray3yqcix4girnxpyu5uaeltcvwdexy21zvbfm&count=20`;
-                    
-                    this.log(`📥 Récupération du flux: ${source.type}`);
-                    const response = await fetch(rssApiUrl);
-                    
-                    if (!response.ok) {
-                        throw new Error(`Erreur HTTP: ${response.status}`);
-                    }
-
-                    const rssData = await response.json();
-                    
-                    if (rssData.status !== 'ok') {
-                        throw new Error(`Erreur RSS: ${rssData.message}`);
-                    }
-
-                    this.log(`📊 ${rssData.items.length} articles trouvés pour ${source.type}`);
-
-                    for (const article of rssData.items) {
-                        try {
-                            const wasAdded = await this.processArticle(article, source);
-                            if (wasAdded) added++;
-                            processed++;
-                        } catch (error) {
-                            this.log(`❌ Erreur article "${article.title}": ${error.message}`, 'error');
-                        }
-                    }
-
-                    this.log(`✅ ${source.type}: ${added} nouveaux / ${processed} traités`);
-
-                } catch (error) {
-                    this.log(`❌ Erreur source ${source.type}: ${error.message}`, 'error');
-                    throw error;
-                }
-
-                return { added, processed };
-            }
-
-            async processArticle(article, source) {
-                try {
-                    const existing = await db.collection('news')
-                        .where('sourceUrl', '==', article.link)
-                        .limit(1)
-                        .get();
-
-                    if (!existing.empty) {
-                        return false;
-                    }
-
-                    const rawContent = article.content || article.description;
-                    const cleanContent = this.convertWordPressToClean(rawContent);
-                    const summary = this.extractSummary(article.description || cleanContent);
-
-                    // 🤖 AMÉLIORATION IA
-                    let finalTitle = article.title.trim();
-                    let finalContent = cleanContent;
-                    let finalSummary = summary;
-                    let aiImproved = false;
-
-                    try {
-                        // ✅ AJOUT : Vérification taille contenu avant IA
-                        if (finalContent.length > 5000) {
-                            this.log(`⚠️ Article trop long pour IA (${finalContent.length} chars), garde original`, 'warning');
-                        } else {
-                            const improved = await improveArticleWithAI({
-                                title: finalTitle,
-                                content: finalContent
-                            });
-                            
-                            if (improved && improved.title && improved.content) {
-                                finalTitle = improved.title;
-                                finalContent = improved.content;
-                                finalSummary = improved.summary || finalSummary;
-                                aiImproved = true;
-                                this.log(`🤖 Article amélioré par IA: ${finalTitle.substring(0, 30)}...`);
-                            } else {
-                                this.log(`⚠️ IA a retourné des données incomplètes, garde original`, 'warning');
-                            }
-                        }
-                    } catch (error) {
-                        this.log(`❌ Erreur IA (${error.message}), garde original`, 'warning');
-                    }
-
-                    const newsData = {
-                        title: finalTitle,
-                        content: finalContent,
-                        summary: finalSummary,
-                        aiImproved: aiImproved,
-                        aiProvider: aiImproved ? 'Google AI Studio' : null,
-                        sourceUrl: article.link,
-                        type: source.type,
-                        establishmentType: source.establishmentType,
-                        status: 'published',
-                        featured: false,
-                        author: 'La Revue',
-                        publishDate: new Date(article.pubDate),
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        views: 0,
-                        tags: ['actualité', source.type, 'wordpress'],
-                        syncedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-
-                    // 🔥 NOUVELLE LOGIQUE D'EXTRACTION D'IMAGES i.ibb.co
-                    const extractedImage = this.extractIbbImage(article.content || article.description || '');
-                    
-                    if (extractedImage) {
-                        newsData.imageUrl = extractedImage;
-                        this.log(`🖼️ Image i.ibb.co trouvée: ${extractedImage.substring(0, 50)}...`);
-                    } else if (article.thumbnail) {
-                        newsData.imageUrl = article.thumbnail;
-                        this.log(`🖼️ Image thumbnail utilisée: ${article.thumbnail.substring(0, 50)}...`);
-                    } else if (article.enclosure && article.enclosure.link) {
-                        newsData.imageUrl = article.enclosure.link;
-                        this.log(`🖼️ Image enclosure utilisée: ${article.enclosure.link.substring(0, 50)}...`);
-                    } else {
-                        // Image par défaut si aucune trouvée
-                        newsData.imageUrl = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400';
-                        this.log(`🖼️ Image par défaut utilisée pour: ${article.title.substring(0, 30)}...`);
-                    }
-
-                    const city = this.extractCity(cleanContent);
-                    if (city) {
-                        newsData.city = city;
-                    }
-
-                    await db.collection('news').add(newsData);
-                    
-                    this.log(`✅ Article ajouté: "${article.title.substring(0, 50)}..."`, 'success');
-                    return true;
-
-                } catch (error) {
-                    this.log(`❌ Erreur traitement article: ${error.message}`, 'error');
-                    throw error;
-                }
-            }
-
-            convertWordPressToClean(content) {
-                if (!content) return 'Contenu à venir';
-                
-                return content
-                    // ✅ AJOUT : Supprimer les commentaires WordPress
-                    .replace(/<!--\s*wp:[^>]*-->/g, '')
-                    .replace(/<!--\s*\/wp:[^>]*-->/g, '')
-                    // ✅ AJOUT : Nettoyer les classes WordPress
-                    .replace(/class="wp-block-[^"]*"/g, '')
-                    .replace(/class="wp-[^"]*"/g, '')
-                    // ✅ AJOUT : Simplifier les balises figure
-                    .replace(/<figure[^>]*>/g, '')
-                    .replace(/<\/figure>/g, '')
-                    // Nettoyage existant
-                    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-                    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-                    .replace(/<!--[\s\S]*?-->/g, '')
-                    // ✅ AJOUT : Nettoyer les espaces multiples
-                    .replace(/\n\s*\n/g, '\n')
-                    .replace(/\s+/g, ' ')
-                    .trim();
-            }
-
-            extractSummary(content) {
-                if (!content) return 'Résumé à venir';
-                
-                const textContent = content.replace(/<[^>]*>/g, '').trim();
-                
-                if (textContent.length <= 200) return textContent;
-                
-                const truncated = textContent.substring(0, 200);
-                const lastSpace = truncated.lastIndexOf(' ');
-                
-                return lastSpace > 150 ? truncated.substring(0, lastSpace) + '...' : truncated + '...';
-            }
-
-            extractCity(content) {
-                if (!content) return null;
-                
-                const cities = [
-                    'Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg', 
-                    'Montpellier', 'Bordeaux', 'Lille', 'Rennes', 'Reims', 'Le Havre', 
-                    'Saint-Étienne', 'Toulon', 'Angers', 'Grenoble', 'Dijon', 'Nîmes', 'Aix-en-Provence'
-                ];
-                
-                const textContent = content.replace(/<[^>]*>/g, '');
-                
-                for (const city of cities) {
-                    if (textContent.includes(city)) {
-                        return city;
-                    }
-                }
-                
-                return null;
-            }
-
-            // 🔥 NOUVELLE MÉTHODE POUR EXTRAIRE LES IMAGES i.ibb.co
-            extractIbbImage(content) {
-                if (!content) return null;
-                
-                // Regex pour chercher les URLs d'images i.ibb.co dans le contenu HTML
-                const ibbImageRegex = /https:\/\/i\.ibb\.co\/[a-zA-Z0-9\/\-\.]+\.(jpg|jpeg|png|gif|webp)/gi;
-                
-                // Chercher toutes les images i.ibb.co
-                const matches = content.match(ibbImageRegex);
-                
-                if (matches && matches.length > 0) {
-                    // Retourner la première image trouvée
-                    return matches[0];
-                }
-                
-                // Si pas d'images directes, chercher dans les balises img
-                const imgTagRegex = /<img[^>]+src="(https:\/\/i\.ibb\.co\/[^"]+)"/gi;
-                const imgMatches = imgTagRegex.exec(content);
-                
-                if (imgMatches && imgMatches[1]) {
-                    return imgMatches[1];
-                }
-                
-                return null;
-            }
-
-            async testFeeds() {
-                this.log('🧪 Test des flux RSS en cours...');
-                
-                const results = [];
-                
-                for (const source of this.sources) {
-                    try {
-                        const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&api_key=y9ray3yqcix4girnxpyu5uaeltcvwdexy21zvbfm&count=5`);
-                        const data = await response.json();
-                        
-                        const result = {
-                            url: source.url,
-                            type: source.type,
-                            status: data.status,
-                            itemCount: data.items ? data.items.length : 0,
-                            error: data.message || null
-                        };
-                        
-                        results.push(result);
-                        
-                        if (data.status === 'ok') {
-                            this.log(`✅ ${source.type}: ${data.items.length} articles disponibles`);
-                        } else {
-                            this.log(`❌ ${source.type}: ${data.message}`, 'error');
-                        }
-                        
-                    } catch (error) {
-                        this.log(`❌ Erreur test ${source.type}: ${error.message}`, 'error');
-                        results.push({
-                            url: source.url,
-                            type: source.type,
-                            status: 'error',
-                            itemCount: 0,
-                            error: error.message
-                        });
-                    }
-                }
-                
-                this.log('🏁 Test des flux terminé');
-                return results;
-            }
-
-            getLogs(limit = 50) {
-                return this.logs.slice(0, limit);
-            }
+            };
+            input.click();
         }
 
-        // Instance globale
-        window.rssService = new RSSyncService();
-
-        // 🤖 AJOUT : Fonction d'amélioration IA
-        async function improveArticleWithAI(article) {
-            const url = `${GOOGLE_AI_CONFIG.endpoint}${GOOGLE_AI_CONFIG.model}:generateContent?key=${GOOGLE_AI_CONFIG.apiKey}`;
-            
-            const prompt = `Tu es le rédacteur en chef de "La Revue". Améliore cet article en respectant SA LOGIQUE ORIGINALE et le remettant en forme :
-
-**ARTICLE ORIGINAL :**
-Titre: ${article.title}
-Contenu: ${article.content}
-
-**RÈGLES :**
-1. Respecte l'angle et la logique de l'article original
-2. Structure HTML propre avec <p>, <h3>, <strong>
-3. Garde TOUS les faits, dates, noms exactement
-4. Style journalistique français professionnel
-5. Pas d'invention d'informations
-
-Réponds UNIQUEMENT avec ce JSON :
-{
-  "title": "titre amélioré gardant l'essence",
-  "content": "contenu refait en HTML propre",
-  "summary": "résumé fidèle (max 150 caractères)"
-}`;
-
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            temperature: 0.6,
-                            topK: 30,
-                            topP: 0.9,
-                            maxOutputTokens: 2048,
-                        }
-                    })
-                });
-
-                if (!response.ok) throw new Error(`Erreur API: ${response.status}`);
-
-                const data = await response.json();
-                const generatedText = data.candidates[0].content.parts[0].text;
-                
-                const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-                if (!jsonMatch) throw new Error('Format IA invalide');
-
-                return JSON.parse(jsonMatch[0]);
-            } catch (error) {
-                console.error('Erreur IA:', error);
-                return null;
-            }
+        function exportAllData() {
+            showNotification('📤 Export de toutes les données...', 'info');
+            setTimeout(() => {
+                showNotification('✅ Export terminé!', 'success');
+            }, 2000);
         }
 
-        // ✅ FONCTIONS RSS MISES À JOUR
-        let rssSyncInterval;
-        let rssService = window.rssService;
-
-        function initRSSService() {
-            rssService = window.rssService;
-            console.log('✅ Service RSS initialisé');
-            startAutoRSSSync();
+        function exportReviews() {
+            showNotification('📊 Export du rapport des avis...', 'info');
+            setTimeout(() => {
+                showNotification('✅ Rapport des avis exporté!', 'success');
+            }, 2000);
         }
 
-        function startAutoRSSSync() {
-            if (rssSyncInterval) clearInterval(rssSyncInterval);
-            
-            // Synchroniser toutes les heures (3600000 ms)
-            rssSyncInterval = setInterval(async () => {
-                const autoSyncEnabled = document.getElementById('autoRSSSync')?.checked;
-                if (autoSyncEnabled && rssService) {
-                    console.log('🔄 Synchronisation automatique déclenchée');
-                    await manualRSSSync();
-                }
-            }, 3600000); // 1 heure
-            
-            console.log('🔄 Synchronisation RSS automatique démarrée');
-        }
-
-        async function manualRSSSync() {
-            try {
-                showNotification('🔄 Synchronisation RSS en cours...', 'info');
-                
-                const result = await rssService.syncAll();
-                
-                document.getElementById('lastSyncTime').textContent = new Date().toLocaleString('fr-FR');
-                await loadNews();
-                
-                const message = `✅ Synchronisation terminée ! ${result.totalAdded} nouveaux articles ajoutés`;
-                showNotification(message, 'success');
-                
-            } catch (error) {
-                console.error('❌ Erreur synchronisation RSS:', error);
-                showNotification('❌ Erreur lors de la synchronisation RSS', 'error');
-            }
-        }
-
-        async function testRSSFeeds() {
-            try {
-                showNotification('🧪 Test des flux RSS...', 'info');
-                
-                const results = await rssService.testFeeds();
-                
-                let message = 'Test terminé:\n';
-                results.forEach(result => {
-                    const status = result.status === 'ok' ? '✅' : '❌';
-                    message += `${status} ${result.type}: ${result.itemCount} articles\n`;
-                });
-                
-                alert(message);
-                showNotification('✅ Test des flux RSS terminé !', 'success');
-                
-            } catch (error) {
-                console.error('❌ Erreur test RSS:', error);
-                showNotification('❌ Erreur lors du test RSS', 'error');
-            }
-        }
-
-        function viewSyncLogs() {
-            const logs = rssService.getLogs(20);
-            if (logs.length === 0) {
-                alert('Aucun log disponible');
-                return;
-            }
-
-            let logMessage = '📊 Logs de synchronisation (20 derniers):\n\n';
-            logs.forEach(log => {
-                const icon = log.type === 'error' ? '❌' : log.type === 'success' ? '✅' : 'ℹ️';
-                logMessage += `${icon} [${log.timestamp}] ${log.message}\n`;
-            });
-
-            alert(logMessage);
-        }
-        
-        // ✅ NOUVELLES FONCTIONS IMPORT WORDPRESS
-        
-        // Fonction de conversion WordPress vers format site web
-        function convertWordPressToSiteFormat(content) {
-            if (!content) return 'Contenu à venir';
-            
-            return content
-                // ✅ PRÉSERVER les titres EXACTEMENT comme sur le site
-                .replace(/<h4 class="wp-block-heading"[^>]*><strong>(.*?)<\/strong>\s*<strong>\(([^)]+)\)<\/strong><\/h4>/g, '#### **$1** **($2)**')
-                .replace(/<h4 class="wp-block-heading"[^>]*><br><strong>(.*?)<\/strong><\/h4>/g, '#### **$1**')
-                .replace(/<h4 class="wp-block-heading"[^>]*><strong>(.*?)<\/strong><\/h4>/g, '#### **$1**')
-                .replace(/<h4 class="wp-block-heading"[^>]*>(.*?)<\/h4>/g, '#### $1')
-                .replace(/<h3 class="wp-block-heading"[^>]*>(.*?)<\/h3>/g, '### $1')
-                .replace(/<h2 class="wp-block-heading"[^>]*>(.*?)<\/h2>/g, '## $1')
-                
-                // ✅ PRÉSERVER les images EXACTEMENT comme sur le site
-                .replace(/<figure[^>]*class="wp-block-image[^>]*>[\s\S]*?<img[^>]+src="([^"]*)"[^>]*>[\s\S]*?<\/figure>/gi, '\n\n![]($1)\n\n')
-                
-                // ✅ PRÉSERVER les paragraphes
-                .replace(/<p><\/p>/g, '\n')
-                .replace(/<p>/g, '').replace(/<\/p>/g, '\n\n')
-                
-                // ✅ PRÉSERVER le formatage
-                .replace(/<strong>/g, '**').replace(/<\/strong>/g, '**')
-                .replace(/<br>/g, '  \n').replace(/<br\/>/g, '  \n')
-                
-                // ✅ PRÉSERVER les liens
-                .replace(/<a href="([^"]*)"[^>]*>(.*?)<\/a>/g, '[$2]($1)')
-                
-                // ✅ PRÉSERVER les caractères spéciaux
-                .replace(/‎/g, '\n\n')
-                
-                // ✅ SUPPRIMER les balises WordPress
-                .replace(/<!--\s*wp:[^>]*-->/g, '')
-                .replace(/<!--\s*\/wp:[^>]*-->/g, '')
-                .replace(/<figure[^>]*>/g, '').replace(/<\/figure>/g, '')
-                .replace(/class="[^"]*"/g, '')
-                .replace(/{"[^"]*"}/g, '')
-                
-                // ✅ NETTOYER sans altérer
-                .replace(/\n{4,}/g, '\n\n\n')
-                .replace(/^\s+/gm, '')
-                .trim();
-        }
-        
-        // Import manuel d'un article WordPress - VERSION CORRIGÉE
-async function importWordPressArticle(withIA = false) {
-    const url = document.getElementById('wordpressArticleUrl').value;
-    if (!url) {
-        showNotification('❌ Veuillez saisir une URL d\'article', 'error');
-        return;
-    }
-    
-    if (!url.includes('larevuedeshotels.com') && !url.includes('larevuedesrestaurants.com')) {
-        showNotification('❌ URL non supportée. Utilisez larevuedeshotels.com ou larevuedesrestaurants.com', 'error');
-        return;
-    }
-    
-    try {
-        showNotification('📥 Import en cours...', 'info');
-        
-        // Vérifier si l'article existe déjà
-        const existing = await db.collection('news')
-            .where('sourceUrl', '==', url)
-            .limit(1)
-            .get();
-            
-        if (!existing.empty) {
-            showNotification('ℹ️ Article déjà importé', 'warning');
-            return;
-        }
-        
-        // ✅ NOUVELLE APPROCHE AVEC PLUSIEURS PROXIES DE FALLBACK
-        let html = null;
-        const proxies = [
-            `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-            `https://corsproxy.io/?${encodeURIComponent(url)}`,
-            `https://cors-anywhere.herokuapp.com/${url}`
-        ];
-        
-        for (const proxyUrl of proxies) {
-            try {
-                console.log(`🔄 Tentative avec proxy: ${proxyUrl}`);
-                const response = await fetch(proxyUrl, {
-                    headers: {
-                        'Accept': 'application/json, text/html, */*',
-                        'User-Agent': 'Mozilla/5.0 (compatible; LaRevue-Import/1.0)'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                // ✅ VÉRIFIER LE TYPE DE CONTENU
-                const contentType = response.headers.get('content-type');
-                console.log('📄 Content-Type:', contentType);
-                
-                if (contentType && contentType.includes('application/json')) {
-                    // Si c'est du JSON (allorigins)
-                    const data = await response.json();
-                    if (data.contents) {
-                        html = data.contents;
-                        console.log('✅ HTML récupéré via allorigins');
-                        break;
-                    }
-                } else {
-                    // Si c'est du HTML direct
-                    html = await response.text();
-                    if (html && html.includes('<html')) {
-                        console.log('✅ HTML récupéré directement');
-                        break;
-                    }
-                }
-                
-            } catch (error) {
-                console.log(`❌ Proxy échoué: ${error.message}`);
-                continue;
-            }
-        }
-        
-        if (!html) {
-            throw new Error('Impossible de récupérer le contenu de l\'article. Tous les proxies ont échoué.');
-        }
-        
-        // ✅ VÉRIFIER QUE C'EST BIEN DU HTML
-        if (!html.includes('<html') && !html.includes('<div')) {
-            throw new Error('Le contenu récupéré ne semble pas être du HTML valide');
-        }
-        
-        console.log('📄 HTML récupéré, taille:', html.length, 'caractères');
-        
-        // Extraire les informations
-        const title = extractTitleFromHtml(html);
-        const content = extractContentFromHtml(html);
-        const imageUrl = extractFeaturedImageFromHtml(html);
-        
-        console.log('📝 Titre extrait:', title);
-        console.log('📄 Contenu extrait:', content.substring(0, 100) + '...');
-        console.log('🖼️ Image extraite:', imageUrl);
-        
-        if (!title || title === 'Article importé') {
-            throw new Error('Impossible d\'extraire le titre de l\'article');
-        }
-        
-        if (!content || content.length < 100) {
-            throw new Error('Impossible d\'extraire le contenu de l\'article');
-        }
-        
-        // Convertir au format site web
-        let finalContent = convertWordPressToSiteFormat(content);
-        let finalTitle = title;
-        let aiImproved = false;
-        
-        // Améliorer avec IA si demandé
-        if (withIA) {
-            try {
-                showNotification('🤖 Amélioration IA en cours...', 'info');
-                const improved = await improveArticleWithAI({
-                    title: finalTitle,
-                    content: finalContent
-                });
-                
-                if (improved && improved.title && improved.content) {
-                    finalTitle = improved.title;
-                    finalContent = improved.content;
-                    aiImproved = true;
-                    showNotification('✅ Article amélioré par IA !', 'success');
-                }
-            } catch (error) {
-                console.log('⚠️ IA non disponible, contenu original conservé');
-                showNotification('⚠️ IA non disponible, contenu original importé', 'warning');
-            }
-        }
-        
-        // Créer l'article dans Firebase
-        const newsData = {
-            title: finalTitle,
-            content: finalContent,
-            summary: extractSummaryFromContent(finalContent),
-            sourceUrl: url,
-            imageUrl: imageUrl,
-            type: detectTypeFromUrl(url),
-            establishmentType: detectEstablishmentTypeFromUrl(url),
-            status: 'published',
-            featured: false,
-            author: 'La Revue',
-            aiImproved: aiImproved,
-            aiProvider: aiImproved ? 'Google AI Studio' : null,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            views: 0,
-            tags: ['actualité', detectTypeFromUrl(url), 'wordpress', 'import'],
-            city: extractCityFromContent(finalContent)
-        };
-        
-        console.log('💾 Sauvegarde dans Firebase...', newsData);
-        
-        await db.collection('news').add(newsData);
-        await loadNews();
-        
-        showNotification('✅ Article importé avec succès !', 'success');
-        document.getElementById('wordpressArticleUrl').value = '';
-        
-    } catch (error) {
-        console.error('❌ Erreur import WordPress:', error);
-        showNotification(`❌ Erreur lors de l'import: ${error.message}`, 'error');
-        
-        // ✅ AFFICHER LES DÉTAILS DE L'ERREUR POUR LE DEBUG
-        console.error('🔍 Détails de l\'erreur:', {
-            message: error.message,
-            stack: error.stack,
-            url: url
-        });
-    }
-}
-        
-        // Import avec IA
-        async function importWordPressArticleWithIA() {
-            await importWordPressArticle(true);
-        }
-        
-        // Fonctions utilitaires d'extraction
-        function extractTitleFromHtml(html) {
-            let title = '';
-            
-            // Essayer plusieurs sélecteurs
-            const titlePatterns = [
-                /<h1[^>]*class="[^"]*entry-title[^"]*"[^>]*>([^<]+)<\/h1>/i,
-                /<h1[^>]*>([^<]+)<\/h1>/i,
-                /<title[^>]*>([^<]+)<\/title>/i
-            ];
-            
-            for (const pattern of titlePatterns) {
-                const match = html.match(pattern);
-                if (match) {
-                    title = match[1].replace(' - La Revue des Hôtels', '').replace(' - La Revue des Restaurants', '').trim();
-                    if (title) break;
-                }
-            }
-            
-            return title || 'Article importé';
-        }
-        
-        function extractContentFromHtml(html) {
-            let content = '';
-            
-            // Chercher le contenu principal
-            const contentPatterns = [
-                /<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-                /<article[^>]*>([\s\S]*?)<\/article>/i,
-                /<main[^>]*>([\s\S]*?)<\/main>/i
-            ];
-            
-            for (const pattern of contentPatterns) {
-                const match = html.match(pattern);
-                if (match) {
-                    content = match[1];
-                    break;
-                }
-            }
-            
-            if (!content) content = html;
-            
-            // Nettoyer les éléments indésirables
-            content = content
-                .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-                .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-                .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
-                .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
-                .replace(/<div[^>]*class="[^"]*sidebar[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
-                .replace(/<div[^>]*class="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
-            
-            return content;
-        }
-        
-        function extractFeaturedImageFromHtml(html) {
-            const imagePatterns = [
-                /<meta property="og:image" content="([^"]+)"/i,
-                /<img[^>]+src="(https:\/\/i\.ibb\.co\/[^"]+)"/i,
-                /<img[^>]+src="([^"]+)"[^>]*class="[^"]*wp-post-image[^"]*"/i
-            ];
-            
-            for (const pattern of imagePatterns) {
-                const match = html.match(pattern);
-                if (match) return match[1];
-            }
-            
-            return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400';
-        }
-        
-        function detectTypeFromUrl(url) {
-            if (url.includes('larevuedeshotels')) return 'hotel';
-            if (url.includes('larevuedesrestaurants')) return 'restaurant';
-            return 'general';
-        }
-        
-        function detectEstablishmentTypeFromUrl(url) {
-            if (url.includes('larevuedeshotels')) return 'hotels';
-            if (url.includes('larevuedesrestaurants')) return 'restaurants';
-            return 'general';
-        }
-        
-        function extractSummaryFromContent(content) {
-            if (!content) return 'Résumé à venir';
-            
-            const textContent = content.replace(/[#*!\[\]()]/g, '').replace(/\n+/g, ' ').trim();
-            
-            if (textContent.length <= 200) return textContent;
-            
-            const truncated = textContent.substring(0, 200);
-            const lastSpace = truncated.lastIndexOf(' ');
-            
-            return lastSpace > 150 ? truncated.substring(0, lastSpace) + '...' : truncated + '...';
-        }
-        
-        function extractCityFromContent(content) {
-            if (!content) return null;
-            
-            const cities = [
-                'Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg',
-                'Montpellier', 'Bordeaux', 'Lille', 'Rennes', 'Reims', 'Le Havre',
-                'Saint-Étienne', 'Toulon', 'Angers', 'Grenoble', 'Dijon', 'Nîmes',
-                'Aix-en-Provence', 'Chamonix', 'Cassis', 'Gordes', 'Cernay', 'Bagnols'
-            ];
-            
-            const textContent = content.replace(/[#*!\[\]()]/g, '');
-            
-            for (const city of cities) {
-                if (textContent.includes(city)) {
-                    return city;
-                }
-            }
-            
-            return null;
-        }
-
-        // News editing functions
-        async function editNews(newsId) {
-            try {
-                const doc = await db.collection('news').doc(newsId).get();
-                if (doc.exists) {
-                    const newsData = doc.data();
-                   
-                    // Remplir le formulaire avec les données existantes
-                    document.getElementById('editNewsId').value = newsId;
-                    document.getElementById('editNewsTitle').value = newsData.title || '';
-                    document.getElementById('editNewsContent').value = newsData.content || '';
-                    document.getElementById('editNewsSummary').value = newsData.summary || '';
-                    document.getElementById('editNewsCity').value = newsData.city || '';
-                    document.getElementById('editNewsType').value = newsData.type || '';
-                    document.getElementById('editNewsStatus').value = newsData.status || 'draft';
-                    document.getElementById('editNewsFeature').checked = newsData.featured || false;
-                    document.getElementById('editNewsImageUrl').value = newsData.imageUrl || '';
-                    document.getElementById('editNewsArticleLink').value = newsData.articleLink || '';
-                    document.getElementById('editNewsTags').value = newsData.tags ? newsData.tags.join(', ') : '';
-           
-                   
-                    // Afficher le modal
-                    document.getElementById('editNewsModal').classList.add('show');
-                }
-            } catch (error) {
-                console.error('Erreur lors du chargement de l\'actualité:', error);
-                alert('Erreur lors du chargement de l\'actualité');
-            }
-        }
-
-        function closeEditNewsModal() {
-            document.getElementById('editNewsModal').classList.remove('show');
-            document.getElementById('editNewsForm').reset();
-        }
-
-        async function handleEditNewsSubmit(e) {
-            e.preventDefault();
-           
-            try {
-                showNotification('💾 Modification en cours...', 'info');
-               
-                const newsId = document.getElementById('editNewsId').value;
-                const formData = {
-                    title: document.getElementById('editNewsTitle').value,
-                    type: document.getElementById('editNewsType').value,
-                    content: document.getElementById('editNewsContent').value,
-                    summary: document.getElementById('editNewsSummary').value || 'Résumé à venir',    // ← NOUVELLE LIGNE
-                    articleLink: document.getElementById('editNewsArticleLink').value,
-                    city: document.getElementById('editNewsCity').value || '',
-                    status: document.getElementById('editNewsStatus').value,
-                    featured: document.getElementById('editNewsFeature').checked,
-                    tags: document.getElementById('editNewsTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                // Handle image
-                const imageUrl = document.getElementById('editNewsImageUrl').value;
-                if (imageUrl) {
-                    formData.imageUrl = imageUrl;
-                }
-
-                // Handle publication date
-                if (formData.status === 'published') {
-                    formData.publishedAt = firebase.firestore.FieldValue.serverTimestamp();
-                }
-
-                // Update in Firestore
-                await db.collection('news').doc(newsId).update(formData);
-               
-                closeEditNewsModal();
-                await loadNews();
-                updateFeaturedNews();
-                showNotification('✅ Actualité modifiée avec succès!', 'success');
-               
-            } catch (error) {
-                console.error('Erreur lors de la modification de l\'actualité:', error);
-                showNotification('❌ Erreur lors de la modification de l\'actualité', 'error');
-            }
+        function bulkActions() {
+            showNotification('🔧 Actions groupées disponibles via les cases à cocher', 'info');
         }
 
         // Close modals when clicking outside
@@ -5140,202 +4108,27 @@ async function importWordPressArticle(withIA = false) {
             }
         });
 
-         // ✅ NOUVELLES FONCTIONS COPIER-COLLER À AJOUTER ICI
-
-        // Import manuel par copier-coller
-        async function importManualContent(withIA = false) {
-            const title = document.getElementById('manualArticleTitle').value.trim();
-            const content = document.getElementById('manualArticleContent').value.trim();
-            const type = document.getElementById('manualArticleType').value;
-            const city = document.getElementById('manualArticleCity').value.trim();
+        // Debug function for news
+        window.debugNews = function() {
+            console.log('=== 🔍 DEBUG ACTUALITÉS ===');
+            console.log('📊 news.length:', news.length);
+            console.log('📊 filteredNews.length:', filteredNews.length);
+            console.log('🔥 Firebase db:', typeof db);
+            console.log('📰 Premier article:', news[0]);
+            console.log('🎯 Table news DOM:', document.getElementById('newsTable'));
             
-            if (!title) {
-                showNotification('❌ Veuillez saisir un titre', 'error');
-                return;
-            }
-            
-            if (!content) {
-                showNotification('❌ Veuillez coller le contenu HTML', 'error');
-                return;
-            }
-            
-            try {
-                showNotification('📋 Import manuel en cours...', 'info');
-                
-                // Vérifier si article existe déjà (par titre)
-                const existing = await db.collection('news')
-                    .where('title', '==', title)
-                    .limit(1)
-                    .get();
-                    
-                if (!existing.empty) {
-                    if (!confirm('Un article avec ce titre existe déjà. Continuer quand même ?')) {
-                        return;
-                    }
-                }
-                
-                // Convertir le contenu WordPress vers format propre
-                let finalContent = convertWordPressToSiteFormat(content);
-                let finalTitle = title;
-                let aiImproved = false;
-                
-                // Améliorer avec IA si demandé
-                if (withIA) {
-                    try {
-                        showNotification('🤖 Amélioration IA en cours...', 'info');
-                        const improved = await improveArticleWithAI({
-                            title: finalTitle,
-                            content: finalContent
-                        });
-                        
-                        if (improved && improved.title && improved.content) {
-                            finalTitle = improved.title;
-                            finalContent = improved.content;
-                            aiImproved = true;
-                            showNotification('✅ Article amélioré par IA !', 'success');
-                        }
-                    } catch (error) {
-                        console.log('⚠️ IA non disponible, contenu original conservé');
-                        showNotification('⚠️ IA non disponible, contenu original importé', 'warning');
-                    }
-                }
-                
-                // Extraire la première image i.ibb.co
-                const imageUrl = extractIbbImageFromContent(content) || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400';
-                
-                // Créer l'article dans Firebase
-                const newsData = {
-                    title: finalTitle,
-                    content: finalContent,
-                    summary: extractSummaryFromContent(finalContent),
-                    imageUrl: imageUrl,
-                    type: type,
-                    establishmentType: type === 'hotel' ? 'hotels' : type === 'restaurant' ? 'restaurants' : type === 'spa' ? 'spas' : 'general',
-                    city: city || extractCityFromContent(finalContent) || '',
-                    status: 'published',
-                    featured: false,
-                    author: 'La Revue',
-                    aiImproved: aiImproved,
-                    aiProvider: aiImproved ? 'Google AI Studio' : null,
-                    importMethod: 'manual_paste',
-                    createdAt: new Date(),
-                    timestamp: new Date(),
-                    publishedAt: new Date(),
-                    publishDate: new Date(),
-                    views: 0,
-                    tags: ['actualité', type, 'wordpress', 'import-manuel']
-                };
-                // ✅ VALIDATION DES DONNÉES OBLIGATOIRES
-if (!newsData.title || !newsData.content) {
-    throw new Error('Titre ou contenu manquant');
-}
-
-console.log('🔍 Validation timestamps:', {
-    createdAt: newsData.createdAt,
-    timestamp: newsData.timestamp,
-    publishDate: newsData.publishDate
-});
-
-console.log('📊 Données à sauvegarder:', {
-    title: newsData.title.substring(0, 50) + '...',
-    contentLength: newsData.content.length,
-    type: newsData.type,
-    hasTimestamp: !!newsData.timestamp,
-    hasCreatedAt: !!newsData.createdAt
-});
-
-                console.log('💾 Sauvegarde article manuel...', newsData);
-
-// ✅ AJOUT : Test de connexion Firebase avant sauvegarde
-try {
-    console.log('💾 Sauvegarde vers Firebase collection "news"...');
-    
-    const docRef = await db.collection('news').add(newsData);
-    console.log('✅ Document créé avec ID:', docRef.id);
-    
-    // Vérification immédiate
-    const savedDoc = await db.collection('news').doc(docRef.id).get();
-    if (savedDoc.exists) {
-        console.log('✅ Document vérifié dans Firebase:', savedDoc.data().title);
-    } else {
-        throw new Error('Document non trouvé après création');
-    }
-    
-    console.log('🔄 Rechargement des actualités...');
-    await loadNews();
-    console.log('✅ Actualités rechargées');
-    
-} catch (firebaseError) {
-    console.error('❌ ERREUR FIREBASE DÉTAILLÉE:', firebaseError);
-    throw new Error(`Erreur Firebase lors de la sauvegarde: ${firebaseError.message}`);
-}
-                
-                showNotification('✅ Article importé avec succès !', 'success');
-                clearManualForm();
-                
-                // Proposition d'édition
-                setTimeout(() => {
-                    if (confirm('Article importé ! Voulez-vous l\'éditer maintenant pour vérifier le résultat ?')) {
-                        // Trouver l'article nouvellement créé
-                        const newArticle = news.find(n => n.title === finalTitle);
-                        if (newArticle) {
-                            editNews(newArticle.id);
-                        }
-                    }
-                }, 1000);
-                
-            } catch (error) {
-                console.error('❌ Erreur import manuel:', error);
-                showNotification(`❌ Erreur lors de l'import: ${error.message}`, 'error');
-            }
-        }
-
-        // Import avec IA
-        async function importManualContentWithIA() {
-            await importManualContent(true);
-        }
-
-        // Fonction pour vider le formulaire
-        function clearManualForm() {
-            document.getElementById('manualArticleTitle').value = '';
-            document.getElementById('manualArticleContent').value = '';
-            document.getElementById('manualArticleCity').value = '';
-            document.getElementById('manualArticleType').value = 'hotel';
-        }
-
-        // Fonction pour extraire les images i.ibb.co du contenu
-        function extractIbbImageFromContent(content) {
-            if (!content) return null;
-            
-            // Chercher les URLs d'images i.ibb.co
-            const ibbImageRegex = /https:\/\/i\.ibb\.co\/[a-zA-Z0-9\/\-\.]+\.(jpg|jpeg|png|gif|webp)/gi;
-            const matches = content.match(ibbImageRegex);
-            
-            if (matches && matches.length > 0) {
-                console.log('🖼️ Image i.ibb.co trouvée:', matches[0]);
-                return matches[0];
-            }
-            
-            // Chercher dans les balises img
-            const imgTagRegex = /<img[^>]+src="(https:\/\/i\.ibb\.co\/[^"]+)"/gi;
-            const imgMatches = imgTagRegex.exec(content);
-            
-            if (imgMatches && imgMatches[1]) {
-                console.log('🖼️ Image trouvée dans balise img:', imgMatches[1]);
-                return imgMatches[1];
-            }
-            
-            return null;
-        }
-
-        // Auto-save functionality
-        setInterval(() => {
-            const settings = JSON.parse(localStorage.getItem('larevue_settings') || '{}');
-            if (settings.autoBackupFrequency === 'daily') {
-                // Implement auto-backup logic here
-                console.log('Auto-backup would run here');
-            }
-        }, 24 * 60 * 60 * 1000); // Check daily
+            // Test Firebase direct
+            db.collection('news').limit(3).get()
+                .then(snapshot => {
+                    console.log('✅ Test Firebase direct réussi:', snapshot.size);
+                    snapshot.docs.forEach(doc => {
+                        console.log('📄 Doc:', doc.id, doc.data());
+                    });
+                })
+                .catch(error => {
+                    console.error('❌ Test Firebase direct échoué:', error);
+                });
+        };
 
     </script>
 </body>

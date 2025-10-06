@@ -2001,6 +2001,7 @@ https://example.com/image2.jpg"></textarea>
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const storage = firebase.storage();
+        setupGoogleAIKey();
 
         // Global Variables
         let establishments = [];
@@ -2197,13 +2198,32 @@ https://example.com/image2.jpg"></textarea>
                     id: doc.id,
                     ...doc.data()
                 }));
+                
+                // ✅ AJOUT : Cache local de sécurité
+                localStorage.setItem('establishments_cache', JSON.stringify(establishments));
+                localStorage.setItem('establishments_cache_time', Date.now().toString());
+                
                 filteredEstablishments = [...establishments];
                 renderEstablishments();
                 populateCityFilter();
                 updatePagination();
             } catch (error) {
                 console.error('Erreur lors du chargement des établissements:', error);
-                showNotification('❌ Erreur lors du chargement des établissements', 'error');
+                
+                // ✅ AJOUT : Fallback cache si Firebase indisponible
+                const cached = localStorage.getItem('establishments_cache');
+                const cacheTime = localStorage.getItem('establishments_cache_time');
+                
+                if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 3600000) { // 1h de cache
+                    establishments = JSON.parse(cached);
+                    filteredEstablishments = [...establishments];
+                    renderEstablishments();
+                    populateCityFilter();
+                    updatePagination();
+                    showNotification('⚠️ Utilisation du cache local (Firebase indisponible)', 'warning');
+                } else {
+                    showNotification('❌ Erreur lors du chargement des établissements', 'error');
+                }
             }
         }
 
@@ -4014,6 +4034,31 @@ class RSSyncService {
         
         this.logs = [];
         this.isRunning = false;
+        
+        // ✅ AJOUT : Validation au démarrage
+        this.validateSources();
+    }
+
+    // ✅ NOUVELLE MÉTHODE À AJOUTER
+    validateSources() {
+        this.sources.forEach(source => {
+            try {
+                new URL(source.url);
+                this.log(`✅ URL valide: ${source.type}`, 'info');
+            } catch (error) {
+                this.log(`❌ URL invalide: ${source.url}`, 'error');
+            }
+        });
+    }
+
+    // ✅ NOUVELLE MÉTHODE À AJOUTER
+    isValidUrl(string) {
+        try {
+            new URL(string);
+            return true;
+        } catch (_) {
+            return false;
+        }
     }
 
     log(message, type = 'info') {
@@ -4094,6 +4139,7 @@ class RSSyncService {
         let processed = 0;
 
         try {
+            await new Promise(resolve => setTimeout(resolve, 1000));
             const rssApiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}&api_key=y9ray3yqcix4girnxpyu5uaeltcvwdexy21zvbfm&count=20`;
             
             this.log(`📥 Récupération du flux: ${source.type}`);
@@ -4152,20 +4198,27 @@ class RSSyncService {
         let aiImproved = false;
 
         try {
-            const improved = await improveArticleWithAI({
-                title: finalTitle,
-                content: finalContent
-            });
-            
-            if (improved) {
-                finalTitle = improved.title;
-                finalContent = improved.content;
-                finalSummary = improved.summary;
-                aiImproved = true;
-                this.log(`🤖 Article amélioré par IA: ${finalTitle.substring(0, 30)}...`);
+            // ✅ AJOUT : Vérification taille contenu avant IA
+            if (finalContent.length > 5000) {
+                this.log(`⚠️ Article trop long pour IA (${finalContent.length} chars), garde original`, 'warning');
+            } else {
+                const improved = await improveArticleWithAI({
+                    title: finalTitle,
+                    content: finalContent
+                });
+                
+                if (improved && improved.title && improved.content) {
+                    finalTitle = improved.title;
+                    finalContent = improved.content;
+                    finalSummary = improved.summary || finalSummary;
+                    aiImproved = true;
+                    this.log(`🤖 Article amélioré par IA: ${finalTitle.substring(0, 30)}...`);
+                } else {
+                    this.log(`⚠️ IA a retourné des données incomplètes, garde original`, 'warning');
+                }
             }
         } catch (error) {
-            this.log(`❌ Erreur IA, garde original: ${error.message}`, 'warning');
+            this.log(`❌ Erreur IA (${error.message}), garde original`, 'warning');
         }
 
         const newsData = {
@@ -4505,7 +4558,7 @@ function viewSyncLogs() {
                 }
             }, 4000);
         });
-        });
+   
 
         // Auto-save functionality
         setInterval(() => {

@@ -2433,17 +2433,20 @@ setupGoogleAIKey();
                     </td>
                     <td class="px-4 py-3">
                         <div class="action-buttons">
-                            <button onclick="editNews('${article.id}')" class="btn btn-primary">
-                                ✏️ Modifier
-                            </button>
-                            <button onclick="toggleFeatured('${article.id}', ${!article.featured})" class="btn ${article.featured ? 'btn-warning' : 'btn-success'}">
-                                ${article.featured ? '⭐ Retirer' : '⭐ Une'}
-                            </button>
-                            ${article.articleLink ? `<a href="${article.articleLink}" target="_blank" class="btn btn-secondary">🔗 Lien</a>` : ''}
-                            <button onclick="deleteNews('${article.id}')" class="btn btn-danger">
-                                🗑️ Supprimer
-                            </button>
-                        </div>
+    <button onclick="editNews('${article.id}')" class="btn btn-primary">
+        ✏️ Modifier
+    </button>
+    <button onclick="toggleFeatured('${article.id}', ${!article.featured})" class="btn ${article.featured ? 'btn-warning' : 'btn-success'}">
+        ${article.featured ? '⭐ Retirer' : '⭐ Une'}
+    </button>
+    ${article.articleLink ? `<a href="${article.articleLink}" target="_blank" class="btn btn-secondary">🔗 Lien</a>` : ''}
+    <button onclick="improveArticleWithIA('${article.id}')" class="btn ${article.aiImproved ? 'btn-secondary' : 'btn-purple'}" ${article.aiImproved ? 'disabled' : ''}>
+        ${article.aiImproved ? '🤖 Déjà IA' : '🤖 Améliorer IA'}
+    </button>
+    <button onclick="deleteNews('${article.id}')" class="btn btn-danger">
+        🗑️ Supprimer
+    </button>
+</div>
                     </td>
                 </tr>
             `).join('');
@@ -3339,6 +3342,87 @@ if (formData.type === 'hotel') {
                 } catch (error) {
                     console.error('Erreur lors de la suppression:', error);
                     showNotification('❌ Erreur lors de la suppression', 'error');
+                }
+            }
+        }
+
+        async function improveArticleWithIA(newsId) {
+            try {
+                // Trouver l'article
+                const article = news.find(n => n.id === newsId);
+                if (!article) {
+                    showNotification('❌ Article non trouvé', 'error');
+                    return;
+                }
+
+                // Vérifier si déjà traité par IA
+                if (article.aiImproved) {
+                    showNotification('ℹ️ Article déjà amélioré par IA', 'info');
+                    return;
+                }
+
+                // Confirmation utilisateur
+                const confirm = window.confirm(`🤖 Améliorer cet article avec l'IA ?\n\n"${article.title}"\n\nCela peut prendre quelques secondes et consomme des crédits IA.`);
+                if (!confirm) return;
+
+                // Démarrer le traitement
+                showNotification('🤖 Amélioration IA en cours...', 'info');
+                
+                // Désactiver le bouton pendant le traitement
+                const button = document.querySelector(`button[onclick="improveArticleWithIA('${newsId}')"]`);
+                if (button) {
+                    button.disabled = true;
+                    button.innerHTML = '⏳ IA en cours...';
+                }
+
+                // Appeler l'IA
+                const improved = await improveArticleWithAI({
+                    title: article.title,
+                    content: article.content
+                });
+
+                if (improved && improved.title && improved.content) {
+                    // Sauvegarder l'amélioration
+                    await db.collection('news').doc(newsId).update({
+                        title: improved.title,
+                        content: improved.content,
+                        summary: improved.summary || article.summary,
+                        aiImproved: true,
+                        aiProvider: 'Google AI Studio',
+                        aiImprovedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        // Garder l'original en backup
+                        originalTitle: article.title,
+                        originalContent: article.content,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // Recharger les données
+                    await loadNews();
+                    
+                    showNotification('✅ Article amélioré par IA avec succès !', 'success');
+                    
+                    // Afficher un aperçu des changements
+                    const changes = `🤖 AMÉLIORATIONS IA :\n\n📝 TITRE AVANT :\n${article.title}\n\n📝 TITRE APRÈS :\n${improved.title}\n\n📄 CONTENU :\n${improved.content.length > 200 ? improved.content.substring(0, 200) + '...' : improved.content}`;
+                    
+                    setTimeout(() => {
+                        if (window.confirm(`${changes}\n\nVoulez-vous voir l'article modifié ?`)) {
+                            editNews(newsId);
+                        }
+                    }, 1000);
+                    
+                } else {
+                    throw new Error('IA a retourné des données incomplètes');
+                }
+
+            } catch (error) {
+                console.error('Erreur amélioration IA:', error);
+                showNotification(`❌ Erreur IA: ${error.message}`, 'error');
+                
+                // Réactiver le bouton
+                const button = document.querySelector(`button[onclick="improveArticleWithIA('${newsId}')"]`);
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '🤖 Améliorer IA';
                 }
             }
         }

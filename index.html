@@ -2354,7 +2354,13 @@ setupGoogleAIKey();
             const tbody = document.getElementById('newsTable');
             const startIndex = (currentNewsPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
-            const pageNews = filteredNews.slice(startIndex, endIndex);
+            const pageNews = filteredNews
+    .sort((a, b) => {
+        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+        return dateB - dateA; // Ordre décroissant (plus récent en premier)
+    })
+    .slice(startIndex, endIndex);
 
             tbody.innerHTML = pageNews.map(article => `
                 <tr class="hover:bg-gray-50">

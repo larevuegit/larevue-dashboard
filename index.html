@@ -2394,7 +2394,10 @@ setupGoogleAIKey();
                         <div class="flex items-center gap-3">
                             ${article.imageUrl ? `<img src="${article.imageUrl}" class="w-12 h-12 object-cover rounded-lg">` : '<div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">📰</div>'}
                             <div>
-                                <div class="font-medium text-gray-900">${article.title}</div>
+                                <div class="font-medium text-gray-900">
+    ${article.title}
+    ${article.aiImproved ? '<span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded ml-2">🤖 IA</span>' : ''}
+</div>
                                 <div class="text-sm text-gray-500">${truncateText(article.content, 60)}</div>
                             </div>
                         </div>

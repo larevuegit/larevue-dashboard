@@ -2241,7 +2241,7 @@ setupGoogleAIKey();
 
         async function loadNews() {
             try {
-                const snapshot = await db.collection('news').orderBy('createdAt', 'desc').get();
+                const snapshot = await db.collection('news').orderBy('timestamp', 'desc').orderBy('createdAt', 'desc').get();
                 news = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()

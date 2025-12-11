@@ -2468,28 +2468,28 @@ Réponds UNIQUEMENT avec ce JSON :
         }
 
         // Convertir WordPress vers format site web
-        function convertWordPressToSiteFormat(content) {
-            if (!content) return 'Contenu à venir';
-            
-            return content
-                .replace(/<h4 class="wp-block-heading"[^>]*><strong>(.*?)<\/strong>\s*<strong>\(([^)]+)\)<\/strong><\/h4>/g, '<h3><strong>$1</strong> <strong>($2)</strong></h3>')
-                .replace(/<h4 class="wp-block-heading"[^>]*><br><strong>(.*?)<\/strong><\/h4>/g, '<h3><strong>$1</strong></h3>')
-                .replace(/<h4 class="wp-block-heading"[^>]*><strong>(.*?)<\/strong><\/h4>/g, '<h3><strong>$1</strong></h3>')
-                .replace(/<h4 class="wp-block-heading"[^>]*>(.*?)<\/h4>/g, '<h3>$1</h3>')
-                .replace(/<h3 class="wp-block-heading"[^>]*>(.*?)<\/h3>/g, '<h2>$1</h2>')
-                .replace(/<h2 class="wp-block-heading"[^>]*>(.*?)<\/h2>/g, '<h1>$1</h1>')
-                .replace(/<figure[^>]*class="wp-block-image[^>]*>[\s\S]*?<img[^>]+src="([^"]*)"[^>]*>[\s\S]*?<\/figure>/gi, '<p><img src="$1" class="img-responsive" /></p>')
-                .replace(/<p><\/p>/g, '')
-                .replace(/<!--\s*wp:[^>]*-->/g, '')
-                .replace(/<!--\s*\/wp:[^>]*-->/g, '')
-                .replace(/<figure[^>]*>/g, '').replace(/<\/figure>/g, '')
-                .replace(/class="[^"]*"/g, '')
-                .replace(/{"[^"]*"}/g, '')
-                .replace(/‎/g, '<br>')
-                .replace(/\n{3,}/g, '\n\n')
-                .replace(/^\s+/gm, '')
-                .trim();
-        }
+function convertWordPressToSiteFormat(content) {
+    if (!content) return 'Contenu à venir';
+    
+    return content
+        // ✅ CORRECTION CRITIQUE : Supprime TOUS les commentaires WordPress (y compris fermants)
+        .replace(/<!--\s*\/?wp:[^>]*?-->/gi, '')  // ✅ Regex unifié avec \/?
+        .replace(/<h4 class="wp-block-heading"[^>]*><strong>(.*?)<\/strong>\s*<strong>\(([^)]+)\)<\/strong><\/h4>/g, '<h3><strong>$1</strong> <strong>($2)</strong></h3>')
+        .replace(/<h4 class="wp-block-heading"[^>]*><br><strong>(.*?)<\/strong><\/h4>/g, '<h3><strong>$1</strong></h3>')
+        .replace(/<h4 class="wp-block-heading"[^>]*><strong>(.*?)<\/strong><\/h4>/g, '<h3><strong>$1</strong></h3>')
+        .replace(/<h4 class="wp-block-heading"[^>]*>(.*?)<\/h4>/g, '<h3>$1</h3>')
+        .replace(/<h3 class="wp-block-heading"[^>]*>(.*?)<\/h3>/g, '<h2>$1</h2>')
+        .replace(/<h2 class="wp-block-heading"[^>]*>(.*?)<\/h2>/g, '<h1>$1</h1>')
+        .replace(/<figure[^>]*class="wp-block-image[^>]*>[\s\S]*?<img[^>]+src="([^"]*)"[^>]*>[\s\S]*?<\/figure>/gi, '<p><img src="$1" class="img-responsive" /></p>')
+        .replace(/<p><\/p>/g, '')
+        .replace(/<figure[^>]*>/g, '').replace(/<\/figure>/g, '')
+        .replace(/class="[^"]*"/g, '')
+        .replace(/{"[^"]*"}/g, '')
+        .replace(/‎/g, '<br>')
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/^\s+/gm, '')
+        .trim();
+}
 
         // Extraire les images i.ibb.co du contenu
         function extractIbbImageFromContent(content) {

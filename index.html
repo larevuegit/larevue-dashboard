@@ -850,11 +850,13 @@
                             <div>
                                 <label class="form-label text-purple-800">🏨 Type d'établissement *</label>
                                 <select id="manualArticleType" class="form-input">
-                                    <option value="hotel">🏨 Hôtel</option>
-                                    <option value="restaurant">🍽️ Restaurant</option>
-                                    <option value="spa">🧘 Spa</option>
-                                    <option value="general">🌟 Général</option>
-                                </select>
+    <option value="hotel">🏨 Hôtel</option>
+    <option value="restaurant">🍽️ Restaurant</option>
+    <option value="spa">🧘 Spa</option>
+    <option value="luxe">💎 Luxe</option>
+    <option value="voyages">✈️ Voyages</option>
+    <option value="general">🌟 Général</option>
+</select>
                             </div>
                             <div>
                                 <label class="form-label text-purple-800">📍 Ville (optionnel)</label>
@@ -909,12 +911,14 @@
                             <div>
                                 <label class="form-label">Type</label>
                                 <select id="filterNewsType" onchange="applyNewsFilters()" class="form-input">
-                                    <option value="">Tous les types</option>
-                                    <option value="hotel">🏨 Hôtel</option>
-                                    <option value="restaurant">🍽️ Restaurant</option>
-                                    <option value="spa">🧘 Spa</option>
-                                    <option value="general">🌟 Général</option>
-                                </select>
+    <option value="">Tous les types</option>
+    <option value="hotel">🏨 Hôtel</option>
+    <option value="restaurant">🍽️ Restaurant</option>
+    <option value="spa">🧘 Spa</option>
+    <option value="luxe">💎 Luxe</option>
+    <option value="voyages">✈️ Voyages</option>
+    <option value="general">🌟 Général</option>
+</select>
                             </div>
                             <div>
                                 <label class="form-label">Statut</label>
@@ -1744,12 +1748,14 @@ https://example.com/image2.jpg"></textarea>
                         <div>
                             <label class="form-label">Catégorie *</label>
                             <select id="editNewsType" required class="form-input">
-                                <option value="">Sélectionner une catégorie</option>
-                                <option value="hotel">🏨 Hôtels</option>
-                                <option value="restaurant">🍽️ Restaurants</option>
-                                <option value="spa">🧘 Spas</option>
-                                <option value="general">🌟 Général</option>
-                            </select>
+    <option value="">Sélectionner une catégorie</option>
+    <option value="hotel">🏨 Hôtels</option>
+    <option value="restaurant">🍽️ Restaurants</option>
+    <option value="spa">🧘 Spas</option>
+    <option value="luxe">💎 Luxe</option>
+    <option value="voyages">✈️ Voyages</option>
+    <option value="general">🌟 Général</option>
+</select>
                         </div>
                         <div>
                             <label class="form-label">Statut</label>
@@ -2894,14 +2900,16 @@ function convertWordPressToSiteFormat(content) {
         }
 
         function getTypeIcon(type) {
-            const icons = {
-                hotel: '🏨',
-                restaurant: '🍽️',
-                spa: '🧘',
-                general: '🌟'
-            };
-            return icons[type] || '📍';
-        }
+    const icons = {
+        hotel: '🏨',
+        restaurant: '🍽️',
+        spa: '🧘',
+        luxe: '💎',
+        voyages: '✈️',
+        general: '🌟'
+    };
+    return icons[type] || '📍';
+}
 
         function getStatusIcon(status) {
             const icons = {

@@ -855,6 +855,7 @@
     <option value="spa">🧘 Spa</option>
     <option value="luxe">💎 Luxe</option>
     <option value="voyages">✈️ Voyages</option>
+    <option value="mode">👗 La Mode</option>  
     <option value="general">🌟 Général</option>
 </select>
                             </div>
@@ -917,6 +918,7 @@
     <option value="spa">🧘 Spa</option>
     <option value="luxe">💎 Luxe</option>
     <option value="voyages">✈️ Voyages</option>
+    <option value="mode">👗 La Mode</option>  
     <option value="general">🌟 Général</option>
 </select>
                             </div>
@@ -1754,6 +1756,7 @@ https://example.com/image2.jpg"></textarea>
     <option value="spa">🧘 Spas</option>
     <option value="luxe">💎 Luxe</option>
     <option value="voyages">✈️ Voyages</option>
+    <option value="mode">👗 La Mode</option>
     <option value="general">🌟 Général</option>
 </select>
                         </div>
@@ -2172,6 +2175,7 @@ https://example.com/image2.jpg"></textarea>
                    type === 'spa' ? 'spas' : 
                    type === 'luxe' ? 'luxe' :           // ✅ AJOUT
                    type === 'voyages' ? 'voyages' :     // ✅ AJOUT
+                   type === 'mode' ? 'mode' :
                    'general',
                     city: city || extractCityFromContent(finalContent) || '',
                     status: 'published',
@@ -2911,6 +2915,7 @@ function convertWordPressToSiteFormat(content) {
         spa: '🧘',
         luxe: '💎',
         voyages: '✈️',
+        mode: '👗', 
         general: '🌟'
     };
     return icons[type] || '📍';

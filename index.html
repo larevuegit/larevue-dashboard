@@ -2167,7 +2167,12 @@ https://example.com/image2.jpg"></textarea>
                     summary: extractSummaryFromContent(finalContent),
                     imageUrl: imageUrl,
                     type: type,
-                    establishmentType: type === 'hotel' ? 'hotels' : type === 'restaurant' ? 'restaurants' : type === 'spa' ? 'spas' : 'general',
+                    establishmentType: type === 'hotel' ? 'hotels' : 
+                   type === 'restaurant' ? 'restaurants' : 
+                   type === 'spa' ? 'spas' : 
+                   type === 'luxe' ? 'luxe' :           // ✅ AJOUT
+                   type === 'voyages' ? 'voyages' :     // ✅ AJOUT
+                   'general',
                     city: city || extractCityFromContent(finalContent) || '',
                     status: 'published',
                     featured: false,

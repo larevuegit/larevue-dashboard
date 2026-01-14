@@ -682,11 +682,12 @@
                         <div>
                             <label class="form-label">Type d'établissement</label>
                             <select id="filterType" onchange="applyFilters()" class="form-input">
-                                <option value="">Tous les types</option>
-                                <option value="hotel">🏨 Hôtel</option>
-                                <option value="restaurant">🍽️ Restaurant</option>
-                                <option value="spa">🧘 Spa</option>
-                            </select>
+    <option value="">Tous les types</option>
+    <option value="hotel">🏨 Hôtel</option>
+    <option value="restaurant">🍽️ Restaurant</option>
+    <option value="spa">🧘 Spa</option>
+    <option value="people">👤 People</option>
+</select>
                         </div>
                         <div>
                             <label class="form-label">Ville</label>
@@ -918,7 +919,8 @@
     <option value="spa">🧘 Spa</option>
     <option value="luxe">💎 Luxe</option>
     <option value="voyages">✈️ Voyages</option>
-    <option value="mode">👗 La Mode</option>  
+    <option value="mode">👗 La Mode</option>
+    <option value="people">👤 People</option>
     <option value="general">🌟 Général</option>
 </select>
                             </div>
@@ -1062,11 +1064,12 @@
                         <div>
                             <label class="form-label">Type d'établissement</label>
                             <select id="filterReviewType" onchange="applyReviewFilters()" class="form-input">
-                                <option value="">Tous les types</option>
-                                <option value="hotel">🏨 Hôtel</option>
-                                <option value="restaurant">🍽️ Restaurant</option>
-                                <option value="spa">🧘 Spa</option>
-                            </select>
+    <option value="">Tous les types</option>
+    <option value="hotel">🏨 Hôtel</option>
+    <option value="restaurant">🍽️ Restaurant</option>
+    <option value="spa">🧘 Spa</option>
+    <option value="people">👤 People</option>
+</select>
                         </div>
                         <div>
                             <label class="form-label">Note donnée</label>
@@ -1432,11 +1435,12 @@
                         <div>
                             <label class="form-label">Type d'établissement *</label>
                             <select id="type" required class="form-input" onchange="updateCriteriaFields()">
-                                <option value="">Sélectionner un type</option>
-                                <option value="hotel">🏨 Hôtel</option>
-                                <option value="restaurant">🍽️ Restaurant</option>
-                                <option value="spa">🧘 Spa</option>
-                            </select>
+    <option value="">Sélectionner un type</option>
+    <option value="hotel">🏨 Hôtel</option>
+    <option value="restaurant">🍽️ Restaurant</option>
+    <option value="spa">🧘 Spa</option>
+    <option value="people">👤 People</option>
+</select>
                         </div>
                     </div>
                 </div>
@@ -1591,11 +1595,12 @@ https://example.com/image2.jpg"></textarea>
                         <div>
                             <label class="form-label">Type d'établissement *</label>
                             <select id="editType" required class="form-input" onchange="updateEditCriteriaFields()">
-                                <option value="">Sélectionner un type</option>
-                                <option value="hotel">🏨 Hôtel</option>
-                                <option value="restaurant">🍽️ Restaurant</option>
-                                <option value="spa">🧘 Spa</option>
-                            </select>
+    <option value="">Sélectionner un type</option>
+    <option value="hotel">🏨 Hôtel</option>
+    <option value="restaurant">🍽️ Restaurant</option>
+    <option value="spa">🧘 Spa</option>
+    <option value="people">👤 People</option>
+</select>
                         </div>
                     </div>
                 </div>
@@ -1757,6 +1762,7 @@ https://example.com/image2.jpg"></textarea>
     <option value="luxe">💎 Luxe</option>
     <option value="voyages">✈️ Voyages</option>
     <option value="mode">👗 La Mode</option>
+    <option value="people">👤 People</option>
     <option value="general">🌟 Général</option>
 </select>
                         </div>
@@ -2915,7 +2921,8 @@ function convertWordPressToSiteFormat(content) {
         spa: '🧘',
         luxe: '💎',
         voyages: '✈️',
-        mode: '👗', 
+        mode: '👗',
+        people: '👤',  // ✅ AJOUT PEOPLE
         general: '🌟'
     };
     return icons[type] || '📍';

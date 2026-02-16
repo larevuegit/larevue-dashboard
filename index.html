@@ -691,6 +691,7 @@
     <option value="restaurant">🍽️ Restaurant</option>
     <option value="spa">🧘 Spa</option>
     <option value="people">👤 People</option>
+    <option value="art">🎨 Art</option>
                                 <option value="culture">🎭 Culture</option>
                                 <option value="automobile">🚗 Automobile</option>
                                 <option value="montres-joaillerie">⌚ Montres & Joaillerie</option>
@@ -868,6 +869,7 @@
     <option value="automobile">🚗 Automobile</option>
     <option value="montres-joaillerie">⌚ Montres & Joaillerie</option>
     <option value="people">👤 People</option>
+    <option value="art">🎨 Art</option>
     <option value="culture">🎭 Culture</option>
     <option value="general">🌟 Général</option>
     <option value="deals">🎁 Bons Plans</option>
@@ -937,6 +939,7 @@
     <option value="automobile">🚗 Automobile</option>
     <option value="montres-joaillerie">⌚ Montres & Joaillerie</option>
     <option value="people">👤 People</option>
+    <option value="art">🎨 Art</option>
     <option value="culture">🎭 Culture</option>
     <option value="general">🌟 Général</option>
     <option value="deals">🎁 Bons Plans</option>
@@ -1253,6 +1256,7 @@
     <option value="restaurant">🍽️ Restaurant</option>
     <option value="spa">🧘 Spa</option>
     <option value="people">👤 People</option>
+    <option value="art">🎨 Art</option>
     <option value="culture">🎭 Culture</option>
 </select>
                         </div>
@@ -1625,6 +1629,7 @@
     <option value="restaurant">🍽️ Restaurant</option>
     <option value="spa">🧘 Spa</option>
     <option value="people">👤 People</option>
+    <option value="art">🎨 Art</option>
     <option value="culture">🎭 Culture</option>
 </select>
                         </div>
@@ -1786,6 +1791,7 @@ https://example.com/image2.jpg"></textarea>
     <option value="restaurant">🍽️ Restaurant</option>
     <option value="spa">🧘 Spa</option>
     <option value="people">👤 People</option>
+    <option value="art">🎨 Art</option>
     <option value="culture">🎭 Culture</option>
 </select>
                         </div>
@@ -1953,6 +1959,7 @@ https://example.com/image2.jpg"></textarea>
     <option value="automobile">🚗 Automobile</option>
     <option value="montres-joaillerie">⌚ Montres & Joaillerie</option>
     <option value="people">👤 People</option>
+    <option value="art">🎨 Art</option>
     <option value="culture">🎭 Culture</option>
     <option value="general">🌟 Général</option>
     <option value="deals">🎁 Bons Plans</option>
@@ -2381,6 +2388,7 @@ https://example.com/image2.jpg"></textarea>
                    type === 'automobile' ? 'automobile' :
                    type === 'montres-joaillerie' ? 'montres-joaillerie' :
                    type === 'culture' ? 'culture' :
+                   type === 'art' ? 'art' :
                    type === 'deals' ? 'deals' :
                    'general',
                     city: city || extractCityFromContent(finalContent) || '',
@@ -3126,6 +3134,8 @@ function convertWordPressToSiteFormat(content) {
         automobile: '🚗',
         'montres-joaillerie': '⌚',
         people: '👤',
+        culture: '🎭',
+        art: '🎨',
         deals: '🎁',
         general: '🌟'
     };

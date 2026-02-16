@@ -642,6 +642,7 @@
                 <div class="tab" onclick="switchTab('beaute')">
     <span class="font-medium">💄 Beauté</span>
 </div>
+                
                 <div class="tab" onclick="switchTab('reviews')">
                     <span class="font-medium">⭐ Modération des Avis</span>
                 </div>
@@ -690,6 +691,7 @@
     <option value="restaurant">🍽️ Restaurant</option>
     <option value="spa">🧘 Spa</option>
     <option value="people">👤 People</option>
+                                <option value="automobile">🚗 Automobile</option>
 </select>
                         </div>
                         <div>
@@ -861,6 +863,7 @@
     <option value="voyages">✈️ Voyages</option>
     <option value="mode">👗 La Mode</option>
     <option value="beaute">💄 Beauté</option>
+    <option value="automobile">🚗 Automobile</option>
     <option value="people">👤 People</option>
     <option value="general">🌟 Général</option>
     <option value="deals">🎁 Bons Plans</option>
@@ -927,6 +930,7 @@
     <option value="voyages">✈️ Voyages</option>
     <option value="mode">👗 La Mode</option>
     <option value="beaute">💄 Beauté</option>
+    <option value="automobile">🚗 Automobile</option>
     <option value="people">👤 People</option>
     <option value="general">🌟 Général</option>
     <option value="deals">🎁 Bons Plans</option>
@@ -1159,6 +1163,7 @@
     </div>
 </div>
 
+        
         <!-- Reviews Tab -->
         <div id="reviews" class="tab-content">
             <div class="card p-6 mb-6">
@@ -1936,6 +1941,7 @@ https://example.com/image2.jpg"></textarea>
     <option value="voyages">✈️ Voyages</option>
     <option value="mode">👗 La Mode</option>
     <option value="beaute">💄 Beauté</option>
+    <option value="automobile">🚗 Automobile</option>
     <option value="people">👤 People</option>
     <option value="general">🌟 Général</option>
     <option value="deals">🎁 Bons Plans</option>
@@ -2361,6 +2367,7 @@ https://example.com/image2.jpg"></textarea>
                    type === 'voyages' ? 'voyages' :     // ✅ AJOUT
                    type === 'mode' ? 'mode' :
                    type === 'beaute' ? 'beaute' :
+                   type === 'automobile' ? 'automobile' :
                    type === 'deals' ? 'deals' :
                    'general',
                     city: city || extractCityFromContent(finalContent) || '',
@@ -3103,6 +3110,7 @@ function convertWordPressToSiteFormat(content) {
         voyages: '✈️',
         mode: '👗',
         beaute: '💄',
+        automobile: '🚗',
         people: '👤',
         deals: '🎁',
         general: '🌟'
@@ -4337,6 +4345,8 @@ function convertWordPressToSiteFormat(content) {
                 });
         };
 
+
+        
     </script>
 </body>
 </html>
